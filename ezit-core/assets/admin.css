@@ -247,6 +247,18 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-badge.is-active   { background: var(--pg-green); color: var(--pg-dark); }
 .ezit-pg .ezit-badge.is-inactive { background: #fdecea; color: #a02c21; }
 
+/* Module status chips (About → Environment) */
+.ezit-pg .ezit-mods { display: flex; flex-wrap: wrap; gap: 7px; padding: 2px 0; }
+.ezit-pg .ezit-mod {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 999px; border: 1px solid transparent;
+    font-size: 12px; font-weight: 700;
+}
+.ezit-pg .ezit-mod i { font-style: normal; font-size: 11px; }
+.ezit-pg .ezit-mod.is-ok      { background: #eef5e2; border-color: #cfe0ae; color: #41620f; }
+.ezit-pg .ezit-mod.is-stale   { background: #fdf1e3; border-color: #f0d3a4; color: #b3500a; }
+.ezit-pg .ezit-mod.is-missing { background: #fdecec; border-color: #f0b9b9; color: #a02c21; }
+
 /* ── Tables ────────────────────────────────────────────────────────── */
 .ezit-pg .ezit-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; margin: 0; }
 .ezit-pg .ezit-table, .ezit-pg .ezit-table th, .ezit-pg .ezit-table td,

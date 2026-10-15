@@ -80,57 +80,81 @@ $detected = EzIT_Themes::detected($core);
     </table>
 </div>
 
+<?php
+// ── Environment data (also feeds the copyable raw report) ────────────
+$env = [
+    __('Ez IT Core', 'ezit-core')     => 'v' . EZIT_CORE_VERSION,
+    __('WordPress', 'ezit-core')      => get_bloginfo('version'),
+    __('PHP', 'ezit-core')            => PHP_VERSION,
+    __('Active theme', 'ezit-core')   => get_stylesheet(),
+    __('License server', 'ezit-core') => $core->api_url(),
+    __('Site URL', 'ezit-core')       => home_url(),
+];
+$mods = [
+    'class-ezit-core.php'        => 'EzIT_Core',
+    'class-ezit-api.php'         => 'EzIT_API',
+    'class-ezit-licensing.php'   => 'EzIT_Licensing',
+    'class-ezit-updater.php'     => 'EzIT_Updater',
+    'class-ezit-marketplace.php' => 'EzIT_Marketplace',
+    'class-ezit-gate.php'        => 'EzIT_Gate',
+    'class-ezit-themes.php'      => 'EzIT_Themes',
+    'class-ezit-login.php'       => 'EzIT_Login',
+    'class-ezit-customizer.php'  => 'EzIT_Customizer',
+    'class-ezit-banners.php'     => 'EzIT_Banners',
+    'class-ezit-admin.php'       => 'EzIT_Admin',
+];
+$mod_status = []; // short name => ok|stale|missing
+$stale      = false;
+foreach ($mods as $file => $m) {
+    $short = preg_replace('/^EzIT_/', '', $m);
+    if (class_exists($m)) {
+        $mod_status[$short] = 'ok';
+    } else {
+        // File present but class not loaded = the running bootstrap is
+        // stale (old ezit-core.php or OPcache), not a missing upload.
+        $mod_status[$short] = file_exists(EZIT_CORE_INC . $file) ? 'stale' : 'missing';
+        $stale              = true;
+    }
+}
+$glyphs = ['ok' => '✓', 'stale' => '⚠', 'missing' => '✗'];
+
+// Plain-text report for the Copy button / support tickets.
+$report = "Ez IT Core environment\n" . str_repeat('-', 40) . "\n";
+foreach ($env as $k => $v) {
+    $report .= sprintf("%-16s %s\n", $k . ':', $v);
+}
+$report .= "\nLoaded modules\n" . str_repeat('-', 40) . "\n";
+foreach ($mod_status as $name => $st) {
+    $report .= sprintf("%s %-14s\n", $glyphs[$st], $name);
+}
+?>
 <div class="ezit-card" data-ezt-anim>
     <div class="ezit-card__head">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>
         <h3><?php esc_html_e('Environment', 'ezit-core'); ?></h3>
+        <button type="button" class="ezit-copy" data-ezit-copy="#ezit-env-raw" style="margin-left:auto"><?php esc_html_e('Copy report', 'ezit-core'); ?></button>
     </div>
     <table class="ezit-table">
         <tbody>
-            <tr><th scope="row"><?php esc_html_e('Ez IT Core', 'ezit-core'); ?></th><td><?php echo esc_html('v' . EZIT_CORE_VERSION); ?></td></tr>
-            <tr><th scope="row"><?php esc_html_e('WordPress', 'ezit-core'); ?></th><td><?php echo esc_html(get_bloginfo('version')); ?></td></tr>
-            <tr><th scope="row"><?php esc_html_e('PHP', 'ezit-core'); ?></th><td><?php echo esc_html(PHP_VERSION); ?></td></tr>
-            <tr><th scope="row"><?php esc_html_e('Active theme', 'ezit-core'); ?></th><td><?php echo esc_html(get_stylesheet()); ?></td></tr>
-            <tr><th scope="row"><?php esc_html_e('License server', 'ezit-core'); ?></th><td><?php echo esc_html($core->api_url()); ?></td></tr>
-            <tr><th scope="row"><?php esc_html_e('Site URL', 'ezit-core'); ?></th><td><?php echo esc_html(home_url()); ?></td></tr>
+            <?php foreach ($env as $label => $value) : ?>
+            <tr><th scope="row"><?php echo esc_html($label); ?></th><td><?php echo esc_html($value); ?></td></tr>
+            <?php endforeach; ?>
             <tr><th scope="row"><?php esc_html_e('Loaded modules', 'ezit-core'); ?></th><td>
-                <?php
-                $mods = [
-                    'class-ezit-core.php'        => 'EzIT_Core',
-                    'class-ezit-api.php'         => 'EzIT_API',
-                    'class-ezit-licensing.php'   => 'EzIT_Licensing',
-                    'class-ezit-updater.php'     => 'EzIT_Updater',
-                    'class-ezit-marketplace.php' => 'EzIT_Marketplace',
-                    'class-ezit-gate.php'        => 'EzIT_Gate',
-                    'class-ezit-themes.php'      => 'EzIT_Themes',
-                    'class-ezit-login.php'       => 'EzIT_Login',
-                    'class-ezit-customizer.php'  => 'EzIT_Customizer',
-                    'class-ezit-banners.php'     => 'EzIT_Banners',
-                    'class-ezit-admin.php'       => 'EzIT_Admin',
-                ];
-                $bits  = [];
-                $stale = false;
-                foreach ($mods as $file => $m) {
-                    if (class_exists($m)) {
-                        $bits[] = '✓ ' . $m;
-                    } else {
-                        // File present but class not loaded = the running
-                        // bootstrap is stale (old ezit-core.php or OPcache),
-                        // not a missing upload.
-                        $bits[] = file_exists(EZIT_CORE_INC . $file) ? '⚠ ' . $m : '✗ ' . $m;
-                        $stale  = true;
-                    }
-                }
-                echo esc_html(implode('  ', $bits));
-                if ($stale) :
-                ?>
-                <div class="ezit-meta" style="margin-top:4px;color:#b3500a">
+                <div class="ezit-mods">
+                    <?php foreach ($mod_status as $name => $st) : ?>
+                    <span class="ezit-mod is-<?php echo esc_attr($st); ?>"><i><?php echo esc_html($glyphs[$st]); ?></i><?php echo esc_html($name); ?></span>
+                    <?php endforeach; ?>
+                </div>
+                <?php if ($stale) : ?>
+                <div class="ezit-meta" style="margin-top:6px;color:#b3500a">
                     <?php esc_html_e('⚠ = file exists on disk but wasn’t loaded — the running ezit-core.php is stale (OPcache serving old bytecode, or the upload didn’t replace it). ✗ = file missing from the upload.', 'ezit-core'); ?>
                 </div>
-                <?php else : ?>
-                <div class="ezit-meta" style="margin-top:4px"><?php esc_html_e('All modules loaded.', 'ezit-core'); ?></div>
                 <?php endif; ?>
             </td></tr>
         </tbody>
     </table>
+    <details class="ezit-diag">
+        <summary><span class="ezit-diag__title"><?php esc_html_e('Raw environment report', 'ezit-core'); ?></span></summary>
+        <pre id="ezit-env-raw"><?php echo esc_html($report); ?></pre>
+    </details>
 </div>
