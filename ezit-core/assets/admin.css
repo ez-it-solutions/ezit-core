@@ -199,11 +199,14 @@
 
 /* ── Flash / notices — card, not WP chrome ─────────────────────────── */
 .ezit-pg .ezit-flash {
+    display: flex; align-items: center; gap: 10px;
     margin: 0 0 20px; padding: 14px 18px 14px 20px;
     background: #fff; border: 1px solid var(--pg-line); border-left: 4px solid var(--pg-green);
     border-radius: 10px; box-shadow: 0 2px 10px rgba(20,21,31,.05);
     font-size: 14px;
 }
+.ezit-pg .ezit-flash svg { flex-shrink: 0; color: var(--pg-green2); }
+.ezit-pg .ezit-flash.is-err svg { color: #d63638; }
 .ezit-pg .ezit-flash.is-err { border-left-color: #d63638; }
 .ezit-pg .ezit-flash p { margin: 0; }
 
