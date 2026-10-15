@@ -24,6 +24,15 @@ $section = sanitize_key($_GET['section'] ?? 'installed'); // phpcs:ignore
 if (! isset($sections[$section])) {
     $section = 'installed';
 }
+
+// Theme inventory is server-side paginated — a site can have dozens of
+// installed themes and a giant card grid gets unwieldy.
+$per_page   = 24;
+$page       = max(1, absint($_GET['themes_page'] ?? 1)); // phpcs:ignore
+$total      = count($themes);
+$pages      = max(1, (int) ceil($total / $per_page));
+$page       = min($page, $pages);
+$page_items = array_slice($themes, ($page - 1) * $per_page, $per_page);
 // Light panel theme for the nested component.
 $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
        . ' --panel-btn-bg:#14151f; --panel-btn-fg:#ffffff;'
@@ -59,7 +68,7 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
             </button>
         </li>
         <?php endforeach; ?>
-    </ul>
+    </ul>page_i
     <div class="ezt__panels">
 
         <section class="ezt__panel<?php echo $section === 'installed' ? ' ezt__panel--active' : ''; ?>"
@@ -117,6 +126,31 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                     </div>
                 <?php endforeach; ?>
                 </div>
+                <?php if ($pages > 1) : ?>
+                <div class="ezit-paging">
+                    <span class="ezit-paging__count">
+                        <?php echo esc_html(sprintf(
+                            /* translators: 1: first item on page, 2: last item, 3: total */
+                            __('%1$d–%2$d of %3$d themes', 'ezit-core'),
+                            ($page - 1) * $per_page + 1,
+                            min($page * $per_page, $total),
+                            $total
+                        )); ?>
+                    </span>
+                    <span class="ezit-paging__links">
+                        <?php
+                        echo wp_kses_post(paginate_links([
+                            'base'      => add_query_arg('themes_page', '%#%', admin_url('admin.php?page=ezit-core&tab=themes&section=installed')),
+                            'format'    => '',
+                            'current'   => $page,
+                            'total'     => $pages,
+                            'prev_text' => '&lsaquo;',
+                            'next_text' => '&rsaquo;',
+                        ]));
+                        ?>
+                    </span>
+                </div>
+                <?php endif; ?>
             </div>
         </section>
 

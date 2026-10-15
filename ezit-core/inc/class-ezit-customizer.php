@@ -1,6 +1,6 @@
 <?php
 /**
- * EzIT_Customizer — "Ez IT Solutions" panel in the WP Customizer.
+ * EzIT_Customizer — top-level Customizer sections for Ez IT options.
  *
  * Curated, client-safe controls bound to Core's options (type 'option'),
  * so edits made here and in Ez IT → Settings stay in sync. Keys are the
@@ -20,16 +20,11 @@ class EzIT_Customizer
 
     public function register(WP_Customize_Manager $wp): void
     {
-        $wp->add_panel('ezit', [
-            'title'       => __('Ez IT Solutions', 'ezit-core'),
-            'description' => __('Site-wide branding controlled by Ez IT Core — the same options as Ez IT → Settings.', 'ezit-core'),
-            'priority'    => 160,
-        ]);
-
-        /* ── Login page ─────────────────────────────────────────────── */
+        /* ── Login page — top level, next to the theme's own sections ─── */
         $wp->add_section('ezit_login', [
-            'panel' => 'ezit',
-            'title' => __('Login page', 'ezit-core'),
+            'title'       => __('Login page (Ez IT)', 'ezit-core'),
+            'description' => __('Branding for wp-login.php — the same options as Ez IT → Settings → Login page.', 'ezit-core'),
+            'priority'    => 160,
         ]);
 
         $wp->add_setting(EzIT_Login::OPTION . '[logo]', [

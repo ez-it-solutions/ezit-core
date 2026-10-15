@@ -392,9 +392,12 @@ class EzIT_Admin
         check_admin_referer($action, $nonce_field);
     }
 
-    private function redirect(string $tab, string $code, string $message = ''): void
+    private function redirect(string $tab, string $code, string $message = '', array $extra = []): void
     {
-        $args = ['page' => 'ezit-core', 'tab' => $tab, 'ezit_msg' => $code];
+        $args = array_merge(
+            ['page' => 'ezit-core', 'tab' => $tab, 'ezit_msg' => $code],
+            $extra
+        );
         if ($message !== '') {
             $args['ezit_detail'] = $message;
         }
