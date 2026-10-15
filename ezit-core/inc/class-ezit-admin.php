@@ -272,7 +272,7 @@ class EzIT_Admin
 
         $core  = $this->core;
         $flash = $this->flash();
-        include EZIT_CORE_PATH . 'templates/admin/shell.php';
+        include EZIT_CORE_PATH . 'templates/admin/main.php';
     }
 
     // ── handlers ────────────────────────────────────────────────────
