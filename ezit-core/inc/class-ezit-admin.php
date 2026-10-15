@@ -94,7 +94,7 @@ class EzIT_Admin
     public function submenu_highlight(?string $submenu_file): ?string
     {
         if (sanitize_key($_GET['page'] ?? '') === 'ezit-core') { // phpcs:ignore
-            $tab = sanitize_key($_GET['tab'] ?? 'overview');    // phpcs:ignore
+            $tab = sanitize_key($_GET['tab'] ?? 'dashboard');   // phpcs:ignore
             $slug = array_search($tab, self::legacy_map(), true);
             if ($slug) {
                 return $slug;

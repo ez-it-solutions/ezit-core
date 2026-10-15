@@ -268,13 +268,22 @@
 
             // Deep-linking opt-in: [data-ezt-url-param="x"] rewrites ?x=<tab-id>
             // via replaceState so refresh keeps the tab (no reload).
+            // Skipped on initial paint — the server already rendered the
+            // right tab from the URL, and hidden nested instances would
+            // otherwise stamp their param onto every page.
             const param = this.root.dataset.eztUrlParam;
             if (param && this.tabs[index]) {
                 const id = (this.tabs[index].getAttribute('aria-controls') || '')
                     .replace(/^.*-panel-/, '');
-                if (id && window.history?.replaceState) {
+                if (!initial && id && window.history?.replaceState) {
                     const u = new URL(location.href);
                     u.searchParams.set(param, id);
+                    // Nested instances own params that only make sense
+                    // inside their own panel — drop them on an outer switch.
+                    this.root.querySelectorAll('.ezt[data-ezt-url-param]').forEach((nested) => {
+                        const np = nested.dataset.eztUrlParam;
+                        if (np && np !== param) u.searchParams.delete(np);
+                    });
                     history.replaceState(null, '', u);
                 }
                 // Keep the page breadcrumb in step with the active tab.
