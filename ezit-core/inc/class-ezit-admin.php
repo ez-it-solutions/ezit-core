@@ -329,9 +329,11 @@ class EzIT_Admin
             'message'  => sanitize_textarea_field(wp_unslash($_POST['ezit_login_message'] ?? '')),
         ], false);
 
+        $section = sanitize_key(wp_unslash($_POST['section'] ?? ''));
+
         // Alert slots — only write on the alerts section save, or an
         // unchecked "Show" toggle on another section would clear it.
-        if (sanitize_key(wp_unslash($_POST['section'] ?? '')) === 'alerts') {
+        if ($section === 'alerts') {
             $posted = (array) ($_POST['ezit_slots'] ?? []); // phpcs:ignore
             $clean  = [];
             foreach (EzIT_Alerts::declared_slots() as $key => $slot) {
@@ -347,6 +349,14 @@ class EzIT_Admin
                 ];
             }
             update_option(EzIT_Alerts::OPTION, $clean, false);
+        }
+
+        // Site Studio — theme-mod writes for declared fields.
+        if ($section === 'studio') {
+            $posted = (array) ($_POST['ezit_studio'] ?? []); // phpcs:ignore
+            foreach (EzIT_Studio::schemas() as $slug => $schema) {
+                EzIT_Studio::save($slug, $schema, (array) ($posted[$slug] ?? []));
+            }
         }
 
         // Return the user to the section they were editing.

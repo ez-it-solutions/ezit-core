@@ -36,6 +36,7 @@ if (! defined('ABSPATH')) {
         'page'   => __('Holding page', 'ezit-core'),
         'login'  => __('Login page', 'ezit-core'),
         'alerts' => __('Alerts & banners', 'ezit-core'),
+        'studio' => __('Site Studio', 'ezit-core'),
     ];
     $section = sanitize_key($_GET['section'] ?? 'server'); // phpcs:ignore
     if (! isset($sections[$section])) {
@@ -76,3 +77,15 @@ if (! defined('ABSPATH')) {
         </div>
     </div>
 </form>
+
+<script>
+// The hidden `section` field is rendered server-side from ?section= —
+// keep it in step with client-side subnav switches so the save handler
+// knows which section's data to persist.
+document.addEventListener('ezt:tab-change', (e) => {
+    const param = e.target.dataset?.eztUrlParam;
+    if (!param) return;
+    const input = e.target.closest('form')?.querySelector(`input[name="${param}"]`);
+    if (input && e.detail.id) input.value = e.detail.id;
+});
+</script>

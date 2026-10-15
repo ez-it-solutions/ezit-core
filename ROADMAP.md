@@ -121,38 +121,39 @@ hard-codes a theme — every capability arrives through `register_product()`
 extensions or declared hooks, and all writes go to standard WP storage
 (theme mods / options) so nothing is siloed inside core.
 
-- **Themes tab** — new dashboard tab listing `wp_get_themes()`; Ez IT
+- [x] **Themes tab** — new dashboard tab listing `wp_get_themes()`; Ez IT
   products get license badges, version, author. Activate via `switch_theme()`
   through a nonce'd `admin-post` handler. Overview tab links here and
   shows the active registered theme's card. (Also feeds Phase 3 — the
   install flow lands themes into this same tab.)
-- **About tab** — Ez IT Solutions business/contact card + an auto-detected
+- [x] **About tab** — Ez IT Solutions business/contact card + an auto-detected
   inventory of every Ez IT product on the site. Detection works at two
   levels (see Product Manifest below): `register_product()` registrations
   at runtime, plus a filesystem scan of `wp_get_themes()`/`get_plugins()`
   headers for installed-but-inactive or unregistered products — so the tab
   surfaces "detected, not registered" items too. Vertical, version,
   license state and declared capabilities shown per product.
-- **Footer credit** — "Made with ♥ by Ez IT Solutions" toggle + editable
+- [x] **Footer credit** — "Made with ♥ by Ez IT Solutions" toggle + editable
   text. Stored as theme mods (`ezit_credit_enabled`, `ezit_credit_text`)
   so it lives with the theme; core's Themes tab exposes the same controls
   for every registered product. Can later become an entitlement (e.g.,
   credit required on unlicensed/base tier, removable on paid).
-- **Site Studio** — a friendlier face on the Customizer. The theme exposes
-  its editable fields as a schema (Trezise already has
-  `trezise_home_sections()` + `trezise_home_defaults()` — promote this to a
-  declared `fields` array on `register_product()` or a `ezit_theme_fields`
-  hook). Core renders grouped forms with `wp.media` image pickers and
-  writes **theme mods** — the same storage the Customizer uses, so both
-  editors stay in sync and edits survive theme updates.
-- **Alerts/Banners** — theme registers named slots (e.g. the `tz-enroll`
+- [x] **Site Studio** — a friendlier face on the Customizer. Themes declare
+  a `fields` schema on `register_product()` (callable or array — Trezise
+  reuses `trezise_home_sections()`/`trezise_home_defaults()` via
+  `trezise_studio_fields()`); `EzIT_Studio` renders grouped forms under
+  Settings → Site Studio and writes **theme mods** — the same storage the
+  Customizer uses, so both editors stay in sync and edits survive theme
+  updates. Inactive registered themes are editable too (their
+  `theme_mods_<slug>` option is read/written directly).
+- [x] **Alerts/Banners** — theme registers named slots (e.g. the `enroll`
   enrollment bar). Core manages per-slot content, link, schedule and
   on/off as options; the theme renders whatever the slot config says.
-- **Custom login page** — core module: configurable slug (rewrite rule →
+- [x] **Custom login page** — core module: configurable slug (rewrite rule →
   dedicated template), branded with the active theme's palette/logo
   (reuse the `uc` config). Replaces wp-login for members; doubles as the
   gate's client-access front door.
-- **Page builder (later)** — the field schema is the foundation: sections
+- [ ] **Page builder (later)** — the field schema is the foundation: sections
   become draggable "blocks," each block's controls are the same schema
   fields the Studio already renders. Build Studio first; the builder is a
   UI layer over the same data.
