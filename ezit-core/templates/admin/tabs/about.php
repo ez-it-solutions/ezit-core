@@ -95,15 +95,41 @@ $detected = EzIT_Themes::detected($core);
             <tr><th scope="row"><?php esc_html_e('Site URL', 'ezit-core'); ?></th><td><?php echo esc_html(home_url()); ?></td></tr>
             <tr><th scope="row"><?php esc_html_e('Loaded modules', 'ezit-core'); ?></th><td>
                 <?php
-                $mods = ['EzIT_Core', 'EzIT_API', 'EzIT_Licensing', 'EzIT_Updater', 'EzIT_Marketplace',
-                         'EzIT_Gate', 'EzIT_Themes', 'EzIT_Login', 'EzIT_Customizer', 'EzIT_Banners', 'EzIT_Admin'];
-                $bits = [];
-                foreach ($mods as $m) {
-                    $bits[] = class_exists($m) ? '✓ ' . $m : '✗ ' . $m;
+                $mods = [
+                    'class-ezit-core.php'        => 'EzIT_Core',
+                    'class-ezit-api.php'         => 'EzIT_API',
+                    'class-ezit-licensing.php'   => 'EzIT_Licensing',
+                    'class-ezit-updater.php'     => 'EzIT_Updater',
+                    'class-ezit-marketplace.php' => 'EzIT_Marketplace',
+                    'class-ezit-gate.php'        => 'EzIT_Gate',
+                    'class-ezit-themes.php'      => 'EzIT_Themes',
+                    'class-ezit-login.php'       => 'EzIT_Login',
+                    'class-ezit-customizer.php'  => 'EzIT_Customizer',
+                    'class-ezit-banners.php'     => 'EzIT_Banners',
+                    'class-ezit-admin.php'       => 'EzIT_Admin',
+                ];
+                $bits  = [];
+                $stale = false;
+                foreach ($mods as $file => $m) {
+                    if (class_exists($m)) {
+                        $bits[] = '✓ ' . $m;
+                    } else {
+                        // File present but class not loaded = the running
+                        // bootstrap is stale (old ezit-core.php or OPcache),
+                        // not a missing upload.
+                        $bits[] = file_exists(EZIT_CORE_INC . $file) ? '⚠ ' . $m : '✗ ' . $m;
+                        $stale  = true;
+                    }
                 }
                 echo esc_html(implode('  ', $bits));
+                if ($stale) :
                 ?>
-                <div class="ezit-meta" style="margin-top:4px"><?php esc_html_e('✗ = the module file didn’t load — usually an incomplete plugin upload.', 'ezit-core'); ?></div>
+                <div class="ezit-meta" style="margin-top:4px;color:#b3500a">
+                    <?php esc_html_e('⚠ = file exists on disk but wasn’t loaded — the running ezit-core.php is stale (OPcache serving old bytecode, or the upload didn’t replace it). ✗ = file missing from the upload.', 'ezit-core'); ?>
+                </div>
+                <?php else : ?>
+                <div class="ezit-meta" style="margin-top:4px"><?php esc_html_e('All modules loaded.', 'ezit-core'); ?></div>
+                <?php endif; ?>
             </td></tr>
         </tbody>
     </table>

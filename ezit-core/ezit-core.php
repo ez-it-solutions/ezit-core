@@ -32,15 +32,13 @@ if (! defined('EZIT_API_URL')) {
     define('EZIT_API_URL', 'https://license.ez-it-solutions.com');
 }
 
-require_once EZIT_CORE_INC . 'class-ezit-core.php';
-require_once EZIT_CORE_INC . 'class-ezit-api.php';
-require_once EZIT_CORE_INC . 'class-ezit-licensing.php';
-require_once EZIT_CORE_INC . 'class-ezit-updater.php';
-require_once EZIT_CORE_INC . 'class-ezit-marketplace.php';
-require_once EZIT_CORE_INC . 'class-ezit-gate.php';
-require_once EZIT_CORE_INC . 'class-ezit-themes.php';
-require_once EZIT_CORE_INC . 'class-ezit-login.php';
-require_once EZIT_CORE_INC . 'class-ezit-admin.php';
+// Load every module in inc/ — sorted for determinism. Modules only
+// reference each other at runtime (not at include time), so order
+// doesn't matter. Auto-scanning means a new module file can't be
+// orphaned by an out-of-date require list.
+foreach (glob(EZIT_CORE_INC . 'class-ezit-*.php') ?: [] as $module) {
+    require_once $module;
+}
 
 /**
  * Global access point: ezit_core()->register_product([...])
