@@ -273,6 +273,17 @@
 
             this.current = index;
 
+            // Notify listeners (page chrome, WP admin submenu, …) of real
+            // switches — skipped on init; the server already rendered state.
+            if (!initial) {
+                const id = (this.tabs[index]?.getAttribute('aria-controls') || '')
+                    .replace(/^.*-panel-/, '');
+                this.root.dispatchEvent(new CustomEvent('ezt:tab-change', {
+                    detail: { index, id },
+                    bubbles: true,
+                }));
+            }
+
             // Deep-linking opt-in: [data-ezt-url-param="x"] rewrites ?x=<tab-id>
             // via replaceState so refresh keeps the tab (no reload).
             // Skipped on initial paint — the server already rendered the
