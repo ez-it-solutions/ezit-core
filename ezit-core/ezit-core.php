@@ -56,6 +56,7 @@ add_action('plugins_loaded', function () {
     new EzIT_Updater($core);
     new EzIT_Marketplace($core);
     new EzIT_Gate($core);     // maintenance mode — front-end enforcement
+    new EzIT_Login();         // branded wp-login.php
     if (is_admin()) {
         new EzIT_Admin($core);
     }

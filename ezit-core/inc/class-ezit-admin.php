@@ -136,6 +136,15 @@ class EzIT_Admin
             . 'if(!b||b.disabled)return;'
             . 'b.classList.add("is-busy");b.disabled=true;'
             . '});'
+            // Settings subnav: the tabs component rewrites ?section= via
+            // replaceState — mirror it into the hidden field on submit so
+            // the save returns to the panel being edited.
+            . 'document.addEventListener("submit",function(e){'
+            . 'var f=e.target;if(!f||f.id!=="ezit-settings-form")return;'
+            . 'var h=f.querySelector("input[name=section]");if(!h)return;'
+            . 'var s=new URLSearchParams(location.search).get("section");'
+            . 'if(s)h.value=s;'
+            . '});'
             // Revoked licenses: enable Activate only once the code changes.
             . 'document.addEventListener("input",function(e){'
             . 'if(e.target.name!=="license_code")return;'
@@ -299,7 +308,17 @@ class EzIT_Admin
             'logo'       => esc_url_raw(wp_unslash($_POST['ezit_gate_logo'] ?? '')),
             'countdown'  => $countdown !== '' ? gmdate('c', strtotime($countdown)) : '',
         ], false);
-        $this->redirect('settings', 'saved');
+
+        update_option(EzIT_Login::OPTION, [
+            'logo'    => esc_url_raw(wp_unslash($_POST['ezit_login_logo'] ?? '')),
+            'accent'  => sanitize_hex_color(wp_unslash($_POST['ezit_login_accent'] ?? '')) ?: '',
+            'bg'      => sanitize_hex_color(wp_unslash($_POST['ezit_login_bg'] ?? '')) ?: '',
+            'message' => sanitize_textarea_field(wp_unslash($_POST['ezit_login_message'] ?? '')),
+        ], false);
+
+        // Return the user to the section they were editing.
+        $sec = sanitize_key(wp_unslash($_POST['section'] ?? ''));
+        $this->redirect('settings', 'saved', '', $sec !== '' ? ['section' => $sec] : []);
     }
 
     /** Switch the site's active theme — same flow as Appearance → Themes. */

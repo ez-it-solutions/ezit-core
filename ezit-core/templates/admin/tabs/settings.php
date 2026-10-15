@@ -7,9 +7,10 @@ if (! defined('ABSPATH')) {
     exit;
 }
 ?>
-<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+<form id="ezit-settings-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
     <?php wp_nonce_field('ezit_settings', 'ezit_settings_nonce'); ?>
     <input type="hidden" name="action" value="ezit_settings">
+    <input type="hidden" name="section" value="<?php echo esc_attr(sanitize_key($_GET['section'] ?? '')); /* phpcs:ignore */ ?>">
 
     <div class="pg-sethead" data-ezt-anim>
         <span class="pg-sethead__chip" aria-hidden="true">
@@ -33,6 +34,7 @@ if (! defined('ABSPATH')) {
         'server' => __('License server', 'ezit-core'),
         'gate'   => __('Site gate', 'ezit-core'),
         'page'   => __('Holding page', 'ezit-core'),
+        'login'  => __('Login page', 'ezit-core'),
     ];
     $section = sanitize_key($_GET['section'] ?? 'server'); // phpcs:ignore
     if (! isset($sections[$section])) {
