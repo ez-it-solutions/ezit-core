@@ -80,11 +80,7 @@ if (preg_match('/--panel-muted:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
                                 aria-controls="ezit-panel-<?php echo esc_attr($id); ?>"
                                 aria-selected="<?php echo $id === $active ? 'true' : 'false'; ?>"
                                 <?php echo $id === $active ? '' : 'tabindex="-1"'; ?> data-ezt-tab>
-                            <span class=<?php echo $panels_style !== '' ? ' style="' . esc_attr($panels_style) . '"' : ''; ?>>
-                    <div class="ezt__loading" aria-hidden="true">
-                        <span class="ezt__loading-ring"></span>
-                        <span class="ezt__loading-text"><?php esc_html_e('Loading…', 'ezit-core'); ?></span>
-                    </div"ezt__tab-label"><?php echo esc_html($t['label']); ?></span>
+                            <span class="ezt__tab-label"><?php echo esc_html($t['label']); ?></span>
                             <?php if (! empty($t['badge'])) : ?>
                             <span class="ezt__badge"><?php echo esc_html($t['badge']); ?></span>
                             <?php endif; ?>
@@ -94,7 +90,11 @@ if (preg_match('/--panel-muted:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
                     <?php endforeach; ?>
                 </ul>
 
-                <div class="ezt__panels">
+                <div class="ezt__panels"<?php echo $panels_style !== '' ? ' style="' . esc_attr($panels_style) . '"' : ''; ?>>
+                    <div class="ezt__loading" aria-hidden="true">
+                        <span class="ezt__loading-ring"></span>
+                        <span class="ezt__loading-text"><?php esc_html_e('Loading…', 'ezit-core'); ?></span>
+                    </div>
                     <div class="ezt__timer ezt__timer--top" aria-hidden="true"><span class="ezt__timer-fill"></span></div>
 
                     <?php foreach ($tabs as $id => $t) : ?>
@@ -176,6 +176,10 @@ if (preg_match('/--panel-muted:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
                 );
                 ?>
             </div>
+        </div>
+    </footer>
+
+</div><!-- /.ezit-pg -->
         </div>
     </footer>
 
