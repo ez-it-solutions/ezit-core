@@ -42,8 +42,8 @@ class EzIT_Admin
         );
 
         add_menu_page(
-            __('Ez IT', 'ezit-core'),
-            __('Ez IT', 'ezit-core'),
+            __('Ez IT Solutions', 'ezit-core'),
+            __('Ez IT Solutions', 'ezit-core'),
             'manage_options',
             'ezit-core',
             [$this, 'page_dashboard'],
