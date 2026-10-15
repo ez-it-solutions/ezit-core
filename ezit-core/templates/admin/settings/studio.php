@@ -40,8 +40,11 @@ $schemas = EzIT_Studio::schemas();
             ?>
             <div class="ezit-field" style="margin-bottom:12px">
                 <label><?php echo esc_html($label); ?></label>
-                <?php if (($field['type'] ?? 'text') === 'textarea') : ?>
+                <?php $type = $field['type'] ?? 'text'; ?>
+                <?php if ($type === 'textarea') : ?>
                     <textarea name="<?php echo esc_attr($name); ?>" rows="3"><?php echo esc_textarea($value); ?></textarea>
+                <?php elseif ($type === 'email') : ?>
+                    <input type="email" name="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($value); ?>">
                 <?php else : ?>
                     <input type="text" name="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($value); ?>">
                 <?php endif; ?>

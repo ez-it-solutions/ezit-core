@@ -106,6 +106,7 @@ class EzIT_Studio
         return match ($type) {
             'textarea' => sanitize_textarea_field($raw),
             'url'      => esc_url_raw($raw),
+            'email'    => sanitize_email($raw),
             default    => sanitize_text_field($raw),
         };
     }
