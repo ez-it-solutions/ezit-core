@@ -319,6 +319,26 @@ class EzIT_Admin
             'message'  => sanitize_textarea_field(wp_unslash($_POST['ezit_login_message'] ?? '')),
         ], false);
 
+        // Alert slots — only write on the alerts section save, or an
+        // unchecked "Show" toggle on another section would clear it.
+        if (sanitize_key(wp_unslash($_POST['section'] ?? '')) === 'alerts') {
+            $posted = (array) ($_POST['ezit_slots'] ?? []); // phpcs:ignore
+            $clean  = [];
+            foreach (EzIT_Alerts::declared_slots() as $key => $slot) {
+                $in          = (array) ($posted[$key] ?? []);
+                $clean[$key] = [
+                    'on'     => ! empty($in['on']) ? 1 : 0,
+                    'label'  => sanitize_text_field(wp_unslash($in['label'] ?? '')),
+                    'detail' => sanitize_text_field(wp_unslash($in['detail'] ?? '')),
+                    'cta'    => sanitize_text_field(wp_unslash($in['cta'] ?? '')),
+                    'url'    => sanitize_text_field(wp_unslash($in['url'] ?? '')),
+                    'start'  => sanitize_text_field(wp_unslash($in['start'] ?? '')),
+                    'end'    => sanitize_text_field(wp_unslash($in['end'] ?? '')),
+                ];
+            }
+            update_option(EzIT_Alerts::OPTION, $clean, false);
+        }
+
         // Return the user to the section they were editing.
         $sec = sanitize_key(wp_unslash($_POST['section'] ?? ''));
         $this->redirect('settings', 'saved', '', $sec !== '' ? ['section' => $sec] : []);
