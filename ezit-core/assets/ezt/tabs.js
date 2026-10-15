@@ -153,6 +153,11 @@
 
             const prevTab = this.tabs[this.current];
 
+            // First real switch unlocks the panel-child entrance
+            // animation — initial paint must not replay it (empty card
+            // while the stagger holds every child at opacity 0).
+            if (!initial) this.root.classList.add('ezt--switched');
+
             this.tabs.forEach((tab, i) => {
                 const active = i === index;
                 tab.setAttribute('aria-selected', String(active));

@@ -734,14 +734,18 @@
 
 .ezt__panel-inner { max-width: 520px; }
 
-/* staggered entrance for panel children */
-.ezt__panel--active [data-ezt-anim] {
+/* Staggered entrance for panel children — only after the user has
+   switched tabs at least once (.ezt--switched, added by JS). On initial
+   page load the server-rendered active panel must paint its content
+   immediately; running the rise here leaves an empty card while the
+   staggered delays hold every child at opacity 0. */
+.ezt--switched .ezt__panel--active [data-ezt-anim] {
     animation: ezt-rise .6s var(--ezt-ease) both;
 }
-.ezt__panel--active [data-ezt-anim]:nth-of-type(1) { animation-delay: .08s; }
-.ezt__panel--active [data-ezt-anim]:nth-of-type(2) { animation-delay: .16s; }
-.ezt__panel--active [data-ezt-anim]:nth-of-type(3) { animation-delay: .24s; }
-.ezt__panel--active .ezt__footer[data-ezt-anim]     { animation-delay: .32s; }
+.ezt--switched .ezt__panel--active [data-ezt-anim]:nth-of-type(1) { animation-delay: .08s; }
+.ezt--switched .ezt__panel--active [data-ezt-anim]:nth-of-type(2) { animation-delay: .16s; }
+.ezt--switched .ezt__panel--active [data-ezt-anim]:nth-of-type(3) { animation-delay: .24s; }
+.ezt--switched .ezt__panel--active .ezt__footer[data-ezt-anim]     { animation-delay: .32s; }
 
 @keyframes ezt-rise {
     from { opacity: 0; transform: translateY(18px); }
