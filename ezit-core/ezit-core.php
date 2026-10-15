@@ -39,6 +39,7 @@ require_once EZIT_CORE_INC . 'class-ezit-updater.php';
 require_once EZIT_CORE_INC . 'class-ezit-marketplace.php';
 require_once EZIT_CORE_INC . 'class-ezit-gate.php';
 require_once EZIT_CORE_INC . 'class-ezit-themes.php';
+require_once EZIT_CORE_INC . 'class-ezit-login.php';
 require_once EZIT_CORE_INC . 'class-ezit-admin.php';
 
 /**
