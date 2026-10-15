@@ -518,6 +518,19 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-theme__actions form { flex: 1; display: flex; margin: 0; }
 .ezit-pg .ezit-theme__actions form .ezit-btn { width: 100%; }
 
+/* Per-page selector above the grid */
+.ezit-pg .ezit-perpage {
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    margin: 0 0 14px;
+}
+.ezit-pg .ezit-perpage label { font-size: 12.5px; color: var(--pg-muted); }
+.ezit-pg .ezit-perpage select {
+    padding: 5px 10px; border: 1px solid #dcdde6; border-radius: 8px;
+    background: #fff; font-size: 13px; font-weight: 700; color: var(--pg-ink);
+    min-height: auto; box-shadow: none;
+}
+.ezit-pg .ezit-perpage select:focus { border-color: var(--pg-green); outline: 2px solid rgba(118,185,0,.28); outline-offset: -1px; }
+
 /* Grid pagination */
 .ezit-pg .ezit-paging {
     display: flex; align-items: center; justify-content: space-between;

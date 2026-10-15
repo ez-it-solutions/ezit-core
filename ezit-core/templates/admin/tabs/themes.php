@@ -26,8 +26,16 @@ if (! isset($sections[$section])) {
 }
 
 // Theme inventory is server-side paginated — a site can have dozens of
-// installed themes and a giant card grid gets unwieldy.
-$per_page   = 24;
+// installed themes and a giant card grid gets unwieldy. Per-page choice
+// sticks per user (user meta) so it survives reloads.
+$per_opts = [6, 12, 24, 48];
+$per_page = absint($_GET['themes_per_page'] ?? 0); // phpcs:ignore
+if (in_array($per_page, $per_opts, true)) {
+    update_user_meta(get_current_user_id(), 'ezit_themes_per_page', $per_page);
+} else {
+    $saved_pp = (int) get_user_meta(get_current_user_id(), 'ezit_themes_per_page', true);
+    $per_page = in_array($saved_pp, $per_opts, true) ? $saved_pp : 6;
+}
 $page       = max(1, absint($_GET['themes_page'] ?? 1)); // phpcs:ignore
 $total      = count($themes);
 $pages      = max(1, (int) ceil($total / $per_page));
@@ -68,7 +76,7 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
             </button>
         </li>
         <?php endforeach; ?>
-    </ul>page_i
+    </ul>
     <div class="ezt__panels">
 
         <section class="ezt__panel<?php echo $section === 'installed' ? ' ezt__panel--active' : ''; ?>"
@@ -140,7 +148,10 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                     <span class="ezit-paging__links">
                         <?php
                         echo wp_kses_post(paginate_links([
-                            'base'      => add_query_arg('themes_page', '%#%', admin_url('admin.php?page=ezit-core&tab=themes&section=installed')),
+                            'base'      => add_query_arg(
+                                ['themes_page' => '%#%', 'themes_per_page' => $per_page],
+                                admin_url('admin.php?page=ezit-core&tab=themes&section=installed')
+                            ),
                             'format'    => '',
                             'current'   => $page,
                             'total'     => $pages,
@@ -180,6 +191,17 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                         <div class="ezit-field">
                             <label for="ezit-credit-text"><?php esc_html_e('Credit text', 'ezit-core'); ?></label>
                             <input type="text" id="ezit-credit-text" name="credit_text" value="<?php echo esc_attr($credit_txt); ?>" placeholder="<?php esc_attr_e('Ez IT Solutions', 'ezit-core'); ?>">
+                            <span class="hint"><?php esc_html_e('Who the credit links to — leave blank for “Ez IT Solutions”.', 'ezit-core'); ?></span>
+                        </div>
+                        <button type="submit" class="ezit-btn"><?php esc_html_e('Save credit', 'ezit-core'); ?></button>
+                    </form>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+
+    </div>
+</div>
                             <span class="hint"><?php esc_html_e('Who the credit links to — leave blank for “Ez IT Solutions”.', 'ezit-core'); ?></span>
                         </div>
                         <button type="submit" class="ezit-btn"><?php esc_html_e('Save credit', 'ezit-core'); ?></button>
