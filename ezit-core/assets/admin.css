@@ -207,6 +207,10 @@
 .ezit-pg .ezit-flash.is-err { border-left-color: #d63638; }
 .ezit-pg .ezit-flash p { margin: 0; }
 
+/* Ez IT green stripe hugging the bottom edge of the admin bar — a brand
+   ribbon so our screens are recognizable at a glance. */
+body.toplevel_page_ezit-core #wpadminbar { border-bottom: 2px solid var(--pg-green); box-sizing: border-box; }
+
 /* Our dark footer replaces WP's own footer on this screen. */
 body.toplevel_page_ezit-core #wpfooter { display: none; }
 /* …and we reclaim the 65px pad WP reserves for it — footer flush bottom. */

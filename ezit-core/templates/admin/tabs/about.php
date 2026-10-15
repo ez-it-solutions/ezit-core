@@ -47,7 +47,7 @@ $detected = EzIT_Themes::detected($core);
         <tr>
             <td><strong><?php echo esc_html($d['name']); ?></strong>
                 <?php if ($d['product_id'] !== '') : ?>
-                    <div class="ezit-meta"><?php echo esc_html($d['product_id']); ?></div>
+                    <div class="ezit-meta"><?php echo esc_html(sprintf(__('Product ID: %s', 'ezit-core'), $d['product_id'])); ?></div>
                 <?php endif; ?>
                 <?php if (($d['vertical'] ?? '') !== '' && $d['vertical'] !== 'core') : ?>
                     <div class="ezit-meta"><?php echo esc_html(sprintf(__('Vertical: %s', 'ezit-core'), $d['vertical'])); ?></div>
