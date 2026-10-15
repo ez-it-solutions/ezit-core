@@ -15,7 +15,6 @@
     --ezt-font: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
     margin: 0 0 0 -20px;   /* swallow #wpcontent's 20px left gutter — chrome runs edge-to-edge */
     padding: 0;
-    border-left: 2px solid var(--pg-green);  /* vertical Ez IT ribbon against the sidebar */
     background: #e9ebf2;
     font-family: var(--ezt-font);
     color: var(--pg-ink);
