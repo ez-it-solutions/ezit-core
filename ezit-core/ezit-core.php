@@ -61,6 +61,7 @@ add_action('plugins_loaded', function () {
     new EzIT_Customizer();    // "Ez IT Solutions" panel in the Customizer
     if (is_admin()) {
         new EzIT_Admin($core);
+        new EzIT_Banners($core); // server announcements for site admins
     }
 }, 5);
 
