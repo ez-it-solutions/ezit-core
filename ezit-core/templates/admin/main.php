@@ -26,6 +26,16 @@ $tab_keys   = array_keys($tabs);
 $active_idx = array_search($active, $tab_keys, true);
 $edge       = $active_idx === 0 ? 'left'
             : ($active_idx === count($tab_keys) - 1 ? 'right' : '');
+
+// Loading layer under the panels — colored like the ACTIVE panel so the
+// card never shows dead white between first paint and panel content.
+$panels_style = '';
+if (preg_match('/--panel-bg:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
+    $panels_style .= '--panels-bg:' . trim($m[1]) . ';';
+}
+if (preg_match('/--panel-muted:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
+    $panels_style .= '--loading-fg:' . trim($m[1]) . ';';
+}
 ?>
 <div class="ezit-pg">
 
@@ -70,7 +80,11 @@ $edge       = $active_idx === 0 ? 'left'
                                 aria-controls="ezit-panel-<?php echo esc_attr($id); ?>"
                                 aria-selected="<?php echo $id === $active ? 'true' : 'false'; ?>"
                                 <?php echo $id === $active ? '' : 'tabindex="-1"'; ?> data-ezt-tab>
-                            <span class="ezt__tab-label"><?php echo esc_html($t['label']); ?></span>
+                            <span class=<?php echo $panels_style !== '' ? ' style="' . esc_attr($panels_style) . '"' : ''; ?>>
+                    <div class="ezt__loading" aria-hidden="true">
+                        <span class="ezt__loading-ring"></span>
+                        <span class="ezt__loading-text"><?php esc_html_e('Loading…', 'ezit-core'); ?></span>
+                    </div"ezt__tab-label"><?php echo esc_html($t['label']); ?></span>
                             <?php if (! empty($t['badge'])) : ?>
                             <span class="ezt__badge"><?php echo esc_html($t['badge']); ?></span>
                             <?php endif; ?>

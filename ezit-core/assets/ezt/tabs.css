@@ -734,6 +734,44 @@
 
 .ezt__panel-inner { max-width: 520px; }
 
+/* Loading layer — fills the panels wrapper in the ACTIVE panel's colors
+   (--panels-bg is set inline by PHP on load and by JS on switch). Sits
+   at z-index 0, behind every panel, so once content paints it is simply
+   covered — no JS removal needed. The .2s-backwards entrance means a
+   fast load never flashes it. */
+.ezt__loading {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: inherit;
+    color: var(--loading-fg, #8a8fa3);
+    font: 500 12px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    pointer-events: none;
+    animation: ezt-loading-in .25s ease .15s backwards;
+}
+.ezt__loading-ring {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    opacity: .85;
+    animation: ezt-loading-spin .7s linear infinite;
+}
+@keyframes ezt-loading-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes ezt-loading-spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Staggered entrance for panel children — only after the user has
    switched tabs at least once (.ezt--switched, added by JS). On initial
    page load the server-rendered active panel must paint its content
@@ -872,6 +910,8 @@
     .ezt__tab--leaving,
     .ezt__tab--entering,
     .ezt__tab--reappearing,
+    .ezt__loading,
+    .ezt__loading-ring,
     .ezt__cta { animation: none !important; transition: none !important; }
 
     .ezt__panel { opacity: 0; visibility: hidden; transform: none; }

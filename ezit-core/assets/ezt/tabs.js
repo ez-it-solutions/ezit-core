@@ -223,9 +223,11 @@
             // crossfade — the gap behind a fading-out panel reads as
             // white otherwise.
             if (wrap && this.panels[index]) {
-                const bg = getComputedStyle(this.panels[index])
-                    .getPropertyValue('--panel-bg').trim();
+                const st = getComputedStyle(this.panels[index]);
+                const bg = st.getPropertyValue('--panel-bg').trim();
+                const fg = st.getPropertyValue('--panel-muted').trim();
                 if (bg) wrap.style.setProperty('--panels-bg', bg);
+                if (fg) wrap.style.setProperty('--loading-fg', fg);
             }
 
             this.panels.forEach((panel, i) => {
