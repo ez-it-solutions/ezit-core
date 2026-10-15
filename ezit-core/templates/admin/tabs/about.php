@@ -93,6 +93,18 @@ $detected = EzIT_Themes::detected($core);
             <tr><th scope="row"><?php esc_html_e('Active theme', 'ezit-core'); ?></th><td><?php echo esc_html(get_stylesheet()); ?></td></tr>
             <tr><th scope="row"><?php esc_html_e('License server', 'ezit-core'); ?></th><td><?php echo esc_html($core->api_url()); ?></td></tr>
             <tr><th scope="row"><?php esc_html_e('Site URL', 'ezit-core'); ?></th><td><?php echo esc_html(home_url()); ?></td></tr>
+            <tr><th scope="row"><?php esc_html_e('Loaded modules', 'ezit-core'); ?></th><td>
+                <?php
+                $mods = ['EzIT_Core', 'EzIT_API', 'EzIT_Licensing', 'EzIT_Updater', 'EzIT_Marketplace',
+                         'EzIT_Gate', 'EzIT_Themes', 'EzIT_Login', 'EzIT_Customizer', 'EzIT_Banners', 'EzIT_Admin'];
+                $bits = [];
+                foreach ($mods as $m) {
+                    $bits[] = class_exists($m) ? '✓ ' . $m : '✗ ' . $m;
+                }
+                echo esc_html(implode('  ', $bits));
+                ?>
+                <div class="ezit-meta" style="margin-top:4px"><?php esc_html_e('✗ = the module file didn’t load — usually an incomplete plugin upload.', 'ezit-core'); ?></div>
+            </td></tr>
         </tbody>
     </table>
 </div>
