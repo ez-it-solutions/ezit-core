@@ -1,0 +1,875 @@
+/* ==========================================================================
+   EzIT Tabs — tabbed promo layout
+
+   Component-level options (set on .ezt via data attributes):
+     data-ezt-style="rounded|square"   corner style
+     data-ezt-timer="tab|panel-top|panel-bottom|overlay"   progress placement
+
+   Per-panel theming (inline CSS vars on .ezt__panel, mirrored onto its tab):
+     --panel-bg, --panel-fg, --panel-muted, --panel-btn-bg, --panel-btn-fg,
+     --panel-deco, --panel-badge-bg, --panel-badge-fg, --panel-progress
+   ========================================================================== */
+
+:root {
+    --ezt-font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --ezt-frame-bg: #ffffff;
+    --ezt-progress: #6c4dff;
+    --ezt-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+/* Component-only: box-sizing is scoped to the widget so the stylesheet
+   never mutates the host page (plugin-safe drop-in). */
+.ezt, .ezt *, .ezt *::before, .ezt *::after { box-sizing: border-box; }
+
+/* ── Frame (outer wrapper) ─────────────────────────────────────────── */
+
+.ezt {
+    /* rounded defaults — square mode overrides below */
+    --ezt-radius-frame: 20px;
+    --ezt-radius-panel: 14px;
+    --ezt-radius-tab: 12px;
+    --ezt-radius-scoop: 18px;
+    --ezt-timer-cap: 999px;   /* pill ends on timer tracks/fills; square mode zeroes it */
+    --ezt-tab-gap: 12px;
+    --ezt-pull: 64px;
+    --ezt-pull-x: var(--ezt-pull);
+    --ezt-pull-y: 0;
+
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(210px, 275px) 1fr;
+    font-family: var(--ezt-font);
+    color: #14151f;
+    gap: 16px;
+    width: min(1080px, 100%);
+    padding: 16px;
+    background: var(--ezt-frame-bg);
+    border: 1px solid #d4d8e2;
+    border-radius: var(--ezt-radius-frame);
+    box-shadow: 0 12px 44px rgba(20, 21, 31, .10);
+    overflow: hidden;
+    margin: 0 auto;   /* centers when the column is wider than 1080px */
+}
+
+.ezt[data-ezt-style="square"] {
+    --ezt-radius-frame: 0;
+    --ezt-radius-panel: 0;
+    --ezt-radius-tab: 0;
+    --ezt-timer-cap: 0;
+    --ezt-tab-gap: 0;
+    gap: 0;
+    padding: 0;
+}
+
+/* ── Tab list ──────────────────────────────────────────────────────── */
+
+.ezt__tabs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ezt-tab-gap);
+    height: 100%;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ezt__tabs li {
+    flex: 1;             /* tabs fill the column height */
+    display: flex;
+    position: relative;  /* anchors the Mixed fake-tab pseudos */
+}
+/* data-ezt-fill="off": tabs keep natural height and pack to the top
+   (whitespace below), instead of stretching to fill the column. */
+.ezt[data-ezt-fill="off"] > .ezt__tabs > li {
+    flex: none;
+}
+
+.ezt__tab {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    /* kill the UA default focus ring — the .ezt--kb :focus-visible
+       rule draws the keyboard one explicitly */
+    outline: 0;
+    gap: 10px;
+    width: 100%;
+    min-height: 58px;
+    padding: 16px 20px;
+    background: #fff;
+    color: #14151f;
+    border: 1px solid #dcdfe9;
+    border-radius: var(--ezt-radius-tab);
+    box-shadow: 0 1px 4px rgba(20, 21, 31, .08);
+    font: inherit;
+    font-size: 15px;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    transition:
+        background .35s ease,
+        color .35s ease,
+        border-color .35s ease,
+        border-radius .3s var(--ezt-ease),
+        padding .3s var(--ezt-ease),
+        margin .3s var(--ezt-ease),
+        transform .2s var(--ezt-ease);
+}
+
+/* Hover: no movement — light grey fill + darker border (inactive only,
+   so the themed active tab is untouched). */
+.ezt__tab:not([aria-selected="true"]):hover {
+    background: #f0f2f7;
+    border-color: #c4c9d6;
+}
+
+/* Square mode keeps hairline dividers instead of card borders */
+/* NOTE: attribute/class-scoped rules use child combinators throughout —
+   a .ezt can nest inside a .ezt__panel, and descendant selectors would
+   leak the outer component's dir/style/anim/timer onto the inner one. */
+.ezt[data-ezt-style="square"] > .ezt__tabs > li > .ezt__tab:not([aria-selected="true"]):hover {
+    border-color: transparent;
+    border-bottom-color: #c4c9d6;
+}
+
+/* Keyboard-only focus ring — .ezt--kb is toggled by JS so mouse clicks
+   don't paint the outline on the active tab. */
+.ezt.ezt--kb > .ezt__tabs > li > .ezt__tab:focus-visible {
+    outline: 2px solid var(--ezt-progress);
+    outline-offset: 2px;
+    z-index: 1;
+}
+
+/* Active tab inherits its panel's colors (set inline by JS), extends
+   into the column gap and squares off its right edge so it reads as
+   attached to the card. Panels sit above tabs — the extension is hidden
+   beneath the matching panel color, and pull animations emerge from
+   behind it. */
+.ezt__tab[aria-selected="true"] {
+    background: var(--tab-bg, #e9ebf2);
+    color: var(--tab-fg, #14151f);
+    font-weight: 700;
+    border-color: transparent;
+    box-shadow: none;
+    border-radius: var(--ezt-radius-tab) 0 0 var(--ezt-radius-tab);
+    margin-right: calc(-1 * (16px + 1px));
+    /* offset the margin extension so contents (badge) stay column-aligned */
+    padding-right: calc(20px + 16px + 1px);
+    z-index: 1;
+}
+
+.ezt[data-ezt-style="square"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] {
+    margin-right: -1px;
+    padding-right: calc(20px + 1px);
+    /* keep the hairline divider — generic active rule wipes all borders */
+    border-bottom-color: #e5e8ef;
+    /* v1 accent bar — inset so it doesn't shift contents */
+    box-shadow: inset 4px 0 0 var(--tab-progress, var(--ezt-progress));
+}
+
+/* Mixed style: same attached bridge as Rounded, plus "fake tabs" —
+   theme-colored squares parked at each free junction on the selected
+   tab's li. A transparent quarter-disc bite in each square reveals the
+   white frame → a concave notch rimmed by the tab's own color, so it
+   can't visually merge with a white neighbour tab.
+   The bite's arc centre sits on the seam corner (tab edge × card edge). */
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab[aria-selected="true"])::before,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::before,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab[aria-selected="true"])::after,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::after {
+    content: '';
+    position: absolute;
+    right: calc(-1 * (16px + 1px));   /* squares end flush at the card edge */
+    width: var(--ezt-radius-scoop);
+    height: var(--ezt-radius-scoop);
+    pointer-events: none;
+}
+/* above the tab — bite in the square's top-left corner */
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab[aria-selected="true"])::before,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::before {
+    bottom: calc(100% - 1px);   /* 1px overlap — kills the sub-pixel seam */
+    background: radial-gradient(circle at 0% 0%, transparent 0 var(--ezt-radius-scoop), var(--tab-bg, #14151f) var(--ezt-radius-scoop));
+}
+/* below the tab — bite in the square's bottom-left corner */
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab[aria-selected="true"])::after,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::after {
+    top: calc(100% - 1px);      /* 1px overlap — kills the sub-pixel seam */
+    background: radial-gradient(circle at 0% 100%, transparent 0 var(--ezt-radius-scoop), var(--tab-bg, #14151f) var(--ezt-radius-scoop));
+}
+/* flush edges: no fake tab on the side merged with the card edge */
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:first-child:has(> .ezt__tab[aria-selected="true"])::before,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:first-child:has(> .ezt__tab--leaving)::before,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:last-child:has(> .ezt__tab[aria-selected="true"])::after,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li:last-child:has(> .ezt__tab--leaving)::after {
+    display: none;
+}
+
+/* Pull choreography: the fake tabs ride along — pulled into the card
+   with the outgoing tab, grown out of it with the incoming one. */
+.ezt[data-ezt-style="mixed"][data-ezt-anim="pull"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::before,
+.ezt[data-ezt-style="mixed"][data-ezt-anim="pull"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::after {
+    animation: ezt-scoop-out .5s var(--ezt-ease) both;
+}
+.ezt[data-ezt-style="mixed"][data-ezt-anim="pull"] > .ezt__tabs > li:has(> .ezt__tab--entering)::before,
+.ezt[data-ezt-style="mixed"][data-ezt-anim="pull"] > .ezt__tabs > li:has(> .ezt__tab--entering)::after {
+    animation: ezt-scoop-in-pull .55s var(--ezt-ease) both;
+}
+
+/* Same motion as the tab pull, minus the background animation — the
+   keyframes on the real tab paint a solid bg which would fill the bite. */
+@keyframes ezt-scoop-out {
+    from { transform: none; opacity: 1; }
+    to   { transform: translate(var(--ezt-pull-x), var(--ezt-pull-y)) scale(.85); opacity: 0; }
+}
+@keyframes ezt-scoop-in-pull {
+    0%   { transform: translate(var(--ezt-pull-x), var(--ezt-pull-y)) scale(.85); opacity: 0; }
+    55%  { opacity: 1; }
+    100% { transform: none; opacity: 1; }
+}
+/* fade anim: incoming geometry snaps (see the selected-tab override
+   below) so the fake tabs are at final position on frame one — they
+   bloom immediately with the color fade. The old junction's corners
+   fade out fast as its tail retracts. */
+.ezt[data-ezt-style="mixed"][data-ezt-anim="fade"] > .ezt__tabs > li:has(> .ezt__tab--entering)::before,
+.ezt[data-ezt-style="mixed"][data-ezt-anim="fade"] > .ezt__tabs > li:has(> .ezt__tab--entering)::after {
+    animation: ezt-scoop-in .35s ease both;
+}
+/* Leaving corners hide instantly — the junction becomes plain frame
+   gap as the tail retracts; any slide/fade reads as an artifact. */
+.ezt[data-ezt-style="mixed"][data-ezt-anim="fade"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::before,
+.ezt[data-ezt-style="mixed"][data-ezt-anim="fade"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::after {
+    display: none;
+}
+
+@keyframes ezt-scoop-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+/* the progress bar stops at the tab's edge — the bridge tail would
+   otherwise run through the scoop notch. Applies while leaving too
+   (its bar fades out over .3s) — without the inset the square end
+   lands right on the bite and reads as a stray line. */
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] .ezt__progress,
+.ezt[data-ezt-style="mixed"] > .ezt__tabs > li > .ezt__tab--leaving .ezt__progress {
+    right: calc(16px + 1px);
+}
+/* top-bar Mixed scoops BOTH bottom corners — inset both ends */
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] .ezt__progress,
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li > .ezt__tab--leaving .ezt__progress {
+    left: calc(16px + 1px);
+}
+
+/* Detached style: no attachment — active tab stays a fully rounded
+   card; it keeps its border too (nothing joins the card to hide) */
+.ezt[data-ezt-style="detached"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] {
+    border-radius: var(--ezt-radius-tab);
+    border-color: #dcdfe9;
+    margin-right: 0;
+    padding-right: 20px;
+    box-shadow: 0 1px 4px rgba(20, 21, 31, .08);
+}
+
+/* ── Top-bar orientation (data-ezt-dir="top") ─────────────────────────
+   Tabs run horizontally across the frame top; the card sits below.
+   The geometry is the left-column layout rotated 90°: the active tab
+   dips under the card's top edge, the Mixed fake tabs fill the
+   left/right junction gaps, and the pull travel is vertical. */
+.ezt[data-ezt-dir="top"] {
+    --ezt-pull-x: 0;
+    --ezt-pull-y: var(--ezt-pull);
+    grid-template-columns: 1fr;
+}
+
+.ezt[data-ezt-dir="top"] > .ezt__tabs {
+    flex-direction: row;
+}
+.ezt[data-ezt-dir="top"] > .ezt__tabs > li {
+    flex: none;
+}
+.ezt[data-ezt-dir="top"] > .ezt__tabs > li > .ezt__tab {
+    width: auto;
+    min-height: 46px;
+    padding: 10px 22px;
+}
+
+/* attached active tab: dips under the card's top edge */
+.ezt[data-ezt-dir="top"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] {
+    border-radius: var(--ezt-radius-tab) var(--ezt-radius-tab) 0 0;
+    margin: 0 0 calc(-1 * (16px + 1px));
+    padding-right: 20px;
+    padding-bottom: calc(10px + 16px + 1px);
+}
+.ezt[data-ezt-dir="top"][data-ezt-style="detached"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] {
+    border-radius: var(--ezt-radius-tab);
+    border-color: #dcdfe9;
+    margin: 0;
+    padding: 10px 22px;
+}
+.ezt[data-ezt-dir="top"][data-ezt-style="square"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] {
+    margin: 0 0 -1px;
+    padding: 10px 22px 11px;
+    border-radius: 0;
+    box-shadow: inset 0 -4px 0 var(--tab-progress, var(--ezt-progress));
+}
+/* Square's accent strip shares the fill's accent color — showing both
+   makes the timer invisible. While the tab-bar timer is armed, the
+   progress bar IS the accent line: drop the static strip, show the
+   grey track, and let the fill take over that exact 4px slot. */
+.ezt.ezt--timer-on[data-ezt-dir="top"][data-ezt-style="square"][data-ezt-timer="tab"]
+    > .ezt__tabs > li > .ezt__tab[aria-selected="true"] {
+    box-shadow: none;
+}
+.ezt.ezt--timer-on[data-ezt-dir="top"][data-ezt-style="square"][data-ezt-timer="tab"]
+    > .ezt__tabs > li > .ezt__tab[aria-selected="true"] .ezt__progress {
+    background: rgba(20, 21, 31, .10);
+}
+/* Otherwise the strip owns the slot — hide the empty track so it never
+   doubles the line */
+.ezt[data-ezt-dir="top"][data-ezt-style="square"] > .ezt__tabs .ezt__progress {
+    background: transparent;
+}
+/* Outgoing tab keeps its bridge geometry while the pull plays —
+   aria-selected flips instantly, so without this the tail would pop off
+   a frame before the animation starts. (Pull-only: in fade the tail
+   retracts immediately via the margin transition.) */
+.ezt[data-ezt-anim="pull"]:not([data-ezt-dir="top"]):not([data-ezt-style="detached"]) > .ezt__tabs > li > .ezt__tab--leaving {
+    border-radius: var(--ezt-radius-tab) 0 0 var(--ezt-radius-tab);
+    margin-right: calc(-1 * (16px + 1px));
+    padding-right: calc(20px + 16px + 1px);
+}
+.ezt[data-ezt-anim="pull"]:not([data-ezt-dir="top"])[data-ezt-style="square"] > .ezt__tabs > li > .ezt__tab--leaving {
+    border-radius: 0;
+    margin-right: -1px;
+    padding-right: 21px;
+}
+/* top-bar variant — same rule, downward bridge */
+.ezt[data-ezt-dir="top"][data-ezt-anim="pull"]:not([data-ezt-style="detached"]) > .ezt__tabs > li > .ezt__tab--leaving {
+    border-radius: var(--ezt-radius-tab) var(--ezt-radius-tab) 0 0;
+    margin: 0 0 calc(-1 * (16px + 1px));
+    padding-bottom: calc(10px + 16px + 1px);
+}
+.ezt[data-ezt-dir="top"][data-ezt-style="square"][data-ezt-anim="pull"] > .ezt__tabs > li > .ezt__tab--leaving {
+    border-radius: 0;
+    margin-bottom: -1px;
+    padding-bottom: 11px;
+}
+/* square mode: hairlines become vertical dividers */
+.ezt[data-ezt-dir="top"][data-ezt-style="square"] > .ezt__tabs > li > .ezt__tab {
+    border: 0;
+    border-right: 1px solid #e5e8ef;
+}
+.ezt[data-ezt-dir="top"][data-ezt-style="square"] > .ezt__tabs > li:last-child > .ezt__tab {
+    border-right: 0;
+}
+.ezt[data-ezt-dir="top"][data-ezt-style="square"] > .ezt__tabs > li > .ezt__tab:not([aria-selected="true"]):hover {
+    border-color: transparent;
+    border-right-color: #c4c9d6;
+}
+
+/* Mixed fake tabs — left/right junction squares, bite corner mirrored
+   for each side (far outer corner on the tab-edge line). */
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab[aria-selected="true"])::before,
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::before {
+    top: auto;
+    bottom: calc(-1 * (16px + 1px));
+    right: calc(100% - 1px);
+    background: radial-gradient(circle at 0% 0%, transparent 0 var(--ezt-radius-scoop), var(--tab-bg, #14151f) var(--ezt-radius-scoop));
+}
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab[aria-selected="true"])::after,
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::after {
+    top: auto;
+    bottom: calc(-1 * (16px + 1px));
+    right: auto;
+    left: calc(100% - 1px);
+    background: radial-gradient(circle at 100% 0%, transparent 0 var(--ezt-radius-scoop), var(--tab-bg, #14151f) var(--ezt-radius-scoop));
+}
+
+/* Anchor pull/reappear scaling to the junction edge — a center-origin
+   scale would lift the tail and fake tabs off the card, opening a
+   1px white hairline mid-animation. */
+.ezt[data-ezt-dir="top"] > .ezt__tabs > li > .ezt__tab--leaving,
+.ezt[data-ezt-dir="top"] > .ezt__tabs > li > .ezt__tab--entering,
+.ezt[data-ezt-dir="top"] > .ezt__tabs > li > .ezt__tab--reappearing {
+    transform-origin: center bottom;
+}
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::before,
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--leaving)::after,
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--entering)::before,
+.ezt[data-ezt-dir="top"][data-ezt-style="mixed"] > .ezt__tabs > li:has(> .ezt__tab--entering)::after {
+    transform-origin: center bottom;
+}
+
+/* ── 'Pull' tab transition ───────────────────────────────────────────
+   Outgoing tab is pulled INTO the content area (keeps its theme colors,
+   shrinks + fades), then reappears as a plain white tab.
+   Incoming tab grows OUT of the content area, fading in as it settles. */
+
+.ezt[data-ezt-anim="pull"] > .ezt__tabs > li > .ezt__tab--leaving {
+    animation: ezt-tab-out .5s var(--ezt-ease) both;
+}
+
+.ezt[data-ezt-anim="pull"] > .ezt__tabs > li > .ezt__tab--entering {
+    animation: ezt-tab-in .55s var(--ezt-ease) both;
+}
+
+/* Pull-only: in fade mode the tab never left the list — running a
+   from-opacity-0 keyframe here would flash it out and back. */
+.ezt[data-ezt-anim="pull"] > .ezt__tabs > li > .ezt__tab--reappearing {
+    animation: ezt-tab-reappear .45s ease-out both;
+}
+
+/* Top-bar fade: the card can't travel upward — translateY(14px) opens
+   a slice of frame between the tab bar and the card. It crossfades in
+   place instead; the staggered ezt-rise on its children still gives
+   the upward motion. */
+.ezt[data-ezt-dir="top"][data-ezt-anim="fade"] > .ezt__panels > .ezt__panel {
+    transform: none;
+}
+
+/* Load seam: a themed accent strip along the card's BOTTOM edge while
+   the panel fades in — holds through the load, then dissolves. Runs on
+   each --active add, so every selection gets it; fill keeps it at
+   opacity 0 afterwards. */
+.ezt[data-ezt-dir="top"][data-ezt-anim="fade"] > .ezt__panels > .ezt__panel--active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    background: var(--panel-progress, var(--ezt-progress));
+    pointer-events: none;
+    animation: ezt-loadseam .7s var(--ezt-ease) both;
+}
+@keyframes ezt-loadseam {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Fade mode: the incoming tab's attachment geometry (margin/padding)
+   snaps — the tail is already at full extension while only colors and
+   corners dissolve in. The outgoing tab keeps the base transition, so
+   its tail retracts as the theme washes back to white. */
+.ezt[data-ezt-anim="fade"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] {
+    transition:
+        background .35s ease,
+        color .35s ease,
+        border-color .35s ease,
+        border-radius .3s var(--ezt-ease),
+        box-shadow .3s var(--ezt-ease),
+        transform .2s var(--ezt-ease);
+}
+
+@keyframes ezt-tab-out {
+    from {
+        transform: none;
+        opacity: 1;
+        background: var(--tab-bg, #e9ebf2);
+        color: var(--tab-fg, #14151f);
+    }
+    to {
+        transform: translate(var(--ezt-pull-x), var(--ezt-pull-y)) scale(.85);
+        opacity: 0;
+        background: var(--tab-bg, #e9ebf2);
+        color: var(--tab-fg, #14151f);
+    }
+}
+
+@keyframes ezt-tab-in {
+    0% {
+        transform: translate(var(--ezt-pull-x), var(--ezt-pull-y)) scale(.85);
+        opacity: 0;
+    }
+    55% { opacity: 1; }
+    100% {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+@keyframes ezt-tab-reappear {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.ezt[data-ezt-style="square"] > .ezt__tabs > li > .ezt__tab {
+    box-shadow: none;
+    border: 0;
+    border-bottom: 1px solid #e5e8ef;
+}
+
+/* Bold-state width reservation: JS stamps data-label, the hidden clone
+   occupies the 700 metrics so the real text can switch weight without
+   changing the tab's box. Zero-height block — width only, no extra row.
+   Works for any label text — no fixed widths. */
+.ezt__tab-label {
+    flex: 1;
+}
+.ezt__tab-label::after {
+    content: attr(data-label);
+    display: block;
+    height: 0;
+    overflow: hidden;
+    font-weight: 700;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.ezt__badge {
+    flex-shrink: 0;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #14151f;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    transition: background .35s ease, color .35s ease;
+}
+
+/* Selected (or pulling-out) tab: badge follows the panel's theme
+   (e.g. white pill on navy) */
+.ezt__tab[aria-selected="true"] .ezt__badge,
+.ezt__tab--leaving .ezt__badge {
+    background: var(--tab-badge-bg, #fff);
+    color: var(--tab-badge-fg, #14151f);
+    box-shadow: inset 0 0 0 1px rgba(20, 21, 31, .14);
+}
+
+/* ── Timers (progress placements) ──────────────────────────────────── */
+
+/* 1 · Bar along the bottom of the ACTIVE TAB */
+.ezt__progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    /* pill caps — the scoop inset cuts the right end square, keep it
+       rounded like the standalone timer tracks */
+    border-radius: var(--ezt-timer-cap);
+    background: rgba(20, 21, 31, .10);
+    opacity: 0;
+    transition: opacity .3s ease;
+}
+
+/* hidden unless a placement is active AND auto-rotate is armed
+   (.ezt--timer-on, interval > 0) — Speed=Off renders nothing, but a
+   paused timer keeps its frozen fill visible */
+.ezt.ezt--timer-on[data-ezt-timer="tab"] > .ezt__tabs > li > .ezt__tab[aria-selected="true"] .ezt__progress {
+    opacity: 1;
+}
+
+.ezt__progress-bar {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: var(--ezt-timer-cap);
+    background: var(--tab-progress, var(--ezt-progress));
+}
+
+/* 2-4 · Shared track element used for card top/bottom + frame overlay */
+.ezt__timer {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 4px;
+    /* pill caps — ends stay rounded even where the container clip
+       squares a corner for an edge-merged tab */
+    border-radius: var(--ezt-timer-cap);
+    overflow: hidden;
+    background: rgba(20, 21, 31, .10);
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Full-bleed tracks — the rounded corners come from the parent clip:
+   .ezt__panels is overflow:hidden at the panel radius, .ezt at the
+   frame radius. Ends reach into the curve and clip perfectly. */
+.ezt__timer--top     { top: 0; }
+.ezt__timer--bottom  { bottom: 0; }
+.ezt__timer--overlay { top: 0; height: 5px; z-index: 6; }
+
+.ezt.ezt--timer-on[data-ezt-timer="panel-top"]    > .ezt__panels > .ezt__timer--top,
+.ezt.ezt--timer-on[data-ezt-timer="panel-bottom"] > .ezt__panels > .ezt__timer--bottom,
+.ezt.ezt--timer-on[data-ezt-timer="overlay"]      > .ezt__timer--overlay { display: block; }
+
+.ezt__timer-fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    /* pill cap — the head rounds like the track's clipped ends instead
+       of cutting off square */
+    border-radius: var(--ezt-timer-cap);
+    background: var(--ezt-progress);
+}
+
+/* countdown animation — runs on the active tab bar + whichever placement
+   fill is visible while .is-playing */
+.ezt.is-playing > .ezt__tabs > li > .ezt__tab[aria-selected="true"] .ezt__progress-bar,
+.ezt.is-playing > .ezt__panels > .ezt__timer--top .ezt__timer-fill,
+.ezt.is-playing > .ezt__panels > .ezt__timer--bottom .ezt__timer-fill,
+.ezt.is-playing > .ezt__timer--overlay .ezt__timer-fill {
+    animation: ezt-progress var(--ezt-interval, 5000ms) linear forwards;
+}
+
+@keyframes ezt-progress {
+    from { width: 0%; }
+    to   { width: 100%; }
+}
+
+/* ── Panels ────────────────────────────────────────────────────────── */
+
+/* overflow:hidden + panel radius: children (timer tracks) get clipped
+   to the card silhouette — bars reach into the rounded corners and
+   clip at the curve, instead of poking past it or stopping short.
+   The clip's corners must morph with the card's flush-edge: when the
+   active panel squares a corner to merge with the tab, the clip does
+   too — otherwise it bites a rounded notch out of the junction. */
+.ezt__panels {
+    position: relative;
+    z-index: 2;
+    display: flex; /* active panel stretches when the grid row is taller */
+    min-height: 420px;
+    overflow: hidden;
+    border-radius: var(--ezt-radius-panel);
+    /* mirrors the incoming panel's --panel-bg during crossfades (JS-set)
+       so a fading-out panel never reveals a white gap */
+    background: var(--panels-bg, transparent);
+    transition: border-radius .35s ease, background .35s ease;
+}
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels:has(> .ezt__panel--active[data-ezt-edge="top"]) {
+    border-top-left-radius: 0;
+}
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels:has(> .ezt__panel--active[data-ezt-edge="bottom"]) {
+    border-bottom-left-radius: 0;
+}
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels:has(> .ezt__panel--active[data-ezt-edge="left"]) {
+    border-top-left-radius: 0;
+}
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels:has(> .ezt__panel--active[data-ezt-edge="right"]) {
+    border-top-right-radius: 0;
+}
+
+.ezt__panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding: clamp(32px, 5vw, 64px);
+    background: var(--panel-bg, #fff);
+    color: var(--panel-fg, #14151f);
+    border-radius: var(--ezt-radius-panel);
+    overflow: hidden;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(14px) scale(.985);
+    transition:
+        opacity .35s ease .15s,
+        visibility 0s linear .5s,
+        transform .5s var(--ezt-ease),
+        border-radius .35s var(--ezt-ease);
+}
+
+.ezt__panel--active {
+    /* in-flow: the wrapper sizes itself to the ACTIVE panel's content,
+       so cards grow/shrink per tab (JS morphs the height change);
+       flex:1 stretches it back up when the tab column is taller */
+    position: relative;
+    flex: 1;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+        opacity .55s var(--ezt-ease),
+        transform .55s var(--ezt-ease),
+        visibility 0s;
+    z-index: 1;
+}
+
+/* Flush merge: when the first/last tab is active the card's matching
+   corner squares off so the tab's squared edge joins it cleanly
+   (no white notch at the corner). Applies to all styles — in Mixed the
+   scoop happens on the tab's free corner, not the flush one. */
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels > .ezt__panel--active[data-ezt-edge="top"] {
+    border-top-left-radius: 0;
+}
+
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels > .ezt__panel--active[data-ezt-edge="bottom"] {
+    border-bottom-left-radius: 0;
+}
+
+/* top-bar orientation: first/last tab flush-merges the card's top-left /
+   top-right corner instead */
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels > .ezt__panel--active[data-ezt-edge="left"] {
+    border-top-left-radius: 0;
+}
+.ezt:not([data-ezt-style="detached"]) > .ezt__panels > .ezt__panel--active[data-ezt-edge="right"] {
+    border-top-right-radius: 0;
+}
+
+/* data-ezt-fill="off": tabs pack to the start edge, so the LAST tab no
+   longer reaches the far edge — the flush merge becomes a notch.
+   Restore the rounded corner and the Mixed scoop it was hiding. */
+.ezt[data-ezt-fill="off"]:not([data-ezt-style="detached"]) > .ezt__panels:has(> .ezt__panel--active[data-ezt-edge="bottom"]) {
+    border-bottom-left-radius: var(--ezt-radius-panel);
+}
+.ezt[data-ezt-fill="off"]:not([data-ezt-style="detached"]) > .ezt__panels:has(> .ezt__panel--active[data-ezt-edge="right"]) {
+    border-top-right-radius: var(--ezt-radius-panel);
+}
+.ezt[data-ezt-fill="off"]:not([data-ezt-style="detached"]) > .ezt__panels > .ezt__panel--active[data-ezt-edge="bottom"] {
+    border-bottom-left-radius: var(--ezt-radius-panel);
+}
+.ezt[data-ezt-fill="off"]:not([data-ezt-style="detached"]) > .ezt__panels > .ezt__panel--active[data-ezt-edge="right"] {
+    border-top-right-radius: var(--ezt-radius-panel);
+}
+.ezt[data-ezt-fill="off"][data-ezt-style="mixed"] > .ezt__tabs > li:last-child:has(> .ezt__tab[aria-selected="true"])::after,
+.ezt[data-ezt-fill="off"][data-ezt-style="mixed"] > .ezt__tabs > li:last-child:has(> .ezt__tab--leaving)::after {
+    display: block;
+}
+
+.ezt__panel-inner { max-width: 520px; }
+
+/* staggered entrance for panel children */
+.ezt__panel--active [data-ezt-anim] {
+    animation: ezt-rise .6s var(--ezt-ease) both;
+}
+.ezt__panel--active [data-ezt-anim]:nth-of-type(1) { animation-delay: .08s; }
+.ezt__panel--active [data-ezt-anim]:nth-of-type(2) { animation-delay: .16s; }
+.ezt__panel--active [data-ezt-anim]:nth-of-type(3) { animation-delay: .24s; }
+.ezt__panel--active .ezt__footer[data-ezt-anim]     { animation-delay: .32s; }
+
+@keyframes ezt-rise {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ── Decorative blobs ──────────────────────────────────────────────── */
+
+.ezt__panel-deco--circles::before,
+.ezt__panel-deco--circles::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: var(--panel-deco, rgba(255, 255, 255, .06));
+}
+
+.ezt__panel-deco--circles::before {
+    width: 560px; height: 560px;
+    right: -140px; top: -180px;
+}
+
+.ezt__panel-deco--circles::after {
+    width: 380px; height: 380px;
+    right: 60px; bottom: -140px;
+    opacity: .6;
+}
+
+/* ── Panel content ─────────────────────────────────────────────────── */
+
+.ezt__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.ezt__brand-name { font-size: 26px; font-weight: 600; letter-spacing: .01em; }
+
+.ezt__brand-mark { display: inline-flex; line-height: 0; }
+
+.ezt__heading {
+    margin: 0 0 18px;
+    font-size: clamp(30px, 4vw, 46px);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -.015em;
+}
+
+.ezt__text {
+    margin: 0 0 34px;
+    font-size: 16.5px;
+    line-height: 1.6;
+    color: var(--panel-muted, #5c5f6b);
+    max-width: 46ch;
+}
+
+.ezt__footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.ezt__cta {
+    display: inline-block;
+    padding: 14px 30px;
+    border-radius: 8px;
+    background: var(--panel-btn-bg, #14151f);
+    color: var(--panel-btn-fg, #fff);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform .25s var(--ezt-ease), box-shadow .25s var(--ezt-ease);
+}
+
+.ezt__cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(20, 21, 31, .22);
+}
+
+.ezt__cta:active { transform: translateY(0); }
+
+.ezt__price { font-size: 15px; color: var(--panel-muted, #5c5f6b); }
+.ezt__price strong { color: var(--panel-fg, #14151f); }
+.ezt__price--accent { color: var(--accent, inherit) !important; }
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+    .ezt {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .ezt__tabs {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: var(--ezt-tab-gap);
+        height: auto;
+        scrollbar-width: none;
+    }
+    .ezt__tabs::-webkit-scrollbar { display: none; }
+
+    .ezt__tabs li { flex: 0 0 auto; }
+
+    .ezt__tab {
+        min-height: 0;
+        padding: 14px 18px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .ezt__panels { min-height: 480px; }
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .ezt__panel,
+    .ezt__panel--active,
+    .ezt__panel--active [data-ezt-anim],
+    .ezt__tab,
+    .ezt__tab--leaving,
+    .ezt__tab--entering,
+    .ezt__tab--reappearing,
+    .ezt__cta { animation: none !important; transition: none !important; }
+
+    .ezt__panel { opacity: 0; visibility: hidden; transform: none; }
+    .ezt__panel--active { opacity: 1; visibility: visible; }
+}

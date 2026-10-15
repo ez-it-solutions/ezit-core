@@ -1,0 +1,66 @@
+<?php
+/**
+ * Plugin Name: Ez IT Core
+ * Plugin URI:  https://ez-it-solutions.com
+ * Description: Shared foundation for every Ez IT Solutions theme — licensing,
+ *              marketplace, updates and support, backed by the Ez IT license
+ *              server (license.ez-it-solutions.com, LicenseBox-compatible).
+ * Version:     1.0.1
+ * Requires at least: 6.0
+ * Requires PHP: 8.0
+ * Author:      Ez IT Solutions
+ * Author URI:  https://ez-it-solutions.com
+ * License:     GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: ezit-core
+ */
+
+if (! defined('ABSPATH')) {
+    exit;
+}
+
+define('EZIT_CORE_VERSION', '1.0.1');
+define('EZIT_CORE_FILE', __FILE__);
+define('EZIT_CORE_PATH', plugin_dir_path(__FILE__));
+define('EZIT_CORE_INC',  EZIT_CORE_PATH . 'inc/');
+define('EZIT_CORE_URL',  plugin_dir_url(__FILE__));
+define('EZIT_CORE_ASSETS', EZIT_CORE_URL . 'assets/');
+
+// Default activation-server base; per-site override in wp-config.php or
+// Settings → Ez IT Core. No trailing slash.
+if (! defined('EZIT_API_URL')) {
+    define('EZIT_API_URL', 'https://license.ez-it-solutions.com');
+}
+
+require_once EZIT_CORE_INC . 'class-ezit-core.php';
+require_once EZIT_CORE_INC . 'class-ezit-api.php';
+require_once EZIT_CORE_INC . 'class-ezit-licensing.php';
+require_once EZIT_CORE_INC . 'class-ezit-updater.php';
+require_once EZIT_CORE_INC . 'class-ezit-marketplace.php';
+require_once EZIT_CORE_INC . 'class-ezit-gate.php';
+require_once EZIT_CORE_INC . 'class-ezit-admin.php';
+
+/**
+ * Global access point: ezit_core()->register_product([...])
+ */
+function ezit_core(): EzIT_Core
+{
+    return EzIT_Core::instance();
+}
+
+add_action('plugins_loaded', function () {
+    $core = ezit_core();
+    $core->licensing(); // boots the shared licensing module + cron
+    new EzIT_Updater($core);
+    new EzIT_Marketplace($core);
+    new EzIT_Gate($core);     // maintenance mode — front-end enforcement
+    if (is_admin()) {
+        new EzIT_Admin($core);
+    }
+}, 5);
+
+// Theme functions.php files load AFTER plugins_loaded — register_product()
+// may be called top-level there (the registry accepts it), or hook here.
+add_action('after_setup_theme', function () {
+    do_action('ezit_core_ready', ezit_core());
+}, 99);

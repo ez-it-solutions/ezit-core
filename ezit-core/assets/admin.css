@@ -1,0 +1,475 @@
+/* ==========================================================================
+   Ez IT Core — admin page chrome.
+   Port of tabs/assets/css/plugin.css (the canonical "plugin dashboard"
+   layout) re-branded Ez IT: #76B900 green on #191919, nVidia family.
+   The tab component itself lives in assets/ezt/tabs.css.
+   ========================================================================== */
+
+.ezit-pg {
+    --pg-green:  #76b900;
+    --pg-green2: #5a8f00;
+    --pg-dark:   #191919;
+    --pg-ink:    #14151f;
+    --pg-muted:  #5c5f6b;
+    --pg-line:   #dde0ea;
+    --ezt-font: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+    margin: 0 0 0 -20px;   /* swallow #wpcontent's 20px left gutter — chrome runs edge-to-edge */
+    padding: 0;
+    background: #e9ebf2;
+    font-family: var(--ezt-font);
+    color: var(--pg-ink);
+}
+
+/* ── Top app bar ───────────────────────────────────────────────────── */
+.ezit-pg .pg-bar {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 clamp(16px, 4vw, 40px); height: 58px;
+    background: var(--pg-dark); color: #fff;
+}
+.ezit-pg .pg-bar__brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 17px; font-weight: 700; letter-spacing: .01em;
+    color: #fff; text-decoration: none;
+}
+.ezit-pg .pg-bar__brand svg { fill: var(--pg-green); }
+.ezit-pg .pg-bar__crumb {
+    font-size: 13px; opacity: .75;
+    border-left: 1px solid rgba(255,255,255,.35); padding-left: 16px;
+}
+.ezit-pg .pg-bar__site {
+    margin-left: auto; padding: 8px 18px; border-radius: 8px;
+    background: var(--pg-green); color: var(--pg-dark);
+    font-size: 13.5px; font-weight: 700; text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.ezit-pg .pg-bar__site:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(118,185,0,.35); color: var(--pg-dark); }
+
+/* ── Hero band ─────────────────────────────────────────────────────── */
+.ezit-pg .pg-hero {
+    background: linear-gradient(135deg, var(--pg-dark) 0%, #232323 100%);
+    color: #fff; padding: clamp(28px, 4vw, 44px) clamp(16px, 4vw, 40px);
+    position: relative; overflow: hidden;
+}
+.ezit-pg .pg-hero::before, .ezit-pg .pg-hero::after {
+    content: ''; position: absolute; border-radius: 50%;
+    background: rgba(118,185,0,.14); pointer-events: none;
+}
+.ezit-pg .pg-hero::before { width: 420px; height: 420px; right: -90px; top: -190px; }
+.ezit-pg .pg-hero::after  { width: 280px; height: 280px; right: 160px; bottom: -160px; opacity: .7; }
+.ezit-pg .pg-hero__inner { max-width: 1560px; margin: 0 auto; position: relative; z-index: 1; }
+.ezit-pg .pg-hero__eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--pg-green); margin-bottom: 8px;
+}
+.ezit-pg .pg-hero h1 { margin: 0 0 8px; font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; letter-spacing: -.015em; color: #fff; }
+.ezit-pg .pg-hero p { margin: 0 0 22px; color: rgba(255,255,255,.62); font-size: 15px; max-width: 60ch; }
+.ezit-pg .pg-hero__search { max-width: 560px; position: relative; }
+.ezit-pg .pg-hero__search svg {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: #8a8f9c; pointer-events: none;
+}
+.ezit-pg .pg-hero__search input {
+    width: 100%; box-sizing: border-box;
+    padding: 12px 18px 12px 42px; border: 1px solid transparent; border-radius: 10px;
+    background: #fff; color: var(--pg-ink); font: inherit; font-size: 14.5px;
+    outline: none; box-shadow: 0 8px 24px rgba(10,8,30,.25);
+}
+.ezit-pg .pg-hero__search input:focus { border-color: var(--pg-green); }
+
+/* ── Content shell ─────────────────────────────────────────────────── */
+.ezit-pg .pg-main { max-width: 1560px; margin: 32px auto 0; padding: 0 clamp(16px, 4vw, 40px) 48px; }
+.ezit-pg .pg-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.ezit-pg .pg-grid .ezt { width: 100%; margin: 0; }
+
+/* ── Sidebar + content cards ───────────────────────────────────────── */
+.ezit-pg .pg-card {
+    background: #fff; border: 1px solid var(--pg-line); border-radius: 14px;
+    padding: 20px 22px; box-shadow: 0 2px 10px rgba(20,21,31,.05);
+}
+.ezit-pg .pg-card + .pg-card { margin-top: 18px; }
+.ezit-pg .pg-card h3 { margin: 0 0 14px; font-size: 15px; font-weight: 700; }
+
+.ezit-pg .pg-guide__meta { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 12.5px; color: var(--pg-muted); }
+.ezit-pg .pg-guide__bar { flex: 1; height: 6px; border-radius: 999px; background: #e6e8f0; overflow: hidden; }
+.ezit-pg .pg-guide__bar i { display: block; height: 100%; border-radius: 999px; background: var(--pg-green); }
+.ezit-pg .pg-guide ul { list-style: none; margin: 0; padding: 0; }
+.ezit-pg .pg-guide li {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    margin: 0 -8px; padding: 10px 12px 10px 18px;
+    border-top: 1px solid #eef0f5; border-radius: 8px;
+    font-size: 14px; color: #3a3d4a;
+}
+.ezit-pg .pg-guide li::before {
+    content: ''; width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid #c4c9d6; flex-shrink: 0;
+}
+.ezit-pg .pg-guide li.is-done { color: var(--pg-ink); font-weight: 600; }
+.ezit-pg .pg-guide li.is-done::before {
+    border-color: var(--pg-green);
+    background: var(--pg-green) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>') center no-repeat;
+}
+.ezit-pg .pg-support p { margin: 0 0 14px; font-size: 13.5px; color: var(--pg-muted); line-height: 1.5; }
+.ezit-pg .pg-support a {
+    display: inline-block; padding: 9px 18px; border-radius: 8px;
+    background: var(--pg-ink); color: #fff; font-size: 13.5px; font-weight: 700; text-decoration: none;
+}
+
+/* ── Panel toolbar header (pg-sethead) ─────────────────────────────── */
+.ezit-pg .pg-sethead {
+    display: flex; align-items: center; gap: 18px;
+    margin: 0 0 26px; padding: 18px 22px;
+    background: #fff; border: 1px solid rgba(20,21,31,.08); border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(20,21,31,.05);
+}
+.ezit-pg .pg-sethead__chip {
+    width: 48px; height: 48px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 13px;
+    background: rgba(118,185,0,.14);
+}
+.ezit-pg .pg-sethead__text { min-width: 0; }
+.ezit-pg .pg-sethead__eyebrow { display: block; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8a8f9c; }
+.ezit-pg .pg-sethead__text h2 { margin: 2px 0 4px; font-size: 21px; font-weight: 800; letter-spacing: -.01em; }
+.ezit-pg .pg-sethead__text p { margin: 0; font-size: 13.5px; color: var(--pg-muted); }
+.ezit-pg .pg-sethead__side { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.ezit-pg .pg-sethead__saved { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--pg-muted); white-space: nowrap; }
+.ezit-pg .pg-sethead__saved::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+.ezit-pg .pg-sethead__btn {
+    padding: 9px 18px; border: 0; border-radius: 8px; cursor: pointer;
+    background: var(--pg-ink); color: #fff; font-size: 13.5px; font-weight: 700;
+    font-family: inherit; text-decoration: none; white-space: nowrap; transition: background .2s ease;
+}
+.ezit-pg .pg-sethead__btn:hover { background: #2a2c3d; color: #fff; }
+@media (max-width: 640px) {
+    .ezit-pg .pg-sethead { flex-wrap: wrap; }
+    .ezit-pg .pg-sethead__side { margin-left: 0; width: 100%; }
+}
+
+/* ── Quick links ───────────────────────────────────────────────────── */
+.ezit-pg .pg-quick { margin-top: 24px; }
+.ezit-pg .pg-quick ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 24px; }
+.ezit-pg .pg-quick a { display: flex; align-items: center; gap: 10px; padding: 11px 8px; border-radius: 8px; color: #3a3d4a; font-size: 14px; text-decoration: none; }
+.ezit-pg .pg-quick a:hover { background: #f4f5f9; color: var(--pg-ink); }
+.ezit-pg .pg-quick svg { flex-shrink: 0; color: #8a8f9c; }
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+.ezit-pg .pg-foot { background: var(--pg-dark); color: rgba(255,255,255,.6); margin-top: 8px; }
+.ezit-pg .pg-foot__inner { max-width: 1560px; margin: 0 auto; padding: 34px clamp(16px, 4vw, 40px); display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+.ezit-pg .pg-foot__brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; color: #fff; }
+.ezit-pg .pg-foot__brand svg { fill: var(--pg-green); }
+.ezit-pg .pg-foot__links { display: flex; gap: 22px; margin-left: auto; flex-wrap: wrap; }
+.ezit-pg .pg-foot__links a { color: rgba(255,255,255,.6); font-size: 13.5px; text-decoration: none; }
+.ezit-pg .pg-foot__links a:hover { color: #fff; }
+.ezit-pg .pg-foot__base { border-top: 1px solid rgba(255,255,255,.1); }
+.ezit-pg .pg-foot__base div { max-width: 1560px; margin: 0 auto; padding: 16px clamp(16px, 4vw, 40px); font-size: 12.5px; color: rgba(255,255,255,.4); }
+
+/* ==========================================================================
+   EzIT Tabs — Ez IT theming + WP admin tweaks
+   ========================================================================== */
+.ezit-tabs {
+    --ezt-progress: var(--pg-green);
+    --tab-badge-bg: var(--pg-ink);
+    --tab-badge-fg: var(--pg-green);
+    padding-top: 12px;
+    row-gap: 12px;
+}
+.ezit-tabs[data-ezt-dir="top"] > .ezt__tabs { flex-wrap: wrap; row-gap: 8px; padding: 0; align-self: stretch; }
+.ezit-tabs[data-ezt-dir="top"] > .ezt__tabs > li > .ezt__tab { min-height: 44px; padding: 10px 20px; font-size: 14px; }
+.ezit-tabs .ezt__panels { display: block; height: auto !important; min-height: 420px; margin-top: -1px; }
+
+/* The component squares the card's top-right corner so the LAST tab can
+   merge into it — we want the rounded corner back (tab floats above). */
+.ezit-tabs .ezt__panels:has(> .ezt__panel--active[data-ezt-edge="right"]),
+.ezit-tabs .ezt__panel--active[data-ezt-edge="right"] { border-top-right-radius: var(--ezt-radius-panel) !important; }
+.ezit-tabs .ezt__panel { align-items: flex-start; }
+.ezit-tabs .ezt__panel-inner { max-width: none; width: 100%; }
+.ezit-pg .ezt__text { max-width: none; }   /* component caps at 46ch — our stats need one line */
+
+/* WP admin colors vs panel themes: heading element rules (#1d2327) beat
+   the panel's inherited --panel-fg — force them through. */
+.ezit-pg .ezt__panel :where(h1, h2, h3, h4, h5, h6) { color: inherit; }
+.ezit-pg .ezt__price, .ezit-pg .ezt__price strong { color: inherit; }
+
+/* White cards always carry dark text — dark panels would otherwise
+   bleed --panel-fg down into them (invisible table rows). */
+.ezit-pg .ezit-card, .ezit-pg .pg-card { color: var(--pg-ink); }
+
+/* Breathing room when panel content follows the component footer row. */
+.ezit-pg .ezt__footer:not(:last-child) { margin-bottom: 22px; }
+
+/* ── Flash / notices — card, not WP chrome ─────────────────────────── */
+.ezit-pg .ezit-flash {
+    margin: 0 0 20px; padding: 14px 18px 14px 20px;
+    background: #fff; border: 1px solid var(--pg-line); border-left: 4px solid var(--pg-green);
+    border-radius: 10px; box-shadow: 0 2px 10px rgba(20,21,31,.05);
+    font-size: 14px;
+}
+.ezit-pg .ezit-flash.is-err { border-left-color: #d63638; }
+.ezit-pg .ezit-flash p { margin: 0; }
+
+/* Our dark footer replaces WP's own footer on this screen. */
+body.toplevel_page_ezit-core #wpfooter { display: none; }
+/* …and we reclaim the 65px pad WP reserves for it — footer flush bottom. */
+body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
+
+/* ==========================================================================
+   In-panel content widgets (cards, fields, tables, badges)
+   ========================================================================== */
+
+.ezit-pg .ezit-card {
+    background: #fff; border: 1px solid rgba(20,21,31,.08); border-radius: 14px;
+    padding: 20px 22px; box-shadow: 0 2px 10px rgba(20,21,31,.05);
+    margin-bottom: 18px;
+}
+.ezit-pg .ezit-card__head {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 12px; margin-bottom: 14px;
+    border-bottom: 1px solid #eef0f5; color: var(--pg-green2);
+}
+.ezit-pg .ezit-card__head h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--pg-ink); }
+.ezit-pg .ezit-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 480px)); gap: 16px; margin: 0 0 8px; }
+.ezit-pg .ezit-cards .ezit-card { margin-bottom: 0; display: flex; flex-direction: column; gap: 10px; }
+
+.ezit-pg .ezit-license__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ezit-pg .ezit-license__head h3 { margin: 0; font-size: 16px; }
+
+/* ── Badges ────────────────────────────────────────────────────────── */
+.ezit-pg .ezit-badge {
+    display: inline-flex; align-items: center; gap: 5px; width: fit-content;
+    padding: 4px 12px; border-radius: 999px;
+    font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+}
+.ezit-pg .ezit-badge.is-active   { background: var(--pg-green); color: var(--pg-dark); }
+.ezit-pg .ezit-badge.is-inactive { background: #fdecea; color: #a02c21; }
+
+/* ── Tables ────────────────────────────────────────────────────────── */
+.ezit-pg .ezit-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; margin: 0; }
+.ezit-pg .ezit-table, .ezit-pg .ezit-table th, .ezit-pg .ezit-table td,
+.ezit-pg .ezit-table thead, .ezit-pg .ezit-table tbody, .ezit-pg .ezit-table tr { border: 0; }
+.ezit-pg .ezit-table th {
+    text-align: left; font-size: 11px; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--pg-muted);
+    padding: 10px 14px; border-bottom: 2px solid rgba(20,21,31,.1); background: rgba(20,21,31,.04);
+}
+.ezit-pg .ezit-table th:first-child { border-top-left-radius: 8px; }
+.ezit-pg .ezit-table th:last-child  { border-top-right-radius: 8px; }
+.ezit-pg .ezit-table td { padding: 12px 14px; border-bottom: 1px solid rgba(20,21,31,.07); vertical-align: middle; }
+.ezit-pg .ezit-table tbody tr:last-child > td { border-bottom: 0; }
+.ezit-pg .ezit-table tbody tr:hover > td { background: rgba(118,185,0,.06); }
+
+/* ── Form fields ───────────────────────────────────────────────────── */
+.ezit-pg .ezit-field { display: grid; gap: 6px; margin-bottom: 14px; }
+.ezit-pg .ezit-field label { display: block; margin: 0; font-weight: 600; font-size: 13px; line-height: 1.4; }
+.ezit-pg .ezit-field input[type=text], .ezit-pg .ezit-field input[type=url],
+.ezit-pg .ezit-field input[type=email], .ezit-pg .ezit-field input[type=number],
+.ezit-pg .ezit-field input[type=search], .ezit-pg .ezit-field input[type=password],
+.ezit-pg .ezit-field select, .ezit-pg .ezit-field textarea {
+    width: 100%; box-sizing: border-box; min-height: 40px; margin: 0;
+    padding: 9px 12px; border: 1px solid #d7dae4; border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: #fff; color: var(--pg-ink);
+    box-shadow: none;
+}
+.ezit-pg .ezit-field input:focus, .ezit-pg .ezit-field select:focus, .ezit-pg .ezit-field textarea:focus {
+    border-color: var(--pg-green); outline: 2px solid rgba(118,185,0,.28); outline-offset: -1px; box-shadow: none;
+}
+.ezit-pg .ezit-field .hint { font-size: 12px; color: var(--pg-muted); }
+
+/* ── Buttons ───────────────────────────────────────────────────────── */
+.ezit-pg .button.ezit-btn,
+.ezit-pg button.ezit-btn,
+.ezit-pg input[type=submit].ezit-btn {
+    display: inline-block; padding: 9px 18px; border: 0; border-radius: 8px; cursor: pointer;
+    background: var(--pg-green); color: var(--pg-dark);
+    font-size: 13.5px; font-weight: 700; font-family: inherit; line-height: 1.4;
+    text-decoration: none; text-shadow: none; box-shadow: none;
+    transition: background .2s ease;
+}
+.ezit-pg .ezit-btn:hover, .ezit-pg .ezit-btn:focus { background: var(--pg-green2); color: #fff; }
+.ezit-pg .ezit-btn:disabled { opacity: .55; cursor: not-allowed; }
+.ezit-pg .ezit-btn--ghost { background: var(--pg-ink); color: #fff; }
+.ezit-pg .ezit-btn--ghost:hover { background: #2a2c3d; color: #fff; }
+
+/* Busy state — label swapped for a spinner after the first click. */
+.ezit-pg button.is-busy {
+    position: relative; color: transparent !important; pointer-events: none;
+}
+.ezit-pg button.is-busy::after {
+    content: ""; position: absolute; inset: 0; margin: auto;
+    width: 15px; height: 15px; border-radius: 50%;
+    border: 2px solid rgba(118,185,0,.28); border-top-color: #fff;
+    animation: ezit-spin .7s linear infinite;
+}
+.ezit-pg .ezit-btn.is-busy::after { border-top-color: var(--pg-green); }
+.ezit-pg .ezit-btn--ghost.is-busy::after { border-top-color: #fff; }
+@keyframes ezit-spin { to { transform: rotate(360deg); } }
+
+/* ── Gate settings ─────────────────────────────────────────────────── */
+.ezit-pg .ezit-field--check label {
+    display: flex; align-items: flex-start; gap: 9px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.ezit-pg .ezit-field--check input[type=checkbox] {
+    width: 18px; height: 18px; margin: 0; flex-shrink: 0;
+    accent-color: var(--pg-green); cursor: pointer;
+}
+.ezit-pg .ezit-gate-list { list-style: none; margin: 0 0 18px; padding: 0; }
+.ezit-pg .ezit-gate-list li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 4px; border-top: 1px solid #eef0f5; font-size: 14px;
+}
+.ezit-pg .ezit-card .ezit-flash { margin: 0 0 18px; }
+.ezit-pg .ezit-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+@media (max-width: 720px) { .ezit-pg .ezit-field-grid { grid-template-columns: 1fr; } }
+/* wp-color-picker inside our fields — the Iris picker pops OVER the
+   layout (absolute holder) instead of pushing siblings down. */
+.ezit-pg .wp-picker-container { position: relative; margin-top: 2px; }
+/* Result button = pure swatch. WP parks "Select Color" text inside the
+   colored face; we clip it (a11y-safe) so the button is just the color. */
+.ezit-pg .wp-picker-container .wp-color-result.button {
+    width: 72px; height: 32px; padding: 0; margin-bottom: 0;
+    border-radius: 8px; border-color: #dcdde6; box-shadow: none;
+    cursor: pointer;
+}
+.ezit-pg .wp-picker-container .wp-color-result.button:hover,
+.ezit-pg .wp-picker-container .wp-color-result.button:focus,
+.ezit-pg .wp-picker-container .wp-color-result.button.wp-picker-open {
+    border-color: #b9d67f; box-shadow: 0 0 0 3px rgba(118,185,0,.16);
+}
+.ezit-pg .wp-color-result-text {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+/* The holder is reparented to <body> + position:fixed while open (JS).
+   Until the reparent lands it parks absolute below the container so it
+   never shifts the layout. */
+.wp-picker-container > .wp-picker-holder {
+    position: absolute; top: calc(100% + 6px); left: 0;
+}
+.wp-picker-holder { z-index: 100001; }
+.wp-picker-holder .iris-picker {
+    border: 1px solid var(--pg-line); border-radius: 12px;
+    box-shadow: 0 14px 40px rgba(20,21,31,.22);
+    background: #fff; margin: 0;
+}
+/* WP toggles the input row with .hidden — respect it (closed = swatch
+   only; open = swatch + hex input + Default). */
+.ezit-pg .wp-picker-input-wrap.hidden { display: none !important; }
+.ezit-pg .wp-picker-input-wrap {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.ezit-pg .wp-picker-input-wrap input[type=text].wp-color-picker {
+    width: 110px; border-radius: 8px; border-color: #dcdde6;
+    box-shadow: none;
+}
+.ezit-pg .wp-picker-input-wrap input[type=text].wp-color-picker:focus {
+    border-color: #b9d67f; box-shadow: 0 0 0 3px rgba(118,185,0,.16);
+}
+.ezit-pg .wp-picker-input-wrap .button {
+    border-radius: 8px; border-color: #dcdde6; background: #fff;
+    color: #14151f; box-shadow: none;
+    font-size: 12px; font-weight: 600; line-height: 26px;
+    padding: 0 12px; height: auto; margin: 0;
+}
+.ezit-pg .wp-picker-input-wrap .button:hover,
+.ezit-pg .wp-picker-input-wrap .button:focus {
+    border-color: #b9d67f; color: #14151f;
+    box-shadow: 0 0 0 3px rgba(118,185,0,.16);
+}
+
+/* UC layout picker — live iframe previews, scaled down. */
+.ezit-ucpick {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px; margin-bottom: 4px;
+}
+.ezit-ucpick__item { cursor: pointer; }
+.ezit-ucpick__item input { position: absolute; opacity: 0; pointer-events: none; }
+.ezit-ucpick__frame {
+    display: block; position: relative; height: 132px; overflow: hidden;
+    border: 2px solid #e2e3ec; border-radius: 12px; background: #14161a;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.ezit-ucpick__frame iframe {
+    width: 400%; height: 400%; border: 0; pointer-events: none;
+    transform: scale(.25); transform-origin: 0 0;
+}
+.ezit-ucpick__tick {
+    position: absolute; top: 8px; right: 8px; width: 22px; height: 22px;
+    border-radius: 50%; display: grid; place-items: center;
+    background: var(--pg-green); color: #191919;
+    opacity: 0; transform: scale(.5);
+    transition: opacity .15s ease, transform .15s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.ezit-ucpick__item:hover .ezit-ucpick__frame { border-color: #b9d67f; }
+.ezit-ucpick__item input:checked + .ezit-ucpick__frame {
+    border-color: var(--pg-green);
+    box-shadow: 0 0 0 3px rgba(118,185,0,.18);
+}
+.ezit-ucpick__item input:checked + .ezit-ucpick__frame .ezit-ucpick__tick {
+    opacity: 1; transform: scale(1);
+}
+.ezit-ucpick__meta {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    margin-top: 8px;
+}
+.ezit-ucpick__name { font-size: 12px; font-weight: 600; color: var(--panel-fg, #14151f); }
+.ezit-ucpick__open {
+    font-size: 11.5px; font-weight: 600; white-space: nowrap; text-decoration: none;
+}
+
+/* Gate diagnostics disclosure. */
+.ezit-diag { margin-top: 6px; border-top: 1px solid #eef0f5; padding-top: 14px; }
+.ezit-diag summary {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
+}
+/* display:flex kills the native disclosure triangle — custom chevron. */
+.ezit-diag summary::before {
+    content: ""; flex-shrink: 0; width: 7px; height: 7px;
+    border-right: 2px solid var(--pg-muted); border-bottom: 2px solid var(--pg-muted);
+    transform: rotate(-45deg); transition: transform .18s ease;
+}
+.ezit-diag[open] summary::before { transform: rotate(45deg); }
+.ezit-diag summary .ezit-copy { margin-left: auto; }
+.ezit-diag__title {
+    font-size: 12px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--pg-muted);
+}
+.ezit-diag summary:hover .ezit-diag__title { color: var(--panel-fg, #14151f); }
+.ezit-copy {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 999px; border: 1px solid #dcdde6;
+    background: #fff; color: #5c5f6b; cursor: pointer; transition: all .15s ease;
+}
+.ezit-copy:hover { border-color: var(--pg-green); color: #14151f; }
+.ezit-diag pre {
+    margin: 12px 0 10px; padding: 14px 16px; max-height: 320px; overflow: auto;
+    background: #14151f; color: #b9d67f; border-radius: 10px;
+    font: 12px/1.55 ui-monospace, Consolas, monospace; white-space: pre;
+}
+.ezit-diag .ezit-meta { margin: 0; max-width: 72ch; }
+.ezit-diag .ezit-meta a { font-weight: 600; white-space: nowrap; text-decoration: none; }
+
+/* ── Misc ──────────────────────────────────────────────────────────── */
+.ezit-pg .ezit-meta  { color: var(--pg-muted); font-size: 12px; margin: 0; }
+.ezit-pg .ezit-muted { color: var(--pg-muted); }
+.ezit-pg .ezit-empty {
+    display: grid; place-items: center; gap: 10px; min-height: 140px;
+    border-radius: 10px; background: rgba(20,21,31,.03); color: var(--pg-muted);
+}
+.ezit-pg .ezit-empty svg { opacity: .2; }
+.ezit-pg .ezit-empty p { margin: 0; font-size: 14px; }
+
+/* Marketplace (EzIT_Marketplace::render markup) */
+.ezit-pg .ezit-grid h2 { margin: 4px 0 14px; font-size: 17px; font-weight: 700; color: var(--pg-ink); }
+.ezit-pg .ezit-grid h2 ~ h2 { margin-top: 26px; }
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .ezit-pg .pg-grid { grid-template-columns: 1fr; }
+    .ezit-pg .pg-bar__crumb { display: none; }
+    .ezit-pg .pg-quick ul { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+    .ezit-pg .pg-quick ul { grid-template-columns: 1fr; }
+}

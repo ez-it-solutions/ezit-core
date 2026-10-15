@@ -1,0 +1,10 @@
+# Reference/example material — not part of the shipped plugin
+examples/
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.vscode/
+.idea/
