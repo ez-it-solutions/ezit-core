@@ -88,6 +88,13 @@ class EzIT_Admin
             wp_safe_redirect(admin_url('admin.php?page=ezit-core&tab=' . $map[$page]));
             exit;
         }
+        // Canonical tab ids — old ?tab=overview links 301 to ?tab=dashboard
+        // so bookmarked URLs self-heal instead of showing a stale param.
+        if ($page === 'ezit-core'
+            && sanitize_key($_GET['tab'] ?? '') === 'overview') { // phpcs:ignore
+            wp_safe_redirect(add_query_arg('tab', 'dashboard'), 301);
+            exit;
+        }
     }
 
     /** Sidebar: highlight the submenu entry matching the active tab. */
