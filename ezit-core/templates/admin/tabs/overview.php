@@ -86,7 +86,7 @@ $theme_product = $products[sanitize_key($theme_slug)] ?? null;
 ?>
 <div class="ezit-card ezit-card--theme" data-ezt-anim>
     <div class="ezit-card__head">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M15.5 22a9 9 0 1 1 6.5-2.7"/><path d="M17 15.5a2.5 2.5 0 0 0-3.5 3l3.5 3.5a9 9 0 0 0 4.5-6.5z"/></svg>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/><path d="M9 9v12"/></svg>
         <h3><?php esc_html_e('Active theme', 'ezit-core'); ?></h3>
     </div>
     <div class="ezit-themepeek">

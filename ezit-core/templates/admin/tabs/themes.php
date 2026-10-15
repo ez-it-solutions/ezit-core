@@ -17,7 +17,7 @@ $credit_txt = (string) get_theme_mod(EzIT_Themes::CREDIT_TXT, '');
 ?>
 <div class="ezt__brand" data-ezt-anim>
     <span class="ezt__brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#76b900" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M15.5 22a9 9 0 1 1 6.5-2.7"/><path d="M17 15.5a2.5 2.5 0 0 0-3.5 3l3.5 3.5a9 9 0 0 0 4.5-6.5z"/></svg>
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#76b900" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/><path d="M9 9v12"/></svg>
     </span>
     <span class="ezt__brand-name"><?php esc_html_e('Themes', 'ezit-core'); ?></span>
 </div>
