@@ -25,6 +25,7 @@
     position: sticky; top: var(--wp-admin--admin-bar--height, 32px); z-index: 90;
     display: flex; align-items: center; gap: 20px;
     padding: 0 clamp(16px, 4vw, 40px); height: 58px;
+    border-top: 2px solid var(--pg-green);   /* Ez IT ribbon under the admin bar */
     background: var(--pg-dark); color: #fff;
 }
 .ezit-pg .pg-bar__brand {
@@ -210,11 +211,6 @@
 .ezit-pg .ezit-flash.is-err svg { color: #d63638; }
 .ezit-pg .ezit-flash.is-err { border-left-color: #d63638; }
 .ezit-pg .ezit-flash p { margin: 0; }
-
-/* Ez IT green stripe hugging the bottom edge of the adLiteral hex: the
-   --pg-* vars are scoped to .ezit-pg, unreachable from #wpadminbar. min bar — a brand
-   ribbon so our screens are recognizable at a glance. */#76b900
-body.toplevel_page_ezit-core #wpadminbar { border-bottom: 2px solid var(--pg-green); box-sizing: border-box; }
 
 /* Our dark footer replaces WP's own footer on this screen. */
 body.toplevel_page_ezit-core #wpfooter { display: none; }
