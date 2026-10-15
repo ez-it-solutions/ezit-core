@@ -27,6 +27,8 @@ class EzIT_Admin
         add_action('admin_post_ezit_activate',   [$this, 'handle_activate']);
         add_action('admin_post_ezit_deactivate', [$this, 'handle_deactivate']);
         add_action('admin_post_ezit_settings',   [$this, 'handle_settings']);
+        add_action('admin_post_ezit_switch_theme', [$this, 'handle_switch_theme']);
+        add_action('admin_post_ezit_credit',     [$this, 'handle_credit']);
     }
 
     // ── menu ────────────────────────────────────────────────────────
@@ -50,21 +52,27 @@ class EzIT_Admin
         );
         add_submenu_page('ezit-core', __('Dashboard', 'ezit-core'), __('Dashboard', 'ezit-core'),
             'manage_options', 'ezit-core', [$this, 'page_dashboard']);
+        add_submenu_page('ezit-core', __('Themes', 'ezit-core'), __('Themes', 'ezit-core'),
+            'manage_options', 'ezit-themes', '__return_null');
         add_submenu_page('ezit-core', __('Licenses', 'ezit-core'), __('Licenses', 'ezit-core'),
             'manage_options', 'ezit-licenses', '__return_null');
         add_submenu_page('ezit-core', __('Marketplace', 'ezit-core'), __('Marketplace', 'ezit-core'),
             'manage_options', 'ezit-marketplace', '__return_null');
         add_submenu_page('ezit-core', __('Settings', 'ezit-core'), __('Settings', 'ezit-core'),
             'manage_options', 'ezit-settings', '__return_null');
+        add_submenu_page('ezit-core', __('About', 'ezit-core'), __('About', 'ezit-core'),
+            'manage_options', 'ezit-about', '__return_null');
     }
 
     /** Map of legacy submenu slugs → dashboard tab ids. */
     private static function legacy_map(): array
     {
         return [
+            'ezit-themes'      => 'themes',
             'ezit-licenses'    => 'licenses',
             'ezit-marketplace' => 'marketplace',
             'ezit-settings'    => 'settings',
+            'ezit-about'       => 'about',
         ];
     }
 
@@ -197,6 +205,11 @@ class EzIT_Admin
                             . ' --panel-btn-bg:#76b900; --panel-btn-fg:#191919;'
                             . ' --panel-deco:rgba(118,185,0,.2); --panel-progress:#76b900;',
             ],
+            'themes' => [
+                'label'    => __('Themes', 'ezit-core'),
+                'template' => $dir . 'themes.php',
+                'vars'     => '--panel-bg:#f5f2ec; --panel-deco:rgba(20,21,31,.06);' . $light,
+            ],
             'licenses' => [
                 'label'    => __('Licenses', 'ezit-core'),
                 'template' => $dir . 'licenses.php',
@@ -212,6 +225,13 @@ class EzIT_Admin
                 'label'    => __('Settings', 'ezit-core'),
                 'template' => $dir . 'settings.php',
                 'vars'     => '--panel-bg:#eef0f2; --panel-deco:rgba(20,21,31,.05);' . $light,
+            ],
+            'about' => [
+                'label'    => __('About', 'ezit-core'),
+                'template' => $dir . 'about.php',
+                'vars'     => '--panel-bg:#191919; --panel-fg:#ffffff; --panel-muted:rgba(255,255,255,.65);'
+                            . ' --panel-btn-bg:#76b900; --panel-btn-fg:#191919;'
+                            . ' --panel-deco:rgba(118,185,0,.2); --panel-progress:#76b900;',
             ],
         ];
 
@@ -282,6 +302,38 @@ class EzIT_Admin
         $this->redirect('settings', 'saved');
     }
 
+    /** Switch the site's active theme — same flow as Appearance → Themes. */
+    public function handle_switch_theme(): void
+    {
+        if (! current_user_can('switch_themes')) {
+            wp_die(esc_html__('Permission denied.', 'ezit-core'));
+        }
+        check_admin_referer('ezit_switch_theme', 'ezit_theme_nonce');
+        $stylesheet = sanitize_key(wp_unslash($_POST['stylesheet'] ?? ''));
+        $theme      = wp_get_theme($stylesheet);
+        if ($stylesheet !== '' && $theme->exists()) {
+            switch_theme($stylesheet);
+            $this->redirect('themes', 'switched');
+        }
+        $this->redirect('themes', 'error', __('Theme not found.', 'ezit-core'));
+    }
+
+    /**
+     * Footer credit — saved as theme mods so it travels with the theme
+     * (Customizer-compatible) and works for any Ez IT product theme.
+     */
+    public function handle_credit(): void
+    {
+        if (! current_user_can('edit_theme_options')) {
+            wp_die(esc_html__('Permission denied.', 'ezit-core'));
+        }
+        check_admin_referer('ezit_credit', 'ezit_credit_nonce');
+        set_theme_mod(EzIT_Themes::CREDIT_ON, isset($_POST['credit_enabled']) ? 1 : 0);
+        set_theme_mod(EzIT_Themes::CREDIT_TXT,
+            sanitize_text_field(wp_unslash($_POST['credit_text'] ?? '')));
+        $this->redirect('themes', 'saved');
+    }
+
     // ── helpers ─────────────────────────────────────────────────────
 
     /** Admin notice nudging toward licensing — outside our own pages. */
@@ -336,12 +388,13 @@ class EzIT_Admin
         if ($code === '') {
             return '';
         }
-        $ok = in_array($code, ['activated', 'deactivated', 'saved'], true);
+        $ok = in_array($code, ['activated', 'deactivated', 'saved', 'switched'], true);
         $detail = sanitize_text_field(wp_unslash($_GET['ezit_detail'] ?? ''));
         $label = [
             'activated'   => __('License activated.', 'ezit-core'),
             'deactivated' => __('License deactivated.', 'ezit-core'),
             'saved'       => __('Settings saved.', 'ezit-core'),
+            'switched'    => __('Theme switched.', 'ezit-core'),
             'error'       => __('Something went wrong.', 'ezit-core'),
         ][$code] ?? $code;
         // Server detail supersedes the generic label (avoids "X. X succeeded.").

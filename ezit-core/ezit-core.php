@@ -38,6 +38,7 @@ require_once EZIT_CORE_INC . 'class-ezit-licensing.php';
 require_once EZIT_CORE_INC . 'class-ezit-updater.php';
 require_once EZIT_CORE_INC . 'class-ezit-marketplace.php';
 require_once EZIT_CORE_INC . 'class-ezit-gate.php';
+require_once EZIT_CORE_INC . 'class-ezit-themes.php';
 require_once EZIT_CORE_INC . 'class-ezit-admin.php';
 
 /**
@@ -49,6 +50,7 @@ function ezit_core(): EzIT_Core
 }
 
 add_action('plugins_loaded', function () {
+    EzIT_Themes::boot(); // exposes the `EzIT Product` product header
     $core = ezit_core();
     $core->licensing(); // boots the shared licensing module + cron
     new EzIT_Updater($core);

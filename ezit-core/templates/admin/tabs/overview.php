@@ -77,3 +77,40 @@ $products  = $core->products();
     </table>
 </div>
 <?php endif; ?>
+
+<?php
+$current_theme = wp_get_theme();
+$theme_shot    = $current_theme->get_screenshot();
+$theme_slug    = get_stylesheet();
+$theme_product = $products[sanitize_key($theme_slug)] ?? null;
+?>
+<div class="ezit-card ezit-card--theme" data-ezt-anim>
+    <div class="ezit-card__head">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M15.5 22a9 9 0 1 1 6.5-2.7"/><path d="M17 15.5a2.5 2.5 0 0 0-3.5 3l3.5 3.5a9 9 0 0 0 4.5-6.5z"/></svg>
+        <h3><?php esc_html_e('Active theme', 'ezit-core'); ?></h3>
+    </div>
+    <div class="ezit-themepeek">
+        <?php if ($theme_shot) : ?>
+            <img class="ezit-themepeek__shot" src="<?php echo esc_url($theme_shot); ?>" alt="">
+        <?php endif; ?>
+        <div class="ezit-themepeek__meta">
+            <strong><?php echo esc_html($current_theme->display('Name')); ?></strong>
+            <span class="ezit-meta">
+                <?php
+                printf(
+                    /* translators: 1: version, 2: author */
+                    esc_html__('v%1$s · %2$s', 'ezit-core'),
+                    esc_html((string) $current_theme->get('Version')),
+                    esc_html((string) $current_theme->get('Author'))
+                );
+                ?>
+            </span>
+            <?php if ($theme_product) : ?>
+                <span class="ezit-badge <?php echo $licensing->is_active($theme_slug) ? 'is-active' : 'is-inactive'; ?>">
+                    <?php echo $licensing->is_active($theme_slug) ? esc_html__('Licensed Ez IT product', 'ezit-core') : esc_html__('Ez IT product — unlicensed', 'ezit-core'); ?>
+                </span>
+            <?php endif; ?>
+        </div>
+        <a class="ezit-btn ezit-btn--ghost" href="<?php echo esc_url(admin_url('admin.php?page=ezit-core&tab=themes')); ?>"><?php esc_html_e('Manage themes', 'ezit-core'); ?></a>
+    </div>
+</div>
