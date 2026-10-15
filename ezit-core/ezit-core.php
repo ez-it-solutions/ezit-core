@@ -57,11 +57,21 @@ add_action('plugins_loaded', function () {
     new EzIT_Updater($core);
     new EzIT_Marketplace($core);
     new EzIT_Gate($core);     // maintenance mode — front-end enforcement
-    new EzIT_Login();         // branded wp-login.php
-    new EzIT_Customizer();    // "Ez IT Solutions" panel in the Customizer
+    // Optional modules are class_exists-guarded: a partial upload that
+    // leaves a require missing must never white-screen the site.
+    if (class_exists('EzIT_Login')) {
+        new EzIT_Login();       // branded wp-login.php
+    }
+    if (class_exists('EzIT_Customizer')) {
+        new EzIT_Customizer();  // "Ez IT Solutions" panel in the Customizer
+    }
     if (is_admin()) {
-        new EzIT_Admin($core);
-        new EzIT_Banners($core); // server announcements for site admins
+        if (class_exists('EzIT_Admin')) {
+            new EzIT_Admin($core);
+        }
+        if (class_exists('EzIT_Banners')) {
+            new EzIT_Banners($core); // server announcements for site admins
+        }
     }
 }, 5);
 
