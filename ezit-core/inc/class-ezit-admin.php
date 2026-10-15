@@ -353,7 +353,7 @@ class EzIT_Admin
         set_theme_mod(EzIT_Themes::CREDIT_ON, isset($_POST['credit_enabled']) ? 1 : 0);
         set_theme_mod(EzIT_Themes::CREDIT_TXT,
             sanitize_text_field(wp_unslash($_POST['credit_text'] ?? '')));
-        $this->redirect('themes', 'saved');
+        $this->redirect('themes', 'saved', '', ['section' => 'credit']);
     }
 
     // ── helpers ─────────────────────────────────────────────────────

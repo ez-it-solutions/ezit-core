@@ -491,10 +491,17 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     background: #fff; border: 1px solid rgba(20,21,31,.08); border-radius: 14px;
     overflow: hidden; box-shadow: 0 2px 10px rgba(20,21,31,.05);
     display: flex; flex-direction: column;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.ezit-pg .ezit-theme:hover {
+    transform: translateY(-4px);
+    border-color: rgba(118,185,0,.45);
+    box-shadow: 0 14px 30px rgba(20,21,31,.13);
 }
 .ezit-pg .ezit-theme.is-active { outline: 2px solid var(--pg-green); outline-offset: -1px; }
-.ezit-pg .ezit-theme__shot { position: relative; aspect-ratio: 4/3; background: #14161a; }
-.ezit-pg .ezit-theme__shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ezit-pg .ezit-theme__shot { position: relative; aspect-ratio: 4/3; background: #14161a; overflow: hidden; }
+.ezit-pg .ezit-theme__shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
+.ezit-pg .ezit-theme:hover .ezit-theme__shot img { transform: scale(1.05); }
 .ezit-pg .ezit-theme__blank { display: grid; place-items: center; height: 100%; color: #5c5f6b; }
 .ezit-pg .ezit-theme__flag {
     position: absolute; top: 10px; left: 10px;
@@ -506,8 +513,10 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-theme__title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .ezit-pg .ezit-theme__title strong { font-size: 14.5px; color: var(--pg-ink); }
 .ezit-pg .ezit-theme__badges { display: flex; gap: 6px; flex-wrap: wrap; min-height: 20px; }
-.ezit-pg .ezit-theme__actions { margin-top: auto; padding-top: 6px; }
-.ezit-pg .ezit-theme__actions form { margin: 0; }
+.ezit-pg .ezit-theme__actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+.ezit-pg .ezit-theme__actions .ezit-btn { flex: 1; padding-inline: 10px; text-align: center; }
+.ezit-pg .ezit-theme__actions form { flex: 1; display: flex; margin: 0; }
+.ezit-pg .ezit-theme__actions form .ezit-btn { width: 100%; }
 
 /* Neutral state badge (installed, not active) */
 .ezit-pg .ezit-badge.is-neutral { background: #eef0f5; color: #5c5f6b; }
