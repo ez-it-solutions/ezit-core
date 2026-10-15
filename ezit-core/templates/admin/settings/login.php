@@ -38,9 +38,9 @@ $login = EzIT_Login::settings();
         <div class="ezit-field">
             <label for="ezit_login_bg_color"><?php esc_html_e('Background color', 'ezit-core'); ?></label>
             <input id="ezit_login_bg_color" name="ezit_login_bg_color" type="text" class="ezit-color"
-                   data-default-color="#191919"
-                   value="<?php echo esc_attr($login['bg_color'] !== '' ? $login['bg_color'] : '#191919'); ?>">
-            <span class="hint"><?php esc_html_e('Page background — also the scrim base under a background image.', 'ezit-core'); ?></span>
+                   data-default-color="#f7f2e8"
+                   value="<?php echo esc_attr($login['bg_color'] !== '' ? $login['bg_color'] : '#f7f2e8'); ?>">
+            <span class="hint"><?php esc_html_e('Page background — also the veil base color blended over a background image.', 'ezit-core'); ?></span>
         </div>
     </div>
 

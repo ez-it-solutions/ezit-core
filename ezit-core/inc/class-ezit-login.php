@@ -114,50 +114,47 @@ class EzIT_Login
         if (strlen($accent) === 4) { // 3-digit → 6-digit so alpha suffixes stay valid
             $accent = sprintf('#%s%s%s%s%s%s', $accent[1], $accent[1], $accent[2], $accent[2], $accent[3], $accent[3]);
         }
-        $bg_color = sanitize_hex_color($s['bg_color']) ?: '#191919';
+        $bg_color = sanitize_hex_color($s['bg_color']) ?: '#f7f2e8'; // cream — the site's paper tone
         $bg_image = $s['bg_image'] !== '' ? esc_url_raw($s['bg_image']) : esc_url_raw($defaults['bg_image']);
         $logo     = self::logo_url();
 
+        // Cream veil over the artwork — same recipe the site footer uses,
+        // so the image shows through instead of going near-black.
         $bg_css = "background: {$bg_color};";
         if ($bg_image !== '') {
-            $bg_css = "background: {$bg_color} url('{$bg_image}') center/cover no-repeat fixed;";
+            $bg_css = "background:linear-gradient(180deg,rgba(247,242,232,.55) 0%,rgba(250,246,238,.72) 55%,rgba(253,250,244,.86) 100%),"
+                    . " url('{$bg_image}') center bottom/cover no-repeat fixed, {$bg_color};";
         }
-        $scrim = $bg_image !== ''
-            ? 'body.login::before { content:""; position:fixed; inset:0; z-index:0;'
-              . ' background:linear-gradient(160deg,rgba(25,25,25,.55),rgba(25,25,25,.78)); }'
-              . ' #login { position:relative; z-index:1; }'
-            : '';
 
         $check = rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M14.83 4.89l1.34.94-5.81 8.38H9.02L5.78 9.67l1.34-1.25 2.57 2.4z" fill="' . $accent . '"/></svg>');
 
         $css = "
             body.login { {$bg_css} font-family:'Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif; }
-            {$scrim}
             #login { width:min(420px,92vw); padding-top:6vh; }
             body.login .ezit-login-msg {
                 margin:0 auto 18px; padding:12px 16px; max-width:380px;
-                background:rgba(255,255,255,.92); border-left:3px solid {$accent};
-                border-radius:8px; text-align:center; color:#232323; font-size:14px;
+                background:rgba(255,253,248,.92); border-left:3px solid {$accent};
+                border-radius:8px; text-align:center; color:#2f2a24; font-size:14px;
             }
-            .login h1 a { width:280px; height:120px; background-size:contain; background-position:center; }
+            .login h1 a { width:320px; height:190px; margin-bottom:18px; background-size:contain; background-position:center; }
             .login #loginform, .login #lostpasswordform, .login #registerform {
-                margin-top:6px; padding:30px 28px 26px; border:none; border-radius:16px;
-                box-shadow:0 24px 70px rgba(0,0,0,.45); position:relative; overflow:hidden;
+                margin-top:6px; padding:30px 28px 26px; border:1px solid #ddd4c5; border-radius:16px;
+                box-shadow:0 18px 46px rgba(74,57,35,.18); position:relative; overflow:hidden;
             }
             .login #loginform::before, .login #lostpasswordform::before, .login #registerform::before {
                 content:''; position:absolute; top:0; left:0; right:0; height:4px; background:{$accent};
             }
-            .login label { color:#3c434a; font-weight:600; }
+            .login label { color:#4a443c; font-weight:600; }
             .login input[type=text], .login input[type=password], .login input[type=email] {
                 margin-top:6px; padding:9px 12px; font-size:15px; line-height:1.4;
-                border:1.5px solid #d9dcd2; border-radius:9px; box-shadow:none; min-height:auto;
+                border:1.5px solid #ddd4c5; border-radius:9px; box-shadow:none; min-height:auto;
             }
             .login input[type=text]:focus, .login input[type=password]:focus,
             .login input[type=email]:focus, .login input[type=checkbox]:focus {
                 border-color:{$accent}; box-shadow:0 0 0 3px {$accent}33; outline:none;
             }
             .login input[type=checkbox]:checked::before { content:url(\"data:image/svg+xml,{$check}\") !important; }
-            .login .button.wp-hide-pw { color:#5c5f6b; }
+            .login .button.wp-hide-pw { color:#686158; }
             .login .button-primary {
                 display:block; float:none; width:100%; height:46px; margin:14px 0 0;
                 background:{$accent} !important; border-color:{$accent} !important;
@@ -170,13 +167,13 @@ class EzIT_Login
             }
             .login .message, .login .notice, .login .success, .login .error {
                 border-radius:9px; border-left-color:{$accent};
-                box-shadow:0 8px 24px rgba(0,0,0,.25);
+                box-shadow:0 8px 24px rgba(74,57,35,.12);
             }
             .login .error { border-left-color:#d63638; }
             .login #nav, .login #backtoblog { text-align:center; }
-            .login #nav a, .login #backtoblog a { color:rgba(255,255,255,.85); transition:color .15s ease; }
-            .login #nav a:hover, .login #backtoblog a:hover { color:#fff; }
-            .login .language-switcher select { border-radius:8px; }
+            .login #nav a, .login #backtoblog a { color:#4a443c; font-weight:600; transition:color .15s ease; }
+            .login #nav a:hover, .login #backtoblog a:hover { color:{$accent}; }
+            .login .language-switcher select { border-radius:8px; border-color:#ddd4c5; }
         ";
         if ($logo !== '') {
             $css .= ".login h1 a { background-image:url('{$logo}'); }";
