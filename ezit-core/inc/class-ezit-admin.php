@@ -216,9 +216,9 @@ class EzIT_Admin
         $light = '--panel-fg:#14151f; --panel-muted:#5c5f6b; --panel-btn-bg:#14151f;'
                . ' --panel-btn-fg:#ffffff; --panel-progress:#76b900;';
         $tabs = [
-            'overview' => [
+            'dashboard' => [
                 'label'    => __('Dashboard', 'ezit-core'),
-                'template' => $dir . 'overview.php',
+                'template' => $dir . 'dashboard.php',
                 'vars'     => '--panel-bg:#191919; --panel-fg:#ffffff; --panel-muted:rgba(255,255,255,.65);'
                             . ' --panel-btn-bg:#76b900; --panel-btn-fg:#191919;'
                             . ' --panel-deco:rgba(118,185,0,.2); --panel-progress:#76b900;',
@@ -253,9 +253,12 @@ class EzIT_Admin
             ],
         ];
 
-        $active = sanitize_key($_GET['tab'] ?? 'overview'); // phpcs:ignore
+        $active = sanitize_key($_GET['tab'] ?? 'dashboard'); // phpcs:ignore
+        if ($active === 'overview') {
+            $active = 'dashboard'; // legacy URL alias
+        }
         if (! isset($tabs[$active])) {
-            $active = 'overview';
+            $active = 'dashboard';
         }
 
         // Site Guide checklist — real progress from site state.
@@ -269,7 +272,7 @@ class EzIT_Admin
 
         $core  = $this->core;
         $flash = $this->flash();
-        include EZIT_CORE_PATH . 'templates/admin/dashboard.php';
+        include EZIT_CORE_PATH . 'templates/admin/shell.php';
     }
 
     // ── handlers ────────────────────────────────────────────────────
