@@ -310,10 +310,11 @@ class EzIT_Admin
         ], false);
 
         update_option(EzIT_Login::OPTION, [
-            'logo'    => esc_url_raw(wp_unslash($_POST['ezit_login_logo'] ?? '')),
-            'accent'  => sanitize_hex_color(wp_unslash($_POST['ezit_login_accent'] ?? '')) ?: '',
-            'bg'      => sanitize_hex_color(wp_unslash($_POST['ezit_login_bg'] ?? '')) ?: '',
-            'message' => sanitize_textarea_field(wp_unslash($_POST['ezit_login_message'] ?? '')),
+            'logo'     => esc_url_raw(wp_unslash($_POST['ezit_login_logo'] ?? '')),
+            'accent'   => sanitize_hex_color(wp_unslash($_POST['ezit_login_accent'] ?? '')) ?: '',
+            'bg_color' => sanitize_hex_color(wp_unslash($_POST['ezit_login_bg_color'] ?? '')) ?: '',
+            'bg_image' => esc_url_raw(wp_unslash($_POST['ezit_login_bg_image'] ?? '')),
+            'message'  => sanitize_textarea_field(wp_unslash($_POST['ezit_login_message'] ?? '')),
         ], false);
 
         // Return the user to the section they were editing.
