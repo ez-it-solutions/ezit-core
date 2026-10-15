@@ -202,14 +202,3 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
 
     </div>
 </div>
-                            <span class="hint"><?php esc_html_e('Who the credit links to — leave blank for “Ez IT Solutions”.', 'ezit-core'); ?></span>
-                        </div>
-                        <button type="submit" class="ezit-btn"><?php esc_html_e('Save credit', 'ezit-core'); ?></button>
-                    </form>
-                </div>
-            </div>
-        </section>
-        <?php endif; ?>
-
-    </div>
-</div>
