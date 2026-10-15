@@ -180,7 +180,25 @@ if (preg_match('/--panel-muted:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
     </footer>
 
 </div><!-- /.ezit-pg -->
-        </div>
-    </footer>
 
-</div><!-- /.ezit-pg -->
+<script>
+// Tab switches are client-side (history.replaceState) — WP's submenu_file
+// filter only runs on a full request, so mirror the active tab onto the
+// Ez IT submenu ourselves.
+document.addEventListener('ezt:tab-change', (e) => {
+    if (!e.target.classList?.contains('ezit-tabs')) return;
+    const slug = {
+        dashboard: 'ezit-core', themes: 'ezit-themes', licenses: 'ezit-licenses',
+        marketplace: 'ezit-marketplace', settings: 'ezit-settings', about: 'ezit-about',
+    }[e.detail.id];
+    const menu = document.getElementById('toplevel_page_ezit-core');
+    if (!slug || !menu) return;
+    menu.querySelectorAll('.wp-submenu li.current, .wp-submenu a.current')
+        .forEach((el) => el.classList.remove('current'));
+    const a = menu.querySelector(`.wp-submenu a[href*="page=${slug}"]`);
+    if (a) {
+        a.classList.add('current');
+        a.closest('li')?.classList.add('current');
+    }
+});
+</script>
