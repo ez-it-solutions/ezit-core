@@ -61,5 +61,8 @@ $login = EzIT_Login::settings();
 
     <p class="ezit-meta">
         <a href="<?php echo esc_url(wp_login_url()); ?>" target="_blank" rel="noopener"><?php esc_html_e('Open the login page', 'ezit-core'); ?> ↗</a>
+        &nbsp;·&nbsp;
+        <a href="<?php echo esc_url(admin_url('customize.php?autofocus[section]=ezit_login')); ?>"><?php esc_html_e('Edit in Customizer', 'ezit-core'); ?> ↗</a>
+        <span class="hint" style="display:inline"><?php esc_html_e('— same options, friendlier editor for clients.', 'ezit-core'); ?></span>
     </p>
 </div>
