@@ -401,13 +401,43 @@ class EzIT_Admin
         if (! current_user_can('manage_options')) {
             wp_die(esc_html__('Permission denied.', 'ezit-core'));
         }
-        $body = EzIT_Mail_Log::body((int) ($_GET['i'] ?? -1));
-        if ($body === '') {
+        $entry = EzIT_Mail_Log::entry((int) ($_GET['i'] ?? -1));
+        if ($entry === null || (string) ($entry['body'] ?? '') === '') {
             wp_die(esc_html__('No stored body for this entry.', 'ezit-core'));
         }
         status_header(200);
         header('Content-Type: text/html; charset=UTF-8');
-        echo $body; // phpcs:ignore WordPress.Security.EscapeOutput — stored HTML mail
+
+        // ?full=1 → standalone inbox page (the "open in new window"
+        // link). Plain mode stays a bare body for the modal iframe.
+        if (! empty($_GET['full'])) {
+            printf(
+                '<!DOCTYPE html><html><head><meta charset="utf-8">'
+                . '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                . '<title>%s</title>'
+                . '<style>body{margin:0;background:#f0f0f1;font:13px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif}'
+                . '.mv-head{background:#14151f;color:#eef0f2;padding:12px 18px;font-weight:700;letter-spacing:.02em}'
+                . '.mv-meta{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;margin:0;padding:14px 22px;'
+                . 'background:#fff;border-bottom:1px solid #dcdfe9}'
+                . '.mv-meta dt{color:#787c82;font-weight:600}.mv-meta dd{margin:0;color:#14151f;word-break:break-word}'
+                . '</style></head><body>'
+                . '<div class="mv-head">%s</div>'
+                . '<dl class="mv-meta">'
+                . '<dt>%s</dt><dd>%s</dd>'
+                . '<dt>%s</dt><dd>%s</dd>'
+                . '<dt>%s</dt><dd>%s</dd>'
+                . '</dl>',
+                esc_html((string) ($entry['subject'] ?: __('Email preview', 'ezit-core'))),
+                esc_html__('Email log — Ez IT Solutions', 'ezit-core'),
+                esc_html__('From', 'ezit-core'),    esc_html(($entry['from'] ?? '') !== '' ? $entry['from'] : '—'),
+                esc_html__('To', 'ezit-core'),      esc_html(($entry['to'] ?? '') !== '' ? $entry['to'] : '—'),
+                esc_html__('Sent', 'ezit-core'),    esc_html((string) ($entry['time'] ?? ''))
+            );
+        }
+        echo $entry['body']; // phpcs:ignore WordPress.Security.EscapeOutput — stored HTML mail
+        if (! empty($_GET['full'])) {
+            echo '</body></html>';
+        }
         exit;
     }
 

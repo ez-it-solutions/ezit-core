@@ -153,7 +153,7 @@ function openMailView(tr) {
     if (!mvModal || idx === undefined || !tr.classList.contains('has-body')) return;
     const url = 'admin-post.php?action=ezit_maillog_view&i=' + encodeURIComponent(idx);
     document.getElementById('ezit-mailview-frame').src = url;
-    document.getElementById('ezit-mailview-open').href = url;
+    document.getElementById('ezit-mailview-open').href = url + '&full=1';
     document.getElementById('ezit-mailview-title').textContent =
         tr.querySelector('.ezit-maillog-subj')?.childNodes[0]?.textContent?.trim() || '';
     mvModal.hidden = false;

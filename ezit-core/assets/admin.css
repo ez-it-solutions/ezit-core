@@ -214,6 +214,7 @@
     width: min(720px, 92vw); height: min(82vh, 760px); max-height: 100%;
     display: flex; flex-direction: column;
     background: #f0f0f1; border-radius: 12px; overflow: hidden;
+    border: 2px solid var(--pg-accent);
     box-shadow: 0 24px 64px rgba(0,0,0,.35);
 }
 /* Inbox-style message header — light card between the dark chrome bar
@@ -235,6 +236,11 @@
 .ezit-mailview__bar strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ezit-mailview__bar a { color: #76b900; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .ezit-mailview__bar a:hover { text-decoration: underline; }
+.ezit-mailview__bar a:focus,
+.ezit-mailview__bar a:focus-visible,
+.ezit-mailview__bar button:focus,
+.ezit-mailview__bar button:focus-visible { outline: none; box-shadow: none; }
+.ezit-mailview__bar a:focus-visible { text-decoration: underline; } /* keyboard users keep a cue */
 #ezit-mailview-close {
     background: none; border: 0; color: #eef0f2; font-size: 22px;
     line-height: 1; cursor: pointer; padding: 0 4px;

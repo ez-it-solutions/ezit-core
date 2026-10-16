@@ -94,11 +94,17 @@ class EzIT_Mail_Log
         }, self::entries());
     }
 
-    /** Raw stored body for the preview endpoint. */
-    public static function body(int $i): string
+    /** Full entry by index — preview endpoints need more than the body. */
+    public static function entry(int $i): ?array
     {
-        $log = self::entries();
-        return (string) ($log[$i]['body'] ?? '');
+        $row = self::entries()[$i] ?? null;
+        if ($row === null) {
+            return null;
+        }
+        $fmt = trim(get_option('date_format') . ' ' . get_option('time_format'));
+        $ts  = $row['time'] ?? '';
+        $row['time'] = is_numeric($ts) ? wp_date($fmt, (int) $ts) : (string) $ts;
+        return $row;
     }
 
     public static function clear(): void
