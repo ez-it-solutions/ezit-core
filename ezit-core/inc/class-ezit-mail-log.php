@@ -46,12 +46,19 @@ class EzIT_Mail_Log
             $log = [];
         }
 
-        // 'From: Name <a@b>' is one of the header strings — capture it
-        // for the inbox-style preview header.
+        // Capture the From header for the inbox-style preview. Mailers
+        // report headers inconsistently: a list of "From: x" strings,
+        // one big header block, or a ['From' => x] map.
         $from = '';
-        foreach ((array) ($data['headers'] ?? []) as $h) {
-            if (stripos((string) $h, 'From:') === 0) {
-                $from = trim(substr((string) $h, 5));
+        $headers = $data['headers'] ?? [];
+        if (is_string($headers)) {
+            $headers = explode("\n", $headers);
+        }
+        foreach ((array) $headers as $key => $h) {
+            if (is_string($key) && strcasecmp($key, 'From') === 0) {
+                $from = trim((string) $h); // assoc map
+            } elseif (is_string($h) && stripos(ltrim($h), 'From:') === 0) {
+                $from = trim(substr(ltrim($h), 5)); // "From: x" line
             }
         }
 

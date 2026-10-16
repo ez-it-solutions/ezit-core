@@ -152,12 +152,20 @@ function openMailView(tr) {
     const idx = tr.dataset.mlogIdx;
     if (!mvModal || idx === undefined || !tr.classList.contains('has-body')) return;
     const url = 'admin-post.php?action=ezit_maillog_view&i=' + encodeURIComponent(idx);
-    document.getElementById('ezit-mailview-frame').src = url;
-    document.getElementById('ezit-mailview-open').href = url + '&full=1';
-    document.getElementById('ezit-mailview-title').textContent =
-        tr.querySelector('.ezit-maillog-subj')?.childNodes[0]?.textContent?.trim() || '';
+    const subject = tr.querySelector('.ezit-maillog-subj')?.childNodes[0]?.textContent?.trim() || '';
     mvModal.hidden = false;
     document.body.style.overflow = 'hidden';
+    const frame = document.getElementById('ezit-mailview-frame');
+    const open  = document.getElementById('ezit-mailview-open');
+    if (frame) frame.src = url;
+    if (open)  open.href = url + '&full=1';
+    // Inbox header — every field falls back to an em dash.
+    const meta = { 'ezit-mailview-title': subject, 'mv-from': tr.dataset.mlogFrom,
+                   'mv-to': tr.dataset.mlogTo, 'mv-subject': subject, 'mv-when': tr.dataset.mlogWhen };
+    for (const [id, val] of Object.entries(meta)) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val || '—';
+    }
 }
 function closeMailView() {
     if (!mvModal) return;
