@@ -318,7 +318,13 @@ class EzIT_Gate
         // Armed gate: never let a page cache store guest HTML while the
         // license verdict can flip underneath it (filterable).
         if (apply_filters('ezit_gate_no_cache', true)) {
-            nocache_headers();
+            if (! defined('DONOTCACHEPAGE')) {
+                // WP Rocket, Super Cache, W3TC, LiteSpeed Cache…
+                define('DONOTCACHEPAGE', true);
+            }
+            nocache_headers(); // no-store, must-revalidate — CDNs honoring origin headers
+            header('X-LiteSpeed-Cache-Control: no-cache'); // server-level lscache
+            header('X-Cache-Enabled: False');              // SiteGround/nginx-style hosts
         }
         if ($this->visitor_allowed()) {
             return;
