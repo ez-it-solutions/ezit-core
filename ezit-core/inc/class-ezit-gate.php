@@ -426,6 +426,12 @@ class EzIT_Gate
     /** Render a UC layout template and stop the request. */
     private function render_uc(string $layout, bool $preview = false): void
     {
+        // A UC page must never land in a page cache — a cached UC page
+        // would keep serving "under construction" after re-enable, with
+        // no PHP hit to run the rescue re-verify.
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
         $layouts = self::layouts();
         if (! isset($layouts[$layout])) {
             $layout = 'generic';
