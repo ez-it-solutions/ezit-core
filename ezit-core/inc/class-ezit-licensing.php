@@ -42,6 +42,11 @@ class EzIT_Licensing
         add_action('init', [$this, 'maybe_ping']);
         add_action(self::PING, [$this, 'verify_all']);
 
+        // Verdict flips detected in cron/REST can't always reach a cache
+        // plugin's purge API — the flag makes the next front-end request
+        // run the purge again in a context where it works.
+        add_action('wp', [$this, 'consume_purge_flag']);
+
         // Products that opt in via register_product('deactivate_on_switch')
         // release their seat when their theme is switched away.
         add_action('switch_theme', [$this, 'on_switch_theme'], 10, 2);
@@ -264,8 +269,29 @@ class EzIT_Licensing
         return $ok;
     }
 
-    /** Purge popular page caches so a verdict flip is live immediately. */
+    /**
+     * Verdict flipped — purge now AND flag a retry: if this ran in cron or
+     * a REST push, a page-cache plugin's purge API may not be booted, so
+     * the next front-end `wp` request consumes the flag and purges again.
+     */
     private function purge_caches(): void
+    {
+        set_transient('ezit_purge_pending', 1, HOUR_IN_SECONDS);
+        $this->do_purge();
+    }
+
+    /** Front-end retry — see purge_caches(). Runs on `wp`. */
+    public function consume_purge_flag(): void
+    {
+        if (! get_transient('ezit_purge_pending')) {
+            return;
+        }
+        delete_transient('ezit_purge_pending');
+        $this->do_purge();
+    }
+
+    /** Purge every page/reverse-proxy cache we can reach. */
+    private function do_purge(): void
     {
         if (function_exists('rocket_clean_domain')) {
             rocket_clean_domain();                    // WP Rocket
@@ -275,6 +301,9 @@ class EzIT_Licensing
         }
         if (function_exists('w3tc_flush_all')) {
             w3tc_flush_all();                         // W3 Total Cache
+        }
+        if (function_exists('wpo_cache_flush')) {
+            wpo_cache_flush();                        // WP-Optimize
         }
         global $wp_fastest_cache;
         if (isset($wp_fastest_cache) && method_exists($wp_fastest_cache, 'deleteCache')) {
@@ -286,7 +315,35 @@ class EzIT_Licensing
         if (class_exists('Breeze_PurgeCache')) {
             Breeze_PurgeCache::execute_purge();       // Breeze (Cloudways)
         }
+        global $nginx_purger;
+        if (isset($nginx_purger) && method_exists($nginx_purger, 'purge_all')) {
+            $nginx_purger->purge_all();               // Nginx Helper (rtCamp)
+        }
+        if (method_exists('WpeCommon', 'purge_varnish_cache')) {
+            WpeCommon::purge_varnish_cache();         // WP Engine
+        }
+        global $kinsta_cache;
+        if (isset($kinsta_cache->kinsta_cache_purge)
+            && method_exists($kinsta_cache->kinsta_cache_purge, 'purge_complete_caches')) {
+            $kinsta_cache->kinsta_cache_purge->purge_complete_caches(); // Kinsta
+        }
+        if (class_exists('VarnishPurger')) {          // DreamHost / ipstenu proxy purge
+            $vp = method_exists('VarnishPurger', 'getInstance') ? VarnishPurger::getInstance() : null;
+            if ($vp && method_exists($vp, 'executePurge')) {
+                $vp->executePurge();
+            }
+        }
+
         do_action('litespeed_purge_all');             // LiteSpeed Cache
+
+        // Generic reverse proxies: Varnish-style PURGE and LiteSpeed's
+        // purge header, both fire-and-forget against the front page.
+        foreach ([['method' => 'PURGE'], ['headers' => ['X-LiteSpeed-Purge' => '*']]] as $opts) {
+            wp_remote_request(home_url('/'), array_merge($opts, [
+                'timeout' => 2, 'sslverify' => false, 'blocking' => false,
+            ]));
+        }
+
         do_action('ezit_license_verdict_changed');    // host/CDN integrations
     }
 
