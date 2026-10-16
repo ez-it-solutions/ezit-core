@@ -51,6 +51,22 @@ $products  = $core->products();
             </span>
         </div>
         <p class="ezit-meta"><?php echo esc_html(($p['type'] ?? 'theme') . ' · v' . ($p['version'] ?: '—')); ?></p>
+        <p class="ezit-meta" style="font-family:monospace;font-size:11px">
+            <?php
+            // Config identity — masked keys so a stale deploy or a
+            // dashboard mismatch is visible without exposing the secret.
+            $mask = static function (?string $v): string {
+                $v = (string) $v;
+                return $v === '' ? '—(not set)—'
+                    : esc_html(substr($v, 0, 4)) . '…' . esc_html(substr($v, -4));
+            };
+            printf(
+                'product %s · key %s',
+                esc_html($p['product_id']),
+                $mask($p['api_key'] ?? '')
+            );
+            ?>
+        </p>
 
         <?php if ($is_active) :
             // Cert payload → seats, domain binding, expiry, licensee.
