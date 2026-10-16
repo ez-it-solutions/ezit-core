@@ -52,6 +52,7 @@ class EzIT_Mail_Log
             'to'      => sanitize_text_field((string) $to),
             'subject' => sanitize_text_field((string) ($data['subject'] ?? '')),
             'error'   => sanitize_text_field($error),
+            'body'    => (string) ($data['message'] ?? ''),
         ]);
 
         update_option(self::OPTION, array_slice($log, 0, self::MAX), false);
@@ -77,8 +78,17 @@ class EzIT_Mail_Log
             $row['time'] = is_numeric($ts)
                 ? wp_date($fmt, (int) $ts)
                 : (string) $ts;
+            $row['has_body'] = ($row['body'] ?? '') !== '';
+            unset($row['body']); // list payloads stay light — view endpoint serves it
             return $row;
         }, self::entries());
+    }
+
+    /** Raw stored body for the preview endpoint. */
+    public static function body(int $i): string
+    {
+        $log = self::entries();
+        return (string) ($log[$i]['body'] ?? '');
     }
 
     public static function clear(): void

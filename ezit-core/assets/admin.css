@@ -193,6 +193,38 @@
 .ezit-pg .ezt-subnav > .ezt__tabs > li > .ezt__tab { min-height: 44px; padding: 10px 16px; }
 .ezit-pg .ezt-subnav .ezt__panel-inner { max-width: none; width: 100%; }
 .ezit-pg .ezt-subnav .ezit-card { padding: 16px 18px; margin-bottom: 0; }
+
+/* Email log preview — rows with a stored body are clickable; the modal
+   shows the actual email HTML in an iframe. */
+.ezit-maillog-row.has-body { cursor: pointer; }
+.ezit-maillog-row.has-body:hover td { background: rgba(118,185,0,.05); }
+.ezit-maillog-subj { font-weight: 600; }
+#ezit-maillog-modal {
+    position: fixed; inset: 0; z-index: 100000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15,16,24,.55); backdrop-filter: blur(2px);
+}
+#ezit-maillog-modal[hidden] { display: none; }
+.ezit-mailview {
+    width: min(720px, 92vw); height: min(86vh, 760px);
+    display: flex; flex-direction: column;
+    background: #f0f0f1; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,.35);
+}
+.ezit-mailview__bar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 14px; background: #14151f; color: #eef0f2;
+    font: 500 13.5px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.ezit-mailview__bar strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ezit-mailview__bar a { color: #76b900; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.ezit-mailview__bar a:hover { text-decoration: underline; }
+#ezit-mailview-close {
+    background: none; border: 0; color: #eef0f2; font-size: 22px;
+    line-height: 1; cursor: pointer; padding: 0 4px;
+}
+#ezit-mailview-close:hover { color: #76b900; }
+#ezit-mailview-frame { flex: 1; border: 0; width: 100%; }
 .ezit-pg .ezt__text { max-width: none; }   /* component caps at 46ch — our stats need one line */
 
 /* WP admin colors vs panel themes: heading element rules (#1d2327) beat

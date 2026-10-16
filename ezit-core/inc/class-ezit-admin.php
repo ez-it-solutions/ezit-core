@@ -30,6 +30,7 @@ class EzIT_Admin
         add_action('admin_post_ezit_switch_theme', [$this, 'handle_switch_theme']);
         add_action('admin_post_ezit_credit',     [$this, 'handle_credit']);
         add_action('wp_ajax_ezit_maillog',       [$this, 'handle_maillog']);
+        add_action('admin_post_ezit_maillog_view', [$this, 'handle_maillog_view']);
     }
 
     // ── menu ────────────────────────────────────────────────────────
@@ -378,6 +379,23 @@ class EzIT_Admin
             wp_send_json_error(['message' => 'denied'], 403);
         }
         wp_send_json_success(['rows' => array_slice(EzIT_Mail_Log::formatted(), 0, 20)]);
+    }
+
+    /** Email preview — the stored body rendered as its own document.
+     *  The modal iframe and the "open in new window" link both use it. */
+    public function handle_maillog_view(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die(esc_html__('Permission denied.', 'ezit-core'));
+        }
+        $body = EzIT_Mail_Log::body((int) ($_GET['i'] ?? -1));
+        if ($body === '') {
+            wp_die(esc_html__('No stored body for this entry.', 'ezit-core'));
+        }
+        status_header(200);
+        header('Content-Type: text/html; charset=UTF-8');
+        echo $body; // phpcs:ignore WordPress.Security.EscapeOutput — stored HTML mail
+        exit;
     }
 
     /** Switch the site's active theme — same flow as Appearance → Themes. */

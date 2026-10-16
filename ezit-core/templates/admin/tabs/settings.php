@@ -110,8 +110,10 @@ async function refreshMailLog() {
             if (css) d.style.cssText = css;
             return d;
         };
-        rows.forEach(r => {
+        rows.forEach((r, i) => {
             const tr = document.createElement('tr');
+            tr.className = 'ezit-maillog-row' + (r.has_body ? ' has-body' : '');
+            tr.dataset.mlogIdx = i;
             tr.appendChild(td(r.time || '', 'white-space:nowrap'));
             const badge = document.createElement('span');
             badge.className = 'ezit-badge ' + (r.status === 'sent' ? 'is-active' : 'is-inactive');
@@ -120,7 +122,15 @@ async function refreshMailLog() {
             st.appendChild(badge);
             tr.appendChild(st);
             tr.appendChild(td(r.to || ''));
-            tr.appendChild(td(r.subject || ''));
+            const subj = td(r.subject || '');
+            subj.className = 'ezit-maillog-subj';
+            if (r.has_body) {
+                const arrow = document.createElement('span');
+                arrow.className = 'ezit-meta';
+                arrow.textContent = ' \u2192';
+                subj.appendChild(arrow);
+            }
+            tr.appendChild(subj);
             tr.appendChild(td(r.error || '', 'color:#b3483a;font-size:12.5px'));
             tbody.appendChild(tr);
         });
@@ -128,4 +138,32 @@ async function refreshMailLog() {
         if (empty) empty.style.display = rows.length ? 'none' : '';
     } catch (err) { /* leave the server-rendered rows in place */ }
 }
+
+// Click a row with a stored body → preview modal. The iframe loads the
+// mail as its own document, so the email's styles render untouched.
+const mvModal = document.getElementById('ezit-maillog-modal');
+function openMailView(tr) {
+    const idx = tr.dataset.mlogIdx;
+    if (!mvModal || idx === undefined || !tr.classList.contains('has-body')) return;
+    const url = 'admin-post.php?action=ezit_maillog_view&i=' + encodeURIComponent(idx);
+    document.getElementById('ezit-mailview-frame').src = url;
+    document.getElementById('ezit-mailview-open').href = url;
+    document.getElementById('ezit-mailview-title').textContent =
+        tr.querySelector('.ezit-maillog-subj')?.childNodes[0]?.textContent?.trim() || '';
+    mvModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+}
+function closeMailView() {
+    if (!mvModal) return;
+    mvModal.hidden = true;
+    document.getElementById('ezit-mailview-frame').src = 'about:blank';
+    document.body.style.overflow = '';
+}
+document.getElementById('ezit-maillog-rows')?.addEventListener('click', (e) => {
+    const tr = e.target.closest('tr.ezit-maillog-row');
+    if (tr) openMailView(tr);
+});
+document.getElementById('ezit-mailview-close')?.addEventListener('click', closeMailView);
+mvModal?.addEventListener('click', (e) => { if (e.target === mvModal) closeMailView(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMailView(); });
 </script>

@@ -58,8 +58,12 @@ if ($pages > 1) {
                 </tr>
             </thead>
             <tbody id="ezit-maillog-rows">
-            <?php foreach ($entries as $row) : $ok = ($row['status'] ?? '') === 'sent'; ?>
-                <tr>
+            <?php foreach ($entries as $i => $row) :
+                $ok      = ($row['status'] ?? '') === 'sent';
+                $idx     = ($mlog_pg - 1) * $per_page + $i; // index into the full newest-first log
+                $canview = ! empty($row['has_body']);
+            ?>
+                <tr class="ezit-maillog-row<?php echo $canview ? ' has-body' : ''; ?>" data-mlog-idx="<?php echo esc_attr((string) $idx); ?>">
                     <td style="white-space:nowrap"><?php echo esc_html($row['time'] ?? ''); ?></td>
                     <td>
                         <span class="ezit-badge <?php echo $ok ? 'is-active' : 'is-inactive'; ?>">
@@ -67,7 +71,10 @@ if ($pages > 1) {
                         </span>
                     </td>
                     <td><?php echo esc_html($row['to'] ?? ''); ?></td>
-                    <td><?php echo esc_html($row['subject'] ?? ''); ?></td>
+                    <td class="ezit-maillog-subj">
+                        <?php echo esc_html($row['subject'] ?? ''); ?>
+                        <?php if ($canview) : ?><span class="ezit-meta">&nbsp;&rarr;</span><?php endif; ?>
+                    </td>
                     <td style="color:#b3483a;font-size:12.5px"><?php echo esc_html($row['error'] ?? ''); ?></td>
                 </tr>
             <?php endforeach; ?>
@@ -76,5 +83,18 @@ if ($pages > 1) {
         <?php if ($nav !== '') : ?>
         <div class="ezit-paging" style="margin-top:12px"><?php echo $nav; // phpcs:ignore — paginate_links output ?></div>
         <?php endif; ?>
+    </div>
+
+    <?php /* Preview modal — iframe points at the stored body endpoint,
+           so the email renders exactly as the recipient saw it. */ ?>
+    <div id="ezit-maillog-modal" hidden>
+        <div class="ezit-mailview" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e('Email preview', 'ezit-core'); ?>">
+            <div class="ezit-mailview__bar">
+                <strong id="ezit-mailview-title"></strong>
+                <a id="ezit-mailview-open" href="#" target="_blank" rel="noopener"><?php esc_html_e('Open in new window', 'ezit-core'); ?></a>
+                <button type="button" id="ezit-mailview-close" aria-label="<?php esc_attr_e('Close', 'ezit-core'); ?>">&times;</button>
+            </div>
+            <iframe id="ezit-mailview-frame" title="<?php esc_attr_e('Email preview', 'ezit-core'); ?>"></iframe>
+        </div>
     </div>
 </div>
