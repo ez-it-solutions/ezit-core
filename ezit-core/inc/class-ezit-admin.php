@@ -62,6 +62,9 @@ class EzIT_Admin
             'manage_options', 'ezit-marketplace', '__return_null');
         add_submenu_page('ezit-core', __('Settings', 'ezit-core'), __('Settings', 'ezit-core'),
             'manage_options', 'ezit-settings', '__return_null');
+        // Deep-link straight into Settings → Email log.
+        add_submenu_page('ezit-core', __('Email log', 'ezit-core'), __('Email log', 'ezit-core'),
+            'manage_options', 'ezit-mail-log', '__return_null');
         add_submenu_page('ezit-core', __('About', 'ezit-core'), __('About', 'ezit-core'),
             'manage_options', 'ezit-about', '__return_null');
     }
@@ -85,6 +88,10 @@ class EzIT_Admin
     public function legacy_redirect(): void
     {
         $page = sanitize_key($_GET['page'] ?? ''); // phpcs:ignore
+        if ($page === 'ezit-mail-log') {
+            wp_safe_redirect(admin_url('admin.php?page=ezit-core&tab=settings&section=email-log'));
+            exit;
+        }
         $map  = self::legacy_map();
         if (isset($map[$page])) {
             wp_safe_redirect(admin_url('admin.php?page=ezit-core&tab=' . $map[$page]));
@@ -104,6 +111,12 @@ class EzIT_Admin
     {
         if (sanitize_key($_GET['page'] ?? '') === 'ezit-core') { // phpcs:ignore
             $tab = sanitize_key($_GET['tab'] ?? 'dashboard');   // phpcs:ignore
+            // Email log lives inside the Settings tab — its own sidebar
+            // item wins the highlight while we're on that section.
+            if ($tab === 'settings'
+                && sanitize_key($_GET['section'] ?? '') === 'email-log') { // phpcs:ignore
+                return 'ezit-mail-log';
+            }
             $slug = array_search($tab, self::legacy_map(), true);
             if ($slug) {
                 return $slug;
