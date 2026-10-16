@@ -82,15 +82,21 @@ Core stores it in `ezit_licenses` option per product and echoes it back on verif
       + voluntary UC page with layouts, accent, countdown, client-access cookie
 
 ### Phase 2 — Licensing hardening
-- [ ] Per-theme activation caps surfaced in admin (max_activations, domain list)
-- [ ] Deactivation on theme switch (optional flag per product)
-- [ ] Grace periods: verify failure → warning banner after N days, never front-end break
+- [x] Per-theme activation caps surfaced in admin — the Licenses card
+      decodes the cert and shows seats, domain, expiry, licensee,
+      last-verified
+- [x] Deactivation on theme switch — `register_product(
+      'deactivate_on_switch' => true)` releases the seat on switch_theme
+- [x] Grace periods — transport failures stamp `failing_since`; admin
+      warning banner after `ezit_license_grace_days` (3) — front end never
+      breaks
 - [x] Offline tolerance: cert presence + `expires_at`/`domain` check without phoning
       home *(gate validates cert locally; transport failure keeps last verdict)*
 
 ### Phase 3 — Marketplace
 - [ ] **Server: `GET /api/catalog` not built yet** — core fetch exists and fails
       soft (empty catalog, hourly cache). This is the real Phase 3 blocker.
+      **Full server build spec: `core/LICENSE-SERVER.md`.**
 - Server: `GET /api/catalog` (public product listing: slug, name, thumb, price, version)
 - Server: `GET /api/catalog/{slug}` detail + `POST /api/purchase` (Phase 5)
 - Core: browse/install/activate in-admin (`install_theme` flow w/ licensed download)

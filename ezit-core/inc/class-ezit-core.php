@@ -29,7 +29,8 @@ class EzIT_Core
      * (top-level is fine) or on the `ezit_core_ready` hook.
      *
      * @param array{slug:string,type?:string,name:string,version?:string,
-     *              product_id?:string,api_key?:string,gated?:bool} $args
+     *              product_id?:string,api_key?:string,gated?:bool,
+     *              deactivate_on_switch?:bool} $args
      */
     public function register_product(array $args): void
     {
@@ -41,6 +42,9 @@ class EzIT_Core
             'license_code' => '',     // optional — pre-fills the activate form
             'marketplace'  => true,   // show on the Marketplace page
             'gated'        => true,   // unlicensed = site shows the UC gate
+            // Theme-only: release the license seat when the theme is
+            // switched away (try-before-buy/demo deployments).
+            'deactivate_on_switch' => false,
             'uc'           => [],     // UC page defaults: accent, bg, logo, countdown
         ]);
 

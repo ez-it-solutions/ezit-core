@@ -1,0 +1,183 @@
+# License Server — Phase 3+ Build Spec
+
+What `license.ez-it-solutions.com` needs to build for core's Marketplace,
+Support, and Payments phases. Client-side (`ezit-core`) is written against
+these contracts — build to these shapes and the sites light up with no
+core changes.
+
+**Reference client:** `core/ezit-core/inc/class-ezit-api.php` +
+`class-ezit-marketplace.php`.
+
+---
+
+## 1. Communication protocol (already live — do not change)
+
+Every request from a site carries the LicenseBox header contract:
+
+| Header | Value |
+|---|---|
+| `LB-API-KEY` | the product's `api_key` (per-product, from the dashboard) |
+| `LB-URL` | the site's `home_url()` |
+| `LB-IP` | `$_SERVER['SERVER_ADDR']` |
+| `LB-LANG` | site locale (e.g. `en_US`) |
+
+- POST endpoints use `application/x-www-form-urlencoded` bodies and return
+  `{status: bool, message: string, ...}` JSON.
+- Errors: HTTP ≥ 400 with `{"message": "…"}` — core maps that to WP_Error
+  and shows `message` to the admin.
+- `license_file` / `lic_response` = `<64 hex hmac><base64url(json)>` —
+  core decodes the JSON tail for display only. Any fields you add to the
+  cert payload (e.g. `features[]`, `max_activations`, `expires_at`,
+  `domain`, `client_name`) are automatically surfaced in wp-admin —
+  **additive changes are free; never rename/remove existing keys.**
+
+### Server → site push (already live)
+
+`POST {site}/wp-json/ezit/v1/license-push` with `key={product api_key}`
+forces an immediate re-verify. Call it whenever a license status/feature
+set changes so sites converge in seconds instead of at the next cron.
+
+---
+
+## 2. Already implemented (nothing to build)
+
+`check_connection_ext`, `activate_license`, `verify_license`,
+`deactivate_license`, `check_update`, `get_update_size/{id}`,
+`download_update/main/{id}`.
+
+---
+
+## 3. PHASE 3 — Marketplace (the blocker)
+
+### `GET /api/catalog` — **build first**
+
+Public listing, no auth needed beyond the `LB-*` headers (reject requests
+missing `LB-URL` entirely if you want a soft gate).
+
+```json
+{
+  "items": [
+    {
+      "slug": "trezise-insurance",
+      "type": "theme",
+      "name": "Trezise Insurance",
+      "version": "1.2.0",
+      "thumb": "https://license.ez-it-solutions.com/media/thumbs/trezise.png",
+      "excerpt": "Insurance agency theme — one-page, contact-first.",
+      "category": "business",
+      "price": 0,
+      "product_id": "F43D2273",
+      "installed": false
+    }
+  ]
+}
+```
+
+Core reads `items[]` and renders cards; every field optional except
+`slug`, `name`, `product_id`. `installed` is a nice-to-have (server can
+match `LB-URL` against activation records).
+
+### `GET /api/catalog/{slug}` — detail for the install flow
+
+```json
+{
+  "slug": "trezise-insurance",
+  "name": "Trezise Insurance",
+  "type": "theme",
+  "version": "1.2.0",
+  "product_id": "F43D2273",
+  "api_key": "…",                // needed so core can register_product()
+  "description": "…html…",
+  "screenshots": ["https://…"],
+  "changelog": "…",
+  "requires": "7.4",             // min PHP (optional)
+  "download_endpoint": "download_update/main/F43D2273"
+}
+```
+
+`api_key` here is the product's server-side key — returning it is safe
+(the site needs it to activate), but only return it for items flagged
+installable/free; paid items return it after purchase.
+
+### Server-side admin CRUD to support this
+
+- **Catalog item** = a product + marketing fields (thumb, excerpt,
+  category, screenshots). One product may exist without a catalog entry
+  (internal products); a catalog entry may be `published: false`.
+- **Categories** — flat list, mirror Envato-ish: `business, church,
+  school, athletics, gov, dental, law, portfolio, generic`.
+- **Version bumps** — catalog `version` should drive `check_update`
+  responses; keep one source of truth.
+
+### Auth model for install
+
+Core's install flow will call `download_update/main/{product_id}` — it
+already exists. Decide per item:
+
+- **Free item** → return the zip for any request with valid `LB-URL`.
+- **Paid item** → require `license_file` of a purchased license (same
+  check as updates). Returns HTTP 402/403 + `{"message": "Purchase required."}`.
+
+---
+
+## 4. PHASE 4 — Support tickets & announcements
+
+### `GET|POST /api/support/tickets`
+
+Auth: `license_file` in the body (same as verify) — a ticket belongs to a
+license+site pair.
+
+- `GET` → `{"tickets":[{"id","subject","status":"open|answered|closed","updated_at","replies":[{"from":"client|staff","body","at"}]}]}`
+- `POST` → `{"license_file","product_id","subject","body"}` creates;
+  `{"license_file","ticket_id","body"}` replies.
+- Core renders a Support admin page; keep `status` values stable.
+
+### `GET /api/announcements?product_id=…`
+
+Broadcast feed for the dashboard banner module (`class-ezit-banners.php`
+already caches a transient — wire it to this):
+
+```json
+{"items":[{"id","title","body","severity":"info|warning|critical",
+"starts_at","ends_at","product_id"|null,"dismissible":true}]}
+```
+
+Null `product_id` = broadcast to all products. Site dismisses by `id`.
+
+---
+
+## 5. PHASE 5 — Payments
+
+Site never stores cards; Invoice Ninja (billing.ez-it-solutions.com) is
+the payment frontend. License server only needs:
+
+- `POST /api/purchase` → `{"product_id","license_file"|null}` → returns
+  `{"checkout_url": "https://billing.ez-it-solutions.com/…"}` —
+  core deep-links, Stripe/etc. handled by Invoice Ninja.
+- **Webhook handler** — on Invoice Ninja payment events: issue/extend
+  license, update `features[]` in the cert, then POST
+  `license-push` to every activated site (instant propagation).
+
+---
+
+## 6. Cert payload — fields the client already displays
+
+Core's Licenses tab decodes and renders these (all optional):
+
+`client_name`/`registered_name`, `domain`, `expires_at`/`expiry_date`,
+`max_activations`, `used_activations`, `features[]` (Phase 9).
+
+Add them to the cert as they become available — no client deploy needed.
+
+---
+
+## 7. Build order
+
+1. `GET /api/catalog` (+ minimal catalog CRUD in the dashboard)
+2. `GET /api/catalog/{slug}` with `api_key` for free items
+3. Install flow in core (client-side — starts once #2 returns)
+4. Announcements feed → banners module
+5. Support tickets
+6. `/api/purchase` + Invoice Ninja webhook → license-push
+
+Items 1–2 unblock the entire Phase 3 client.

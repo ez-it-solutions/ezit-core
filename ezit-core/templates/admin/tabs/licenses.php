@@ -41,6 +41,7 @@ $products  = $core->products();
         continue;
     }
     $is_active = $licensing->is_active($slug);
+    $lic       = $licensing->license($slug) ?: [];
 ?>
     <div class="ezit-card ezit-license" data-ezt-anim>
         <div class="ezit-license__head">
@@ -51,6 +52,31 @@ $products  = $core->products();
         </div>
         <p class="ezit-meta"><?php echo esc_html(($p['type'] ?? 'theme') . ' · v' . ($p['version'] ?: '—')); ?></p>
 
+        <?php if ($is_active) :
+            // Cert payload → seats, domain binding, expiry, licensee.
+            // Informational decode only — the HMAC is verified server-side.
+            $cert = EzIT_Licensing::cert_payload((string) ($lic['license_file'] ?? '')) ?: [];
+            $seat_used = $cert['used_activations'] ?? $cert['activations_used'] ?? $cert['lic_use'] ?? null;
+            $seat_max  = $cert['max_activations'] ?? $cert['max_usage'] ?? null;
+            $details   = array_filter([
+                __('Licensed to', 'ezit-core')  => $cert['client_name'] ?? $cert['registered_name'] ?? $cert['licensed_to'] ?? '',
+                __('Domain', 'ezit-core')       => $cert['domain'] ?? '',
+                __('Expires', 'ezit-core')      => $cert['expires_at'] ?? $cert['expiry_date'] ?? '',
+                __('Activations', 'ezit-core')  => ($seat_used !== null || $seat_max !== null)
+                                                    ? trim((string) ($seat_used ?? '?') . ' / ' . (string) ($seat_max ?? '∞')) : '',
+                __('Last verified', 'ezit-core') => ! empty($lic['checked_at'])
+                                                    ? human_time_diff((int) $lic['checked_at']) . ' ' . __('ago', 'ezit-core') : '',
+            ]);
+            if ($details) : ?>
+            <dl class="ezit-meta" style="display:grid;grid-template-columns:auto 1fr;gap:2px 14px;margin:4px 0 10px">
+                <?php foreach ($details as $k => $v) : ?>
+                <dt style="font-weight:600;color:#787c82"><?php echo esc_html($k); ?></dt>
+                <dd style="margin:0"><?php echo esc_html((string) $v); ?></dd>
+                <?php endforeach; ?>
+            </dl>
+            <?php endif; ?>
+        <?php endif; ?>
+
         <?php if ($is_active) : ?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <?php wp_nonce_field('ezit_license', 'ezit_license_nonce'); ?>
@@ -58,8 +84,7 @@ $products  = $core->products();
             <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
             <button class="ezit-btn ezit-btn--ghost"><?php esc_html_e('Deactivate', 'ezit-core'); ?></button>
         </form>
-        <?php else :
-            $lic     = $licensing->license($slug) ?: [];
+        <?phplic     = $licensing->license($slug) ?: [];
             $revoked = ! empty($lic['revoked']);
         ?>
         <?php if ($revoked) : ?>

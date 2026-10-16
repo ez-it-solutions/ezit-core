@@ -42,6 +42,10 @@ class EzIT_Licensing
         add_action('init', [$this, 'maybe_ping']);
         add_action(self::PING, [$this, 'verify_all']);
 
+        // Products that opt in via register_product('deactivate_on_switch')
+        // release their seat when their theme is switched away.
+        add_action('switch_theme', [$this, 'on_switch_theme'], 10, 2);
+
         // Server → site push: the license server can POST
         // /wp-json/ezit/v1/license-push (key = a product api_key) to force
         // an immediate re-verify — zero propagation delay on changes.
@@ -229,8 +233,11 @@ class EzIT_Licensing
 
         if (is_wp_error($res)) {
             // Transport failure — keep the last verdict (grace), so a
-            // flaky server can't revoke a working site.
-            $lic['checked_at'] = time();
+            // flaky server can't revoke a working site. failing_since
+            // stamps the START of the outage so admin can warn once the
+            // grace window is exceeded.
+            $lic['checked_at']    = time();
+            $lic['failing_since'] = $lic['failing_since'] ?? time();
             $this->save($slug, $lic);
             return ($lic['status'] ?? '') === 'active';
         }
@@ -239,6 +246,7 @@ class EzIT_Licensing
         $prev              = $lic['status'] ?? '';
         $ok                = ! empty($res['status']);
         $lic['status']     = $ok ? 'active' : 'invalid';
+        unset($lic['failing_since']); // a real answer — any outage is over
         // Sticky marker: active → invalid means disabled/revoked server-side
         // (vs. never activated). Cleared by a fresh activate().
         if ($prev === 'active' && ! $ok) {
@@ -288,6 +296,48 @@ class EzIT_Licensing
         foreach (array_keys($this->core->products()) as $slug) {
             if ($this->license($slug)) {
                 $this->verify($slug);
+            }
+        }
+    }
+
+    /**
+     * Products whose remote verify has been failing longer than the grace
+     * window — returns slug => days failing, for the admin warning banner.
+     */
+    public function stale_products(): array
+    {
+        $days = max(1, (int) apply_filters('ezit_license_grace_days', 3));
+        $out  = [];
+        foreach ($this->all() as $slug => $lic) {
+            $since = (int) ($lic['failing_since'] ?? 0);
+            if ($since === 0 || empty($lic['license_file'])) {
+                continue;
+            }
+            $down = (int) floor((time() - $since) / DAY_IN_SECONDS);
+            if ($down >= $days) {
+                $out[$slug] = $down;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Theme switched away — release the license seat for products that
+     * opted in (register_product 'deactivate_on_switch'). Best effort:
+     * a transport failure leaves the license stored, never breaks the
+     * switch.
+     */
+    public function on_switch_theme(string $new_name, $new_theme): void
+    {
+        $old = get_option('theme_switched'); // stylesheet dir of the theme just deactivated
+        foreach ($this->core->products() as $slug => $p) {
+            if (($p['type'] ?? 'theme') !== 'theme' || empty($p['deactivate_on_switch'])) {
+                continue;
+            }
+            if ($slug === $old && $this->license($slug)) {
+                try {
+                    $this->deactivate($slug);
+                } catch (\Throwable $e) { /* switching away must never fatal */ }
             }
         }
     }

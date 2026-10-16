@@ -481,6 +481,28 @@ class EzIT_Admin
         if (! current_user_can('manage_options')) {
             return;
         }
+        // Verify-outage warning — a license can't be remotely re-checked
+        // past the grace window. Last verdict still stands; nothing on the
+        // front end changes — this only nags the admin to check the server.
+        $stale = $this->core->licensing()->stale_products();
+        if ($stale) {
+            $names = [];
+            foreach ($stale as $slug => $days) {
+                $names[] = sprintf(
+                    '%s (%d+ days)',
+                    esc_html($this->core->product($slug)['name'] ?? $slug),
+                    $days
+                );
+            }
+            printf(
+                '<div class="notice notice-warning"><p>%s</p></div>',
+                sprintf(
+                    /* translators: %s: product names with outage length */
+                    esc_html__('The Ez IT license server has been unreachable for: %s. Sites keep their last verdict — no front-end impact — but renewals/revocations aren\'t syncing until connectivity returns.', 'ezit-core'),
+                    implode(', ', $names)
+                )
+            );
+        }
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
         if ($screen && str_contains($screen->id ?? '', 'ezit')) {
             return; // our own pages show status inline
