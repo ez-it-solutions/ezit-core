@@ -478,6 +478,15 @@ class EzIT_Gate
         if (! isset($layouts[$layout])) {
             $layout = 'generic';
         }
+        // Never let a page cache store UC HTML — a cached gate page would
+        // keep the site closed to guests after re-activation.
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+        if (! $preview) {
+            nocache_headers();
+        }
+
         $file = EZIT_CORE_PATH . "templates/uc/{$layout}.php";
         if (! file_exists($file)) {
             $file = EZIT_CORE_PATH . 'templates/uc/generic.php';
