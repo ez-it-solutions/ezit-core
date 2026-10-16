@@ -64,7 +64,10 @@ if ($pages > 1) {
             </thead>
             <tbody id="ezit-maillog-rows">
             <?php foreach ($entries as $i => $row) :
-                $ok      = ($row['status'] ?? '') === 'sent';
+                $status  = (string) ($row['status'] ?? '');
+                $badge   = $status === 'sent' ? 'is-active' : ($status === 'blocked' ? 'is-blocked' : 'is-inactive');
+                $label   = $status === 'sent' ? __('Sent', 'ezit-core')
+                         : ($status === 'blocked' ? __('Blocked', 'ezit-core') : __('Failed', 'ezit-core'));
                 $idx     = ($mlog_pg - 1) * $per_page + $i; // index into the full newest-first log
                 $canview = ! empty($row['has_body']);
             ?>
@@ -74,8 +77,8 @@ if ($pages > 1) {
                     data-mlog-when="<?php echo esc_attr($row['time'] ?? ''); ?>">
                     <td style="white-space:nowrap"><?php echo esc_html($row['time'] ?? ''); ?></td>
                     <td>
-                        <span class="ezit-badge <?php echo $ok ? 'is-active' : 'is-inactive'; ?>">
-                            <?php echo esc_html($ok ? __('Sent', 'ezit-core') : __('Failed', 'ezit-core')); ?>
+                        <span class="ezit-badge <?php echo esc_attr($badge); ?>">
+                            <?php echo esc_html($label); ?>
                         </span>
                     </td>
                     <td><?php echo esc_html($row['to'] ?? ''); ?></td>

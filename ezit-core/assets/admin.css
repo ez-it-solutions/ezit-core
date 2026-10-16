@@ -199,6 +199,7 @@
 .ezit-maillog-row.has-body { cursor: pointer; }
 .ezit-maillog-row.has-body:hover td { background: rgba(118,185,0,.05); }
 .ezit-maillog-subj { font-weight: 600; }
+.ezit-badge.is-blocked { background: #fff3cd; color: #856404; }
 #ezit-maillog-refresh:hover { color: #76b900; }
 #ezit-maillog-refresh.is-spinning svg { animation: ezit-mlog-spin .7s linear infinite; }
 @keyframes ezit-mlog-spin { to { transform: rotate(360deg); } }

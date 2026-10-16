@@ -119,8 +119,8 @@ async function refreshMailLog() {
             tr.dataset.mlogWhen = r.time || '';
             tr.appendChild(td(r.time || '', 'white-space:nowrap'));
             const badge = document.createElement('span');
-            badge.className = 'ezit-badge ' + (r.status === 'sent' ? 'is-active' : 'is-inactive');
-            badge.textContent = r.status === 'sent' ? 'Sent' : 'Failed';
+            badge.className = 'ezit-badge ' + (r.status === 'sent' ? 'is-active' : (r.status === 'blocked' ? 'is-blocked' : 'is-inactive'));
+            badge.textContent = r.status === 'sent' ? 'Sent' : (r.status === 'blocked' ? 'Blocked' : 'Failed');
             const st = document.createElement('td');
             st.appendChild(badge);
             tr.appendChild(st);

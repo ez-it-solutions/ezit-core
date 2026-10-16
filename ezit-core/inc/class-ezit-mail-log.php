@@ -60,6 +60,15 @@ class EzIT_Mail_Log
         } catch (\Throwable $e) { /* never break wp_mail() */ }
     }
 
+    /** Manual entry — e.g. a contact submission the bot checks fake-
+     *  approved before wp_mail() ever ran. Never throws. */
+    public static function note(string $status, string $to, string $subject, string $error = ''): void
+    {
+        try {
+            self::record($status, ['to' => $to, 'subject' => $subject], $error);
+        } catch (\Throwable $e) { /* logging must never break the caller */ }
+    }
+
     private static function record(string $status, array $data, string $error): void
     {
         $to = $data['to'] ?? '';
