@@ -199,7 +199,7 @@
 .ezit-maillog-row.has-body { cursor: pointer; }
 .ezit-maillog-row.has-body:hover td { background: rgba(118,185,0,.05); }
 .ezit-maillog-subj { font-weight: 600; }
-#ezit-maillog-refresh:hover { color: var(--pg-accent); }
+#ezit-maillog-refresh:hover { color: #76b900; }
 #ezit-maillog-refresh.is-spinning svg { animation: ezit-mlog-spin .7s linear infinite; }
 @keyframes ezit-mlog-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { #ezit-maillog-refresh.is-spinning svg { animation: none; } }
@@ -214,7 +214,7 @@
     width: min(720px, 92vw); height: min(82vh, 760px); max-height: 100%;
     display: flex; flex-direction: column;
     background: #f0f0f1; border-radius: 12px; overflow: hidden;
-    border: 2px solid var(--pg-accent);
+    border: 2px solid #76b900;
     box-shadow: 0 24px 64px rgba(0,0,0,.35);
 }
 /* Inbox-style message header — light card between the dark chrome bar
