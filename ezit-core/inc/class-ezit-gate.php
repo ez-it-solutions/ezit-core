@@ -368,8 +368,16 @@ class EzIT_Gate
             return;
         }
         // Armed gate: never let a page cache store guest HTML while the
-        // license verdict can flip underneath it (filterable).
+        // license verdict can flip underneath it. Response headers alone
+        // don't stop file caches — WP Super Cache et al. only honor the
+        // DONOTCACHEPAGE constant (filterable escape hatch).
         if (apply_filters('ezit_gate_no_cache', true)) {
+            if (! defined('DONOTCACHEPAGE')) {
+                define('DONOTCACHEPAGE', true);
+            }
+            if (! headers_sent()) {
+                header('X-LiteSpeed-Cache-Control: no-cache');
+            }
             nocache_headers();
         }
         if ($this->visitor_allowed()) {

@@ -324,6 +324,7 @@ class EzIT_Admin
         if (! in_array($mode, ['off', 'licensed', 'maintenance'], true)) {
             $mode = 'off';
         }
+        $old_mode = EzIT_Gate::settings()['mode'] ?? 'off';
         update_option(EzIT_Gate::OPTION, [
             'mode'       => $mode,
             'enabled'    => $mode !== 'off' ? 1 : 0, // legacy key kept in sync
@@ -335,6 +336,13 @@ class EzIT_Admin
             'logo'       => esc_url_raw(wp_unslash($_POST['ezit_gate_logo'] ?? '')),
             'countdown'  => $countdown !== '' ? gmdate('c', strtotime($countdown)) : '',
         ], false);
+
+        // Mode transition changes what guests see — flag a full purge so
+        // pages cached under the old mode can't outlive it (consumed on
+        // the next front-end request by EzIT_Licensing).
+        if ($mode !== $old_mode) {
+            set_transient('ezit_purge_pending', 1, HOUR_IN_SECONDS);
+        }
 
         update_option(EzIT_Login::OPTION, [
             'logo'     => esc_url_raw(wp_unslash($_POST['ezit_login_logo'] ?? '')),
