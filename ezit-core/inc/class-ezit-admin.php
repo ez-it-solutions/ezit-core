@@ -359,6 +359,11 @@ class EzIT_Admin
             }
         }
 
+        // Email log — the section's "Clear log" button submits here.
+        if ($section === 'maillog' && isset($_POST['ezit_clear_maillog'])) {
+            EzIT_Mail_Log::clear();
+        }
+
         // Return the user to the section they were editing.
         $sec = sanitize_key(wp_unslash($_POST['section'] ?? ''));
         $this->redirect('settings', 'saved', '', $sec !== '' ? ['section' => $sec] : []);
