@@ -324,11 +324,6 @@ class EzIT_Admin
         if (! in_array($mode, ['off', 'licensed', 'maintenance'], true)) {
             $mode = 'off';
         }
-        // Gate-mode changes flip what guests see — evict cached pages on
-        // the next front-end request (purge APIs live there, not here).
-        if ($mode !== (EzIT_Gate::settings()['mode'] ?? 'off')) {
-            update_option('ezit_cache_purge_pending', time(), false);
-        }
         update_option(EzIT_Gate::OPTION, [
             'mode'       => $mode,
             'enabled'    => $mode !== 'off' ? 1 : 0, // legacy key kept in sync

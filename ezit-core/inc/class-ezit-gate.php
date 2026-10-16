@@ -178,15 +178,67 @@ class EzIT_Gate
             // Cheap local sanity — domain binding + expiry inside the cert.
             $payload = EzIT_Licensing::cert_payload($lic['license_file']);
             if ($payload) {
-                if (! empty($payload['domain']) && $payload['domain'] !== $host) {
+                if (! self::cert_domain_matches($payload, $host)) {
                     return false;
                 }
-                if (! empty($payload['expires_at']) && strtotime($payload['expires_at']) < time()) {
+                if (self::cert_expired($payload)) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    /**
+     * Does the cert's domain binding cover this host? Reads whichever key
+     * the server emits (domain, licensed_domain, licensed_domains[] …);
+     * values may be bare hosts or URLs. www/apex are the same domain —
+     * sites routinely canonicalize between them.
+     */
+    private static function cert_domain_matches(array $payload, string $host): bool
+    {
+        $bound = [];
+        foreach (['domain', 'licensed_domain', 'site_domain', 'host'] as $k) {
+            if (! empty($payload[$k]) && is_string($payload[$k])) {
+                $bound[] = $payload[$k];
+            }
+        }
+        foreach (['domains', 'licensed_domains', 'allowed_domains'] as $k) {
+            if (! empty($payload[$k]) && is_array($payload[$k])) {
+                $bound = array_merge($bound, $payload[$k]);
+            }
+        }
+        if ($bound === []) {
+            return true; // cert declares no binding — nothing to check
+        }
+
+        $norm = static function ($d): string {
+            $d = (string) $d;
+            $h = wp_parse_url(strpos($d, '://') !== false ? $d : 'https://' . $d, PHP_URL_HOST);
+            return (string) preg_replace('/^www\./i', '', strtolower((string) $h));
+        };
+        $want = $norm($host);
+        foreach ($bound as $d) {
+            if ($norm($d) === $want) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Cert expiry — accepts Unix timestamps or date strings. Unparseable
+     * values ("lifetime", "never") count as non-expiring: an unparsed
+     * strtotime() is false, and `false < time()` was the spurious-gate bug.
+     */
+    private static function cert_expired(array $payload): bool
+    {
+        $exp = $payload['expires_at'] ?? $payload['expiry_date'] ?? $payload['expires'] ?? null;
+        if ($exp === null || $exp === '' ) {
+            return false;
+        }
+        $ts = is_numeric($exp) ? (int) $exp : strtotime((string) $exp);
+        return $ts !== false && $ts !== 0 && $ts < time();
     }
 
     // ── access cookie (gate users) ──────────────────────────────────
@@ -318,13 +370,7 @@ class EzIT_Gate
         // Armed gate: never let a page cache store guest HTML while the
         // license verdict can flip underneath it (filterable).
         if (apply_filters('ezit_gate_no_cache', true)) {
-            if (! defined('DONOTCACHEPAGE')) {
-                // WP Rocket, Super Cache, W3TC, LiteSpeed Cache…
-                define('DONOTCACHEPAGE', true);
-            }
-            nocache_headers(); // no-store, must-revalidate — CDNs honoring origin headers
-            header('X-LiteSpeed-Cache-Control: no-cache'); // server-level lscache
-            header('X-Cache-Enabled: False');              // SiteGround/nginx-style hosts
+            nocache_headers();
         }
         if ($this->visitor_allowed()) {
             return;
@@ -379,6 +425,8 @@ class EzIT_Gate
                     : '(never)',
                 'age_seconds'  => isset($lic['checked_at']) ? time() - $lic['checked_at'] : null,
                 'is_active'    => $licensing->is_active($slug),
+                'cert'         => EzIT_Licensing::cert_payload((string) ($lic['license_file'] ?? ''))
+                    ?: '(unreadable)',
             ];
         }
         $report = [
@@ -426,12 +474,6 @@ class EzIT_Gate
     /** Render a UC layout template and stop the request. */
     private function render_uc(string $layout, bool $preview = false): void
     {
-        // A UC page must never land in a page cache — a cached UC page
-        // would keep serving "under construction" after re-enable, with
-        // no PHP hit to run the rescue re-verify.
-        if (! defined('DONOTCACHEPAGE')) {
-            define('DONOTCACHEPAGE', true);
-        }
         $layouts = self::layouts();
         if (! isset($layouts[$layout])) {
             $layout = 'generic';

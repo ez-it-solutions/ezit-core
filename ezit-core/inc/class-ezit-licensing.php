@@ -39,10 +39,6 @@ class EzIT_Licensing
         // 3. hourly recurring verify as the floor.
         // The front-end gate additionally calls freshen() itself when armed.
         add_action('admin_init', [$this, 'freshen_admin']);
-        // A verdict flip can happen in cron/admin where front-end cache
-        // APIs (WP Super Cache phase2 etc.) aren't loaded — carry the
-        // purge forward to the next request that CAN see them.
-        add_action('init', [$this, 'maybe_purge_cache'], 1);
         add_action('init', [$this, 'maybe_ping']);
         add_action(self::PING, [$this, 'verify_all']);
 
@@ -262,23 +258,10 @@ class EzIT_Licensing
         // A verdict flip must be visible to guests NOW — purge every page
         // cache we know about so the next request reaches PHP.
         if ($lic['status'] !== $prev) {
-            update_option('ezit_cache_purge_pending', time(), false); // init retries with more APIs
             $this->purge_caches();
         }
 
         return $ok;
-    }
-
-    /** Second-chance purge: runs on the request AFTER a verdict flip, when
-     *  front-end cache APIs (e.g. WP Super Cache phase2, loaded via the
-     *  advanced-cache drop-in) are actually available. */
-    public function maybe_purge_cache(): void
-    {
-        if (! get_option('ezit_cache_purge_pending')) {
-            return;
-        }
-        delete_option('ezit_cache_purge_pending');
-        $this->purge_caches();
     }
 
     /** Purge popular page caches so a verdict flip is live immediately. */
