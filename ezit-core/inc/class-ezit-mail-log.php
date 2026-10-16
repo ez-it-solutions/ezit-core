@@ -87,7 +87,10 @@ class EzIT_Mail_Log
             'to'      => sanitize_text_field((string) $to),
             'subject' => sanitize_text_field((string) ($data['subject'] ?? '')),
             'error'   => sanitize_text_field($error),
-            'from'    => sanitize_text_field($from),
+            // sanitize_text_field() would strip "<addr>" as an HTML tag —
+            // keep the angle brackets, kill only line breaks (header-safe;
+            // the value is esc_html()'d wherever it's rendered).
+            'from'    => trim((string) preg_replace('/[\r\n]+/', ' ', $from)),
             'body'    => (string) ($data['message'] ?? ''),
         ]);
 
