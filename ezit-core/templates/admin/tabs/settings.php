@@ -141,7 +141,10 @@ async function refreshMailLog() {
 
 // Click a row with a stored body → preview modal. The iframe loads the
 // mail as its own document, so the email's styles render untouched.
+// Portal to <body>: the tab component's animations create a containing
+// block that would otherwise trap the fixed overlay inside the panel.
 const mvModal = document.getElementById('ezit-maillog-modal');
+if (mvModal) document.body.appendChild(mvModal);
 function openMailView(tr) {
     const idx = tr.dataset.mlogIdx;
     if (!mvModal || idx === undefined || !tr.classList.contains('has-body')) return;
