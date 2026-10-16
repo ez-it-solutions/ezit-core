@@ -100,7 +100,7 @@ $products  = $core->products();
             <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
             <button class="ezit-btn ezit-btn--ghost"><?php esc_html_e('Deactivate', 'ezit-core'); ?></button>
         </form>
-        <?phplic     = $licensing->license($slug) ?: [];
+        <?php else :
             $revoked = ! empty($lic['revoked']);
         ?>
         <?php if ($revoked) : ?>
