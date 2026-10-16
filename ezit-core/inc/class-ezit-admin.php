@@ -360,7 +360,7 @@ class EzIT_Admin
         }
 
         // Email log — the section's "Clear log" button submits here.
-        if ($section === 'maillog' && isset($_POST['ezit_clear_maillog'])) {
+        if ($section === 'email-log' && isset($_POST['ezit_clear_maillog'])) {
             EzIT_Mail_Log::clear();
         }
 

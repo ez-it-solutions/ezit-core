@@ -37,7 +37,7 @@ if (! defined('ABSPATH')) {
         'login'  => __('Login page', 'ezit-core'),
         'alerts' => __('Alerts & banners', 'ezit-core'),
         'studio' => __('Site Studio', 'ezit-core'),
-        'maillog' => __('Email log', 'ezit-core'),
+        'email-log' => __('Email log', 'ezit-core'),
     ];
     $section = sanitize_key($_GET['section'] ?? 'server'); // phpcs:ignore
     if (! isset($sections[$section])) {
