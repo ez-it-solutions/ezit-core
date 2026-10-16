@@ -15,10 +15,25 @@ class EzIT_Mail_Log
     public const OPTION = 'ezit_mail_log';
     public const MAX    = 100;
 
+    /** Sender captured from PHPMailer at send time — some mailers strip
+     *  the From header out of the list before wp_mail_succeeded fires. */
+    private static ?string $pending_from = null;
+
     public static function boot(): void
     {
+        add_action('phpmailer_init',    [self::class, 'capture_from']);
         add_action('wp_mail_succeeded', [self::class, 'sent']);
-        add_action('wp_mail_failed', [self::class, 'failed']);
+        add_action('wp_mail_failed',    [self::class, 'failed']);
+    }
+
+    /** phpmailer_init fires per wp_mail() — stash the mailer's From. */
+    public static function capture_from($phpmailer): void
+    {
+        $from = trim((string) ($phpmailer->From ?? ''));
+        $name = trim((string) ($phpmailer->FromName ?? ''));
+        self::$pending_from = $from === ''
+            ? null
+            : ($name !== '' ? sprintf('%s <%s>', $name, $from) : $from);
     }
 
     /** @param array $data mail args as sent: to, subject, headers… */
@@ -61,6 +76,10 @@ class EzIT_Mail_Log
                 $from = trim(substr(ltrim($h), 5)); // "From: x" line
             }
         }
+        if ($from === '' && self::$pending_from !== null) {
+            $from = self::$pending_from;
+        }
+        self::$pending_from = null; // consumed — never leak into the next send
 
         array_unshift($log, [
             'time'    => time(), // epoch — display converts to site timezone
