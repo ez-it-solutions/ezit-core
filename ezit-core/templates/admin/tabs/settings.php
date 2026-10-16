@@ -88,5 +88,44 @@ document.addEventListener('ezt:tab-change', (e) => {
     if (!param) return;
     const input = e.target.closest('form')?.querySelector(`input[name="${param}"]`);
     if (input && e.detail.id) input.value = e.detail.id;
+
+    // Email log swaps client-side — pull fresh rows so the table is
+    // never a stale render of whenever the page first loaded.
+    if (e.detail.id === 'email-log') refreshMailLog();
 });
+
+async function refreshMailLog() {
+    const tbody = document.getElementById('ezit-maillog-rows');
+    if (!tbody || typeof ajaxurl === 'undefined') return;
+    try {
+        const res  = await fetch(ajaxurl + '?action=ezit_maillog');
+        const data = await res.json();
+        const rows = data?.data?.rows ?? [];
+        const wrap  = document.getElementById('ezit-maillog-wrap');
+        const empty = document.getElementById('ezit-maillog-empty');
+        tbody.innerHTML = '';
+        const td = (txt, css = '') => {
+            const d = document.createElement('td');
+            d.textContent = txt;
+            if (css) d.style.cssText = css;
+            return d;
+        };
+        rows.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.appendChild(td(r.time || '', 'white-space:nowrap'));
+            const badge = document.createElement('span');
+            badge.className = 'ezit-badge ' + (r.status === 'sent' ? 'is-active' : 'is-inactive');
+            badge.textContent = r.status === 'sent' ? 'Sent' : 'Failed';
+            const st = document.createElement('td');
+            st.appendChild(badge);
+            tr.appendChild(st);
+            tr.appendChild(td(r.to || ''));
+            tr.appendChild(td(r.subject || ''));
+            tr.appendChild(td(r.error || '', 'color:#b3483a;font-size:12.5px'));
+            tbody.appendChild(tr);
+        });
+        if (wrap)  wrap.style.display  = rows.length ? '' : 'none';
+        if (empty) empty.style.display = rows.length ? 'none' : '';
+    } catch (err) { /* leave the server-rendered rows in place */ }
+}
 </script>

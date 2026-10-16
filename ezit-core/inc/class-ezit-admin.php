@@ -29,6 +29,7 @@ class EzIT_Admin
         add_action('admin_post_ezit_settings',   [$this, 'handle_settings']);
         add_action('admin_post_ezit_switch_theme', [$this, 'handle_switch_theme']);
         add_action('admin_post_ezit_credit',     [$this, 'handle_credit']);
+        add_action('wp_ajax_ezit_maillog',       [$this, 'handle_maillog']);
     }
 
     // ── menu ────────────────────────────────────────────────────────
@@ -367,6 +368,16 @@ class EzIT_Admin
         // Return the user to the section they were editing.
         $sec = sanitize_key(wp_unslash($_POST['section'] ?? ''));
         $this->redirect('settings', 'saved', '', $sec !== '' ? ['section' => $sec] : []);
+    }
+
+    /** Fresh rows for the Email log section — the tabs swap client-side,
+     *  so the panel needs live data rather than a stale render. */
+    public function handle_maillog(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'denied'], 403);
+        }
+        wp_send_json_success(['rows' => array_slice(EzIT_Mail_Log::formatted(), 0, 20)]);
     }
 
     /** Switch the site's active theme — same flow as Appearance → Themes. */

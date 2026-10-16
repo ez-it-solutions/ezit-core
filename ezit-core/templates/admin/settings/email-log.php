@@ -7,7 +7,26 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-$entries = EzIT_Mail_Log::entries();
+$all      = EzIT_Mail_Log::formatted();
+$per_page = 20;
+$total    = count($all);
+$pages    = max(1, (int) ceil($total / $per_page));
+$mlog_pg  = min($pages, max(1, (int) ($_GET['mlog_page'] ?? 1))); // phpcs:ignore
+$entries  = array_slice($all, ($mlog_pg - 1) * $per_page, $per_page);
+
+$nav = '';
+if ($pages > 1) {
+    $nav = paginate_links([
+        'base'      => add_query_arg('mlog_page', '%#%'),
+        'format'    => '',
+        'current'   => $mlog_pg,
+        'total'     => $pages,
+        'prev_text' => '&larr;',
+        'next_text' => '&rarr;',
+        'type'      => 'list',
+        'add_args'  => false,
+    ]);
+}
 ?>
 <div class="ezit-card">
     <div class="ezit-card__head">
@@ -24,10 +43,10 @@ $entries = EzIT_Mail_Log::entries();
         <?php esc_html_e('Every email the site tried to send — newest first. Failed entries carry the transport error.', 'ezit-core'); ?>
     </p>
 
-    <?php if ($entries === []) : ?>
-        <p class="ezit-meta"><?php esc_html_e('No email activity yet.', 'ezit-core'); ?></p>
-    <?php else : ?>
-    <div style="overflow-x:auto">
+    <?php if ($entries === [] && $total === 0) : ?>
+        <p class="ezit-meta" id="ezit-maillog-empty"><?php esc_html_e('No email activity yet.', 'ezit-core'); ?></p>
+    <?php endif; ?>
+    <div id="ezit-maillog-wrap" style="overflow-x:auto<?php echo $total === 0 ? ';display:none' : ''; ?>">
         <table class="widefat striped" style="border:0">
             <thead>
                 <tr>
@@ -38,7 +57,7 @@ $entries = EzIT_Mail_Log::entries();
                     <th><?php esc_html_e('Error', 'ezit-core'); ?></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="ezit-maillog-rows">
             <?php foreach ($entries as $row) : $ok = ($row['status'] ?? '') === 'sent'; ?>
                 <tr>
                     <td style="white-space:nowrap"><?php echo esc_html($row['time'] ?? ''); ?></td>
@@ -54,6 +73,8 @@ $entries = EzIT_Mail_Log::entries();
             <?php endforeach; ?>
             </tbody>
         </table>
+        <?php if ($nav !== '') : ?>
+        <div class="ezit-paging" style="margin-top:12px"><?php echo $nav; // phpcs:ignore — paginate_links output ?></div>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 </div>

@@ -185,6 +185,14 @@
 .ezit-tabs .ezt__panel--active[data-ezt-edge="right"] { border-top-right-radius: var(--ezt-radius-panel) !important; }
 .ezit-tabs .ezt__panel { align-items: flex-start; }
 .ezit-tabs .ezt__panel-inner { max-width: none; width: 100%; }
+
+/* Settings subnav — the labels are short, so the column only needs
+   ~180px; panels keep the remaining width (the component's own
+   520px inner cap would squeeze wide tables like the Email log). */
+.ezit-pg .ezt-subnav { grid-template-columns: minmax(150px, 185px) 1fr; width: min(1180px, 100%); padding: 14px; }
+.ezit-pg .ezt-subnav > .ezt__tabs > li > .ezt__tab { min-height: 44px; padding: 10px 16px; }
+.ezit-pg .ezt-subnav .ezt__panel-inner { max-width: none; width: 100%; }
+.ezit-pg .ezt-subnav .ezit-card { padding: 16px 18px; margin-bottom: 0; }
 .ezit-pg .ezt__text { max-width: none; }   /* component caps at 46ch — our stats need one line */
 
 /* WP admin colors vs panel themes: heading element rules (#1d2327) beat

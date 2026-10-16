@@ -47,7 +47,7 @@ class EzIT_Mail_Log
         }
 
         array_unshift($log, [
-            'time'    => current_time('mysql'),
+            'time'    => time(), // epoch — display converts to site timezone
             'status'  => $status,
             'to'      => sanitize_text_field((string) $to),
             'subject' => sanitize_text_field((string) ($data['subject'] ?? '')),
@@ -62,6 +62,23 @@ class EzIT_Mail_Log
     {
         $log = get_option(self::OPTION, []);
         return is_array($log) ? $log : [];
+    }
+
+    /**
+     * Entries with `time` rendered in the site's timezone using the
+     * Settings → General date+time formats (no hardcoded 24h clock).
+     */
+    public static function formatted(): array
+    {
+        $fmt = trim(get_option('date_format') . ' ' . get_option('time_format'));
+        return array_map(static function (array $row) use ($fmt): array {
+            $ts = $row['time'] ?? '';
+            // Epoch (new) vs legacy 'Y-m-d H:i:s' stored by the first build.
+            $row['time'] = is_numeric($ts)
+                ? wp_date($fmt, (int) $ts)
+                : (string) $ts;
+            return $row;
+        }, self::entries());
     }
 
     public static function clear(): void
