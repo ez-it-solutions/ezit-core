@@ -113,7 +113,10 @@ async function refreshMailLog() {
         rows.forEach((r, i) => {
             const tr = document.createElement('tr');
             tr.className = 'ezit-maillog-row' + (r.has_body ? ' has-body' : '');
-            tr.dataset.mlogIdx = i;
+            tr.dataset.mlogIdx  = i;
+            tr.dataset.mlogFrom = r.from || '';
+            tr.dataset.mlogTo   = r.to   || '';
+            tr.dataset.mlogWhen = r.time || '';
             tr.appendChild(td(r.time || '', 'white-space:nowrap'));
             const badge = document.createElement('span');
             badge.className = 'ezit-badge ' + (r.status === 'sent' ? 'is-active' : 'is-inactive');
@@ -166,6 +169,10 @@ document.getElementById('ezit-maillog-rows')?.addEventListener('click', (e) => {
     const tr = e.target.closest('tr.ezit-maillog-row');
     if (tr) openMailView(tr);
 });
+document.getElementById('ezit-mailview-close')?.addEventListener('click', closeMailView);
+mvModal?.addEventListener('click', (e) => { if (e.target === mvModal) closeMailView(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMailView(); });
+</script>
 document.getElementById('ezit-mailview-close')?.addEventListener('click', closeMailView);
 mvModal?.addEventListener('click', (e) => { if (e.target === mvModal) closeMailView(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMailView(); });

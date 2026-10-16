@@ -63,7 +63,10 @@ if ($pages > 1) {
                 $idx     = ($mlog_pg - 1) * $per_page + $i; // index into the full newest-first log
                 $canview = ! empty($row['has_body']);
             ?>
-                <tr class="ezit-maillog-row<?php echo $canview ? ' has-body' : ''; ?>" data-mlog-idx="<?php echo esc_attr((string) $idx); ?>">
+                <tr class="ezit-maillog-row<?php echo $canview ? ' has-body' : ''; ?>" data-mlog-idx="<?php echo esc_attr((string) $idx); ?>"
+                    data-mlog-from="<?php echo esc_attr($row['from'] ?? ''); ?>"
+                    data-mlog-to="<?php echo esc_attr($row['to'] ?? ''); ?>"
+                    data-mlog-when="<?php echo esc_attr($row['time'] ?? ''); ?>">
                     <td style="white-space:nowrap"><?php echo esc_html($row['time'] ?? ''); ?></td>
                     <td>
                         <span class="ezit-badge <?php echo $ok ? 'is-active' : 'is-inactive'; ?>">
@@ -90,10 +93,18 @@ if ($pages > 1) {
     <div id="ezit-maillog-modal" hidden>
         <div class="ezit-mailview" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e('Email preview', 'ezit-core'); ?>">
             <div class="ezit-mailview__bar">
-                <strong id="ezit-mailview-title"></strong>
+                <strong id="ezit-mailview-title"><?php esc_html_e('Email preview', 'ezit-core'); ?></strong>
                 <a id="ezit-mailview-open" href="#" target="_blank" rel="noopener"><?php esc_html_e('Open in new window', 'ezit-core'); ?></a>
                 <button type="button" id="ezit-mailview-close" aria-label="<?php esc_attr_e('Close', 'ezit-core'); ?>">&times;</button>
             </div>
+            <?php /* Inbox-style header — the same fields a mail client
+                   shows above the message. */ ?>
+            <dl class="ezit-mailview__meta">
+                <div><dt><?php esc_html_e('From', 'ezit-core'); ?></dt><dd id="mv-from"></dd></div>
+                <div><dt><?php esc_html_e('To', 'ezit-core'); ?></dt><dd id="mv-to"></dd></div>
+                <div><dt><?php esc_html_e('Subject', 'ezit-core'); ?></dt><dd id="mv-subject"></dd></div>
+                <div><dt><?php esc_html_e('Sent', 'ezit-core'); ?></dt><dd id="mv-when"></dd></div>
+            </dl>
             <iframe id="ezit-mailview-frame" title="<?php esc_attr_e('Email preview', 'ezit-core'); ?>"></iframe>
         </div>
     </div>

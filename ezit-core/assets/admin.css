@@ -202,15 +202,27 @@
 #ezit-maillog-modal {
     position: fixed; inset: 0; z-index: 100000;
     display: flex; align-items: center; justify-content: center;
+    padding: 72px 16px 32px; /* clears the WP admin bar + plugin header */
     background: rgba(15,16,24,.55); backdrop-filter: blur(2px);
 }
 #ezit-maillog-modal[hidden] { display: none; }
 .ezit-mailview {
-    width: min(720px, 92vw); height: min(86vh, 760px);
+    width: min(720px, 92vw); height: min(82vh, 760px); max-height: 100%;
     display: flex; flex-direction: column;
     background: #f0f0f1; border-radius: 12px; overflow: hidden;
     box-shadow: 0 24px 64px rgba(0,0,0,.35);
 }
+/* Inbox-style message header — light card between the dark chrome bar
+   and the email body, like a mail client's From/To/Subject/Date block. */
+.ezit-mailview__meta {
+    display: grid; grid-template-columns: auto 1fr; gap: 3px 14px;
+    margin: 0; padding: 12px 18px;
+    background: #fff; border-bottom: 1px solid #dcdfe9;
+    font: 13px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.ezit-mailview__meta div { display: contents; }
+.ezit-mailview__meta dt { color: #787c82; font-weight: 600; }
+.ezit-mailview__meta dd { margin: 0; color: #14151f; word-break: break-word; }
 .ezit-mailview__bar {
     display: flex; align-items: center; gap: 14px;
     padding: 10px 14px; background: #14151f; color: #eef0f2;

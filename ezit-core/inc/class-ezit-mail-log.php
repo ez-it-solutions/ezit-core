@@ -46,12 +46,22 @@ class EzIT_Mail_Log
             $log = [];
         }
 
+        // 'From: Name <a@b>' is one of the header strings — capture it
+        // for the inbox-style preview header.
+        $from = '';
+        foreach ((array) ($data['headers'] ?? []) as $h) {
+            if (stripos((string) $h, 'From:') === 0) {
+                $from = trim(substr((string) $h, 5));
+            }
+        }
+
         array_unshift($log, [
             'time'    => time(), // epoch — display converts to site timezone
             'status'  => $status,
             'to'      => sanitize_text_field((string) $to),
             'subject' => sanitize_text_field((string) ($data['subject'] ?? '')),
             'error'   => sanitize_text_field($error),
+            'from'    => sanitize_text_field($from),
             'body'    => (string) ($data['message'] ?? ''),
         ]);
 
