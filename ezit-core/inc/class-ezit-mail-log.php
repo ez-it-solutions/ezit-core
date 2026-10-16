@@ -26,27 +26,38 @@ class EzIT_Mail_Log
         add_action('wp_mail_failed',    [self::class, 'failed']);
     }
 
-    /** phpmailer_init fires per wp_mail() — stash the mailer's From. */
+    /** phpmailer_init fires per wp_mail() — stash the mailer's From.
+     *  CRITICAL: this runs INSIDE wp_mail() before the send — an
+     *  exception here would abort the mail and bypass wp_mail_failed,
+     *  so everything is swallowed. Logging can never break sending. */
     public static function capture_from($phpmailer): void
     {
-        $from = trim((string) ($phpmailer->From ?? ''));
-        $name = trim((string) ($phpmailer->FromName ?? ''));
-        self::$pending_from = $from === ''
-            ? null
-            : ($name !== '' ? sprintf('%s <%s>', $name, $from) : $from);
+        try {
+            $from = is_object($phpmailer) ? trim((string) ($phpmailer->From ?? '')) : '';
+            $name = is_object($phpmailer) ? trim((string) ($phpmailer->FromName ?? '')) : '';
+            self::$pending_from = $from === ''
+                ? null
+                : ($name !== '' ? sprintf('%s <%s>', $name, $from) : $from);
+        } catch (\Throwable $e) {
+            self::$pending_from = null;
+        }
     }
 
-    /** @param array $data mail args as sent: to, subject, headers… */
-    public static function sent(array $data): void
+    public static function sent($data): void
     {
-        self::record('sent', $data, '');
+        try {
+            self::record('sent', is_array($data) ? $data : [], '');
+        } catch (\Throwable $e) { /* never break wp_mail() */ }
     }
 
-    public static function failed(WP_Error $error): void
+    public static function failed($error): void
     {
-        // WP stuffs the original mail args into the error data.
-        $data = $error->get_error_data();
-        self::record('failed', is_array($data) ? $data : [], $error->get_error_message());
+        try {
+            // WP stuffs the original mail args into the error data.
+            $data = $error instanceof WP_Error ? $error->get_error_data() : [];
+            $msg  = $error instanceof WP_Error ? $error->get_error_message() : '';
+            self::record('failed', is_array($data) ? $data : [], $msg);
+        } catch (\Throwable $e) { /* never break wp_mail() */ }
     }
 
     private static function record(string $status, array $data, string $error): void
