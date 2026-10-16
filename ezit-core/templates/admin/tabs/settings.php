@@ -169,10 +169,12 @@ document.getElementById('ezit-maillog-rows')?.addEventListener('click', (e) => {
     const tr = e.target.closest('tr.ezit-maillog-row');
     if (tr) openMailView(tr);
 });
-document.getElementById('ezit-mailview-close')?.addEventListener('click', closeMailView);
-mvModal?.addEventListener('click', (e) => { if (e.target === mvModal) closeMailView(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMailView(); });
-</script>
+const mlogRefresh = document.getElementById('ezit-maillog-refresh');
+mlogRefresh?.addEventListener('click', async () => {
+    mlogRefresh.classList.add('is-spinning');
+    try { await refreshMailLog(); }
+    finally { mlogRefresh.classList.remove('is-spinning'); }
+});
 document.getElementById('ezit-mailview-close')?.addEventListener('click', closeMailView);
 mvModal?.addEventListener('click', (e) => { if (e.target === mvModal) closeMailView(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMailView(); });

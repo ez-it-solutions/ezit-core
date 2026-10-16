@@ -32,9 +32,14 @@ if ($pages > 1) {
     <div class="ezit-card__head">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
         <h3><?php esc_html_e('Email log', 'ezit-core'); ?></h3>
+        <button type="button" id="ezit-maillog-refresh" class="ezit-meta" title="<?php esc_attr_e('Refresh', 'ezit-core'); ?>"
+                style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:none;border:0;cursor:pointer;padding:2px 4px">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            <?php esc_html_e('Refresh', 'ezit-core'); ?>
+        </button>
         <?php if ($entries !== []) : ?>
         <button type="submit" name="ezit_clear_maillog" value="1" class="ezit-meta"
-                style="margin-left:auto;background:none;border:0;cursor:pointer;text-decoration:underline">
+                style="background:none;border:0;cursor:pointer;text-decoration:underline">
             <?php esc_html_e('Clear log', 'ezit-core'); ?>
         </button>
         <?php endif; ?>

@@ -199,6 +199,10 @@
 .ezit-maillog-row.has-body { cursor: pointer; }
 .ezit-maillog-row.has-body:hover td { background: rgba(118,185,0,.05); }
 .ezit-maillog-subj { font-weight: 600; }
+#ezit-maillog-refresh:hover { color: var(--pg-accent); }
+#ezit-maillog-refresh.is-spinning svg { animation: ezit-mlog-spin .7s linear infinite; }
+@keyframes ezit-mlog-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #ezit-maillog-refresh.is-spinning svg { animation: none; } }
 #ezit-maillog-modal {
     position: fixed; inset: 0; z-index: 100000;
     display: flex; align-items: center; justify-content: center;
