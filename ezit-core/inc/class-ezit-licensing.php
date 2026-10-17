@@ -31,6 +31,7 @@ class EzIT_Licensing
             wp_schedule_event(time() + 300, 'hourly', self::CRON);
         }
         add_action(self::CRON, [$this, 'verify_all']);
+        add_action(self::CRON, [EzIT_Config::class, 'refresh_if_stale']);
 
         // Freshness guarantees — three layers:
         // 1. admin_init: synchronous re-verify of stale licenses on every
@@ -246,6 +247,10 @@ class EzIT_Licensing
             $this->save($slug, $lic);
             return ($lic['status'] ?? '') === 'active';
         }
+
+        // Config staleness hint rides every verify response — re-read
+        // get_config when the published version moved.
+        EzIT_Config::maybe_sync((int) ($res['config_version'] ?? 0));
 
         // Definitive answer — 'invalid' covers disabled/revoked server-side.
         $prev              = $lic['status'] ?? '';

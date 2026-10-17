@@ -19,11 +19,20 @@ class EzIT_API
      * @return array|WP_Error decoded JSON body, or WP_Error on transport
      *         / HTTP failure.
      */
-    public static function post(string $endpoint, array $product, array $body = [])
+    public static function post(string $endpoint, array $product, array $body = [], ?string $base = null)
     {
         $core = ezit_core();
 
-        $response = wp_remote_post($core->api_url() . '/api/' . ltrim($endpoint, '/'), [
+        // Endpoint map from the server config — lets the server rename
+        // endpoints without a plugin deploy. Only bare names remap;
+        // parameterized paths ('download_update/main/x') pass through.
+        if (strpos($endpoint, '/') === false) {
+            $endpoint = EzIT_Config::endpoint($endpoint) ?? $endpoint;
+        }
+
+        $base = $base !== null ? untrailingslashit($base) : $core->api_url();
+
+        $response = wp_remote_post($base . '/api/' . ltrim($endpoint, '/'), [
             'timeout' => 20,
             'headers' => self::headers($product),
             'body'    => $body,

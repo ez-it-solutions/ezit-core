@@ -11,5 +11,6 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
 
 delete_option('ezit_licenses');
 delete_option('ezit_api_url');
+delete_option('ezit_server_config');
 
 wp_clear_scheduled_hook('ezit_daily_license_verify');

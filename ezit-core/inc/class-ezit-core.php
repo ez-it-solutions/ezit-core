@@ -74,11 +74,27 @@ class EzIT_Core
         return $this->licensing ??= new EzIT_Licensing($this);
     }
 
-    /** The license-server base URL; filterable + option override. */
-    public function api_url(): string
+    /**
+     * Bootstrap URL — the hardcoded/option address the site can always
+     * reach home on. Server config's api_base overrides this at runtime
+     * once synced (see EzIT_Config).
+     */
+    public function bootstrap_url(): string
     {
         $saved = get_option('ezit_api_url', '');
         $url   = $saved !== '' ? $saved : EZIT_API_URL;
-        return untrailingslashit(apply_filters('ezit_api_url', $url));
+        return untrailingslashit($url);
+    }
+
+    /**
+     * Effective license-server base URL. Published server config wins —
+     * that's the point of get_config: repoint every site by publishing a
+     * new config version, no plugin redeploy.
+     */
+    public function api_url(): string
+    {
+        $base = class_exists('EzIT_Config') ? (EzIT_Config::api_base() ?? $this->bootstrap_url())
+                                            : $this->bootstrap_url();
+        return untrailingslashit(apply_filters('ezit_api_url', $base));
     }
 }
