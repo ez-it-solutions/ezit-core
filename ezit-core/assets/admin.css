@@ -576,7 +576,7 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-theme__title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .ezit-pg .ezit-theme__title strong { font-size: 14.5px; color: var(--pg-ink); }
 .ezit-pg .ezit-theme__badges { display: flex; gap: 6px; flex-wrap: wrap; min-height: 20px; }
-.ezit-pg .ezit-theme__actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+.ezit-pg .ezit-theme__actions { display: flex; gap: 8px; width: 100%; }
 .ezit-pg .ezit-theme__actions .ezit-btn { flex: 1; padding-inline: 10px; text-align: center; }
 .ezit-pg .ezit-theme__actions form { flex: 1; display: flex; margin: 0; }
 .ezit-pg .ezit-theme__actions form .ezit-btn { width: 100%; }
@@ -634,18 +634,32 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     margin: 0; font-size: 12px; line-height: 1.45; color: #a02c21;
 }
 
-/* Card actions reveal on hover/focus — keeps the grid clean; keyboard
-   users get the same reveal via :focus-within, touch gets always-on. */
-.ezit-pg .ezit-theme__actions {
-    opacity: 0; transform: translateY(4px);
-    transition: opacity .18s ease, transform .18s ease;
+/* Card actions — centered scrim over the screenshot on hover/focus, so
+   the resting card stays short. The stylesheet slug rides along as
+   useful context (it's what register_product() keys on). Touch devices
+   get an always-on bottom gradient bar instead of a hidden overlay. */
+.ezit-pg .ezit-theme__overlay {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 16px;
+    background: rgba(20,21,31,.62); backdrop-filter: blur(2px);
+    opacity: 0; transition: opacity .18s ease;
 }
-.ezit-pg .ezit-theme:hover .ezit-theme__actions,
-.ezit-pg .ezit-theme:focus-within .ezit-theme__actions {
-    opacity: 1; transform: none;
+.ezit-pg .ezit-theme:hover .ezit-theme__overlay,
+.ezit-pg .ezit-theme:focus-within .ezit-theme__overlay {
+    opacity: 1;
+}
+.ezit-pg .ezit-theme__slug {
+    font: 600 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .02em; color: rgba(255,255,255,.78);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 @media (hover: none) {
-    .ezit-pg .ezit-theme__actions { opacity: 1; transform: none; }
+    .ezit-pg .ezit-theme__overlay {
+        opacity: 1; justify-content: flex-end;
+        background: linear-gradient(to top, rgba(20,21,31,.78), rgba(20,21,31,0) 60%);
+        backdrop-filter: none;
+    }
 }
 
 /* Secondary link-styled button next to .ezt__cta in panel footers */
