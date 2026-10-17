@@ -406,11 +406,14 @@ class EzIT_Admin
                 $in          = (array) ($posted[$key] ?? []);
                 $clean[$key] = [
                     'on'     => ! empty($in['on']) ? 1 : 0,
+                    'mode'   => sanitize_key($in['mode'] ?? 'structured'),
                     'label'  => sanitize_text_field(wp_unslash($in['label'] ?? '')),
                     'detail' => sanitize_text_field(wp_unslash($in['detail'] ?? '')),
                     'cta'    => sanitize_text_field(wp_unslash($in['cta'] ?? '')),
                     'url'    => sanitize_text_field(wp_unslash($in['url'] ?? '')),
                     'custom' => wp_kses_post(wp_unslash((string) ($in['custom'] ?? ''))),
+                    'bg'     => sanitize_hex_color(wp_unslash((string) ($in['bg'] ?? ''))) ?: '',
+                    'color'  => sanitize_hex_color(wp_unslash((string) ($in['color'] ?? ''))) ?: '',
                     'start'  => sanitize_text_field(wp_unslash($in['start'] ?? '')),
                     'end'    => sanitize_text_field(wp_unslash($in['end'] ?? '')),
                 ];

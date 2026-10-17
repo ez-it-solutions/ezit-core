@@ -575,7 +575,7 @@ class EzIT_Gate
             if ($declared) {
                 $cfg    = array_merge($declared['defaults'] ?? [], EzIT_Alerts::saved()[$key] ?? []);
                 $custom = trim((string) ($cfg['custom'] ?? ''));
-                if ($custom !== '') {
+                if (($cfg['mode'] ?? 'structured') === 'custom' && $custom !== '') {
                     // Stripe is plain text — drop the slot's markup.
                     return wp_strip_all_tags($custom);
                 }

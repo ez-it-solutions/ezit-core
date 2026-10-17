@@ -27,46 +27,82 @@ $saved = EzIT_Alerts::saved();
         $on = isset($saved[$key]) ? ! empty($saved[$key]['on']) : true;
         $to_dt = static function ($v) { return $v !== '' && strtotime((string) $v) ? gmdate('Y-m-d\TH:i', strtotime((string) $v)) : ''; };
     ?>
+    <?php $mode = ($cfg['mode'] ?? 'structured') === 'custom' ? 'custom' : 'structured'; ?>
     <fieldset class="ezit-card" style="margin-bottom:18px">
         <div class="ezit-card__head" style="margin-bottom:10px">
             <h4 style="margin:0;font-size:14.5px"><?php echo esc_html($slot['label'] ?? $key); ?></h4>
             <span class="ezit-meta" style="margin-left:auto"><?php echo esc_html($slot['product']); ?></span>
         </div>
 
-        <div class="ezit-field ezit-field--check">
-            <label>
-                <input type="checkbox" name="ezit_slots[<?php echo esc_attr($key); ?>][on]" value="1" <?php checked($on); ?>>
-                <?php esc_html_e('Show this banner', 'ezit-core'); ?>
-            </label>
-        </div>
-        <div class="ezit-field-grid">
-            <div class="ezit-field">
-                <label><?php esc_html_e('Label', 'ezit-core'); ?></label>
-                <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][label]" value="<?php echo esc_attr($cfg['label'] ?? ''); ?>">
+        <div class="ezit-field-grid" style="align-items:end">
+            <div class="ezit-field ezit-field--check" style="margin-bottom:14px">
+                <label>
+                    <input type="checkbox" name="ezit_slots[<?php echo esc_attr($key); ?>][on]" value="1" <?php checked($on); ?>>
+                    <?php esc_html_e('Show this banner', 'ezit-core'); ?>
+                </label>
             </div>
             <div class="ezit-field">
-                <label><?php esc_html_e('Detail', 'ezit-core'); ?></label>
-                <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][detail]" value="<?php echo esc_attr($cfg['detail'] ?? ''); ?>"
-                       placeholder="<?php esc_attr_e('e.g. Oct 15 – Dec 7', 'ezit-core'); ?>">
+                <label><?php esc_html_e('Layout', 'ezit-core'); ?></label>
+                <select class="ezit-slot-mode" name="ezit_slots[<?php echo esc_attr($key); ?>][mode]">
+                    <option value="structured" <?php selected($mode, 'structured'); ?>><?php esc_html_e('Structured — label, detail & button', 'ezit-core'); ?></option>
+                    <option value="custom" <?php selected($mode, 'custom'); ?>><?php esc_html_e('Custom — free-form content & colors', 'ezit-core'); ?></option>
+                </select>
             </div>
         </div>
-        <div class="ezit-field-grid">
-            <div class="ezit-field">
-                <label><?php esc_html_e('Call-to-action text', 'ezit-core'); ?></label>
-                <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][cta]" value="<?php echo esc_attr($cfg['cta'] ?? ''); ?>">
+
+        <div class="ezit-slot-pane" data-pane="structured"<?php echo $mode === 'custom' ? ' hidden' : ''; ?>>
+            <div class="ezit-field-grid">
+                <div class="ezit-field">
+                    <label><?php esc_html_e('Label', 'ezit-core'); ?></label>
+                    <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][label]" value="<?php echo esc_attr($cfg['label'] ?? ''); ?>">
+                </div>
+                <div class="ezit-field">
+                    <label><?php esc_html_e('Detail', 'ezit-core'); ?></label>
+                    <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][detail]" value="<?php echo esc_attr($cfg['detail'] ?? ''); ?>"
+                           placeholder="<?php esc_attr_e('e.g. Oct 15 – Dec 7', 'ezit-core'); ?>">
+                </div>
             </div>
-            <div class="ezit-field">
-                <label><?php esc_html_e('Link URL', 'ezit-core'); ?></label>
-                <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][url]" value="<?php echo esc_attr($cfg['url'] ?? '') ?>"
-                       placeholder="/contact/ or https://…">
+            <div class="ezit-field-grid">
+                <div class="ezit-field">
+                    <label><?php esc_html_e('Call-to-action text', 'ezit-core'); ?></label>
+                    <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][cta]" value="<?php echo esc_attr($cfg['cta'] ?? ''); ?>">
+                </div>
+                <div class="ezit-field">
+                    <label><?php esc_html_e('Link URL', 'ezit-core'); ?></label>
+                    <input type="text" name="ezit_slots[<?php echo esc_attr($key); ?>][url]" value="<?php echo esc_attr($cfg['url'] ?? '') ?>"
+                           placeholder="/contact/ or https://…">
+                </div>
             </div>
         </div>
-        <div class="ezit-field">
-            <label><?php esc_html_e('Custom content (optional)', 'ezit-core'); ?></label>
-            <textarea name="ezit_slots[<?php echo esc_attr($key); ?>][custom]" rows="2"
-                      placeholder="<?php esc_attr_e('Replaces Label / Detail / CTA when filled — basic HTML allowed (<strong>, <em>, <a>)', 'ezit-core'); ?>"
-            ><?php echo esc_textarea($cfg['custom'] ?? ''); ?></textarea>
-            <span class="hint"><?php esc_html_e('Free-form bar copy with formatting — include your own <a href> if it should link; the structured fields are ignored while this is set.', 'ezit-core'); ?></span>
+
+        <div class="ezit-slot-pane" data-pane="custom"<?php echo $mode === 'custom' ? '' : ' hidden'; ?>>
+            <div class="ezit-field">
+                <label><?php esc_html_e('Content', 'ezit-core'); ?></label>
+                <?php
+                wp_editor(
+                    (string) ($cfg['custom'] ?? ''),
+                    'ezit-slot-custom-' . sanitize_key($key),
+                    [
+                        'textarea_name' => "ezit_slots[$key][custom]",
+                        'textarea_rows' => 3,
+                        'media_buttons' => false,
+                        'teeny'         => true,
+                        'quicktags'     => true,
+                    ]
+                );
+                ?>
+                <span class="hint"><?php esc_html_e('Rendered as-is in the bar — include your own link if it should click through; the whole bar is not wrapped in an anchor in this mode.', 'ezit-core'); ?></span>
+            </div>
+            <div class="ezit-field-grid">
+                <div class="ezit-field">
+                    <label><?php esc_html_e('Background', 'ezit-core'); ?></label>
+                    <input type="color" name="ezit_slots[<?php echo esc_attr($key); ?>][bg]" value="<?php echo esc_attr($cfg['bg'] ?? '#526335'); ?>">
+                </div>
+                <div class="ezit-field">
+                    <label><?php esc_html_e('Text color', 'ezit-core'); ?></label>
+                    <input type="color" name="ezit_slots[<?php echo esc_attr($key); ?>][color]" value="<?php echo esc_attr($cfg['color'] ?? '#ffffff'); ?>">
+                </div>
+            </div>
         </div>
         <div class="ezit-field-grid">
             <div class="ezit-field">
@@ -112,7 +148,7 @@ $saved = EzIT_Alerts::saved();
                 <?php endforeach; ?>
                 <?php foreach ($slots as $key => $slot) :
                     $slot_cfg  = array_merge($slot['defaults'] ?? [], $saved[$key] ?? []);
-                    $slot_text = trim((string) ($slot_cfg['custom'] ?? '')) !== ''
+                    $slot_text = ($slot_cfg['mode'] ?? '') === 'custom' && trim((string) ($slot_cfg['custom'] ?? '')) !== ''
                         ? wp_strip_all_tags((string) $slot_cfg['custom'])
                         : trim(implode(' — ', array_filter([
                             (string) ($slot_cfg['label'] ?? ''),
@@ -160,3 +196,16 @@ $saved = EzIT_Alerts::saved();
 </script>
     </fieldset>
 </div>
+<script>
+(function () {
+    document.querySelectorAll('.ezit-slot-mode').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+            var fs = sel.closest('fieldset');
+            if (!fs) return;
+            fs.querySelectorAll('.ezit-slot-pane').forEach(function (pane) {
+                pane.hidden = pane.dataset.pane !== sel.value;
+            });
+        });
+    });
+})();
+</script>

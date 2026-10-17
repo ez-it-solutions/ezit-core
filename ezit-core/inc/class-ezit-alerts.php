@@ -53,7 +53,8 @@ class EzIT_Alerts
 
     /**
      * Resolved config for a slot — null when the theme should hide it.
-     * Fields: on, label, detail, cta, url, start, end (all strings/ints).
+     * Fields: on, mode (structured|custom), label, detail, cta, url,
+     * custom (HTML), bg, color, start, end (all strings/ints).
      */
     public static function slot(string $key): ?array
     {
