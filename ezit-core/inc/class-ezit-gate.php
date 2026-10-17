@@ -488,6 +488,43 @@ class EzIT_Gate
         exit;
     }
 
+    /**
+     * Staff-only outage stripe — front-end counterpart of the wp-admin
+     * notice. Fires on wp_body_open AND wp_footer (themes without the
+     * former), so banner_done ensures it prints exactly once. Guests and
+     * gate users never see it; only logged-in editors/admins do.
+     */
+    public function outage_banner(): void
+    {
+        if ($this->banner_done
+            || ! is_user_logged_in()
+            || ! current_user_can('edit_posts')) {
+            return;
+        }
+        $state = $this->core->licensing()->server_state();
+        if ($state === 'up') {
+            return;
+        }
+        $this->banner_done = true;
+        $msg = $state === 'maintenance'
+            ? __('Ez IT license server: maintenance mode — site is running on its last verified license.', 'ezit-core')
+            : __('Ez IT license server: unreachable — site is running on its last verified license.', 'ezit-core');
+        // Pin under the WP admin bar (32px desktop, 46px below 782px);
+        // top:0 when the toolbar is disabled for this user.
+        $show_admin_bar = is_admin_bar_showing();
+        ?>
+<div id="ezit-outage-bar" role="status"
+     style="position:fixed;top:<?php echo $show_admin_bar ? '32px' : '0'; ?>;left:0;right:0;z-index:99998;display:flex;justify-content:center;
+            padding:7px 14px;background:#b3483a;color:#fff;font:600 13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;
+            box-shadow:0 2px 8px rgba(0,0,0,.25)">
+    <?php echo esc_html($msg); ?>
+</div>
+<?php if ($show_admin_bar) : ?>
+<style>@media (max-width: 782px) { #ezit-outage-bar { top: 46px; } }</style>
+<?php endif; ?>
+        <?php
+    }
+
     /** Gate decision state — shared by the debug endpoint + settings card. */
     public function report(): array
     {
