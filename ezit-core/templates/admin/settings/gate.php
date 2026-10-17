@@ -91,10 +91,19 @@ foreach ($core->products() as $slug => $p) {
                 <option value="closed" <?php selected($ov['mode'], 'closed'); ?>><?php esc_html_e('Force CLOSED — everyone gated', 'ezit-core'); ?></option>
             </select>
             <select id="ezit_ov_ttl" name="ezit_ov_ttl">
-                <option value="4"><?php esc_html_e('for 4 hours', 'ezit-core'); ?></option>
-                <option value="24" selected><?php esc_html_e('for 24 hours', 'ezit-core'); ?></option>
-                <option value="72"><?php esc_html_e('for 3 days', 'ezit-core'); ?></option>
-                <option value="168"><?php esc_html_e('for 7 days', 'ezit-core'); ?></option>
+                <?php
+                // Show the armed override's remaining life, snapped to the
+                // nearest offered window — re-saving keeps reality honest.
+                $ov_ttl_opts = [4 => __('for 4 hours', 'ezit-core'), 24 => __('for 24 hours', 'ezit-core'), 72 => __('for 3 days', 'ezit-core'), 168 => __('for 7 days', 'ezit-core')];
+                $ov_ttl_sel  = 24;
+                if ($ov['mode'] !== 'off') {
+                    $remaining_h = max(0, ((int) $ov['until'] - time()) / HOUR_IN_SECONDS);
+                    $ov_ttl_sel  = array_reduce(array_keys($ov_ttl_opts),
+                        static fn ($best, $h) => abs($h - $remaining_h) < abs($best - $remaining_h) ? $h : $best, 24);
+                }
+                foreach ($ov_ttl_opts as $h => $label) : ?>
+                <option value="<?php echo esc_attr($h); ?>" <?php selected($ov_ttl_sel, $h); ?>><?php echo esc_html($label); ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <span class="hint"><?php esc_html_e('Overrides always auto-expire — you can\'t forget a force-open site. Select Normal and save to clear early (no code needed).', 'ezit-core'); ?></span>

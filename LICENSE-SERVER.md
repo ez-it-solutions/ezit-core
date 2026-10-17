@@ -52,6 +52,56 @@ Failed `activate_license` / `verify_license` responses may carry
 Unknown/missing codes fall back to the response `message`. Always send
 `message` as the human string; `status_code` is the machine discriminator.
 
+### Recovery code + digest (client ≥ 1.2.0 — server must ship)
+
+Each product needs a **recovery code** — a human-readable secret
+(e.g. `XXXX-XXXX-XXXX-XXXX`) generated per product and shown in the
+dashboard under Products → Recovery code. Site admins use it to arm the
+emergency gate override *while the server is offline*, so validation is
+fully offline:
+
+```
+recovery_digest = HMAC-SHA256( "recovery|" + UPPERCASE(trim(code)), product.api_key )
+```
+
+Ship the digest (never the raw code) in **two places**:
+
+1. Inside the signed cert payload as `recovery_digest` — bound to the
+   product by the cert HMAC.
+2. Top-level in every `verify_license` response — so a site picks it up
+   on routine verify without needing a re-activation.
+
+Client behavior: `EzIT_Gate::recovery_code_valid()` recomputes the HMAC
+against any registered product's stored digest (`hash_equals`) — any
+product's code arms the override on its site. If no digest is on file
+yet the arming UI shows "No recovery code on file" — additive rollout
+is safe; old clients ignore the field.
+
+### Maintenance switch (client ≥ 1.2.0)
+
+A global outage switch the license dashboard can flip. While on, **every**
+`/api/*` endpoint answers:
+
+```
+HTTP 503
+Retry-After: <seconds until expected restoration>
+{ "status": false, "status_code": "SERVER_UNAVAILABLE",
+  "message": "License server is down for maintenance" }
+```
+
+Client behavior: `EzIT_API::post()` maps `503 + SERVER_UNAVAILABLE` to
+`WP_Error('ezit_server_unavailable', …, {retry_after, http})`; the client
+then keeps every product's last verdict, stamps `server_state=maintenance`,
+paces re-checks to `Retry-After` (5 min floor, 1 h cap), and shows a
+distinct "maintenance" banner instead of "unreachable". Any other failure
+shape (timeout, 5xx without the code, malformed JSON) classifies as
+`down` — same preservation, same pacing.
+
+Note: while the switch is on, even `verify_license` answers 503 — that's
+the point. No verdicts are issued during a window, and client-side
+verdict preservation means nothing is revoked. A real denial outside a
+maintenance window still requires a normal `status:false` JSON.
+
 ---
 
 ## 2. Already implemented (nothing to build)
