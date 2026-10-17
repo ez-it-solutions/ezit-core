@@ -192,7 +192,8 @@
 .ezit-pg .ezt-subnav { grid-template-columns: minmax(150px, 185px) 1fr; width: min(1180px, 100%); padding: 14px; }
 .ezit-pg .ezt-subnav > .ezt__tabs > li > .ezt__tab { min-height: 44px; padding: 10px 16px; }
 .ezit-pg .ezt-subnav .ezt__panel-inner { max-width: none; width: 100%; }
-.ezit-pg .ezt-subnav .ezit-card { padding: 16px 18px; margin-bottom: 0; }
+.ezit-pg .ezt-subnav .ezit-card { padding: 16px 18px; margin-bottom: 18px; }
+.ezit-pg .ezt-subnav .ezit-card:last-child { margin-bottom: 0; }
 
 /* Email log preview — rows with a stored body are clickable; the modal
    shows the actual email HTML in an iframe. */
@@ -349,6 +350,13 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     font-size: 14px; font-family: inherit; background: #fff; color: var(--pg-ink);
     box-shadow: none;
 }
+/* The shared input rule above flattens background to #fff — restore a
+   chevron so selects still look like selects. */
+.ezit-pg .ezit-field select {
+    appearance: none; -webkit-appearance: none;
+    padding-right: 34px;
+    background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235c5f6b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>') right 12px center no-repeat;
+}
 .ezit-pg .ezit-field input:focus, .ezit-pg .ezit-field select:focus, .ezit-pg .ezit-field textarea:focus {
     border-color: var(--pg-green); outline: 2px solid rgba(118,185,0,.28); outline-offset: -1px; box-shadow: none;
 }
@@ -393,6 +401,8 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     width: 18px; height: 18px; margin: 0; flex-shrink: 0;
     accent-color: var(--pg-green); cursor: pointer;
 }
+.ezit-pg .ezit-ov-row { display: flex; gap: 10px; }
+.ezit-pg .ezit-ov-row select { flex: 1; min-width: 0; }
 .ezit-pg .ezit-gate-list { list-style: none; margin: 0 0 18px; padding: 0; }
 .ezit-pg .ezit-gate-list li {
     display: flex; align-items: center; gap: 12px;
@@ -588,8 +598,9 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 }
 .ezit-pg .ezit-perpage label { font-size: 12.5px; color: var(--pg-muted); }
 .ezit-pg .ezit-perpage select {
-    padding: 5px 10px; border: 1px solid #dcdde6; border-radius: 8px;
-    background: #fff; font-size: 13px; font-weight: 700; color: var(--pg-ink);
+    padding: 5px 28px 5px 10px; border: 1px solid #dcdde6; border-radius: 8px;
+    background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="%235c5f6b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>') right 9px center no-repeat;
+    font-size: 13px; font-weight: 700; color: var(--pg-ink);
     min-height: auto; box-shadow: none;
 }
 .ezit-pg .ezit-perpage select:focus { border-color: var(--pg-green); outline: 2px solid rgba(118,185,0,.28); outline-offset: -1px; }

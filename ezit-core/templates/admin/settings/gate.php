@@ -84,17 +84,19 @@ foreach ($core->products() as $slug => $p) {
 
     <div class="ezit-field">
         <label for="ezit_ov_mode"><?php esc_html_e('Override', 'ezit-core'); ?></label>
-        <select id="ezit_ov_mode" name="ezit_ov_mode">
-            <option value="off" <?php selected($ov['mode'], 'off'); ?>><?php esc_html_e('Normal — gate follows license checks', 'ezit-core'); ?></option>
-            <option value="open" <?php selected($ov['mode'], 'open'); ?>><?php esc_html_e('Force OPEN — everyone passes', 'ezit-core'); ?></option>
-            <option value="closed" <?php selected($ov['mode'], 'closed'); ?>><?php esc_html_e('Force CLOSED — everyone gated', 'ezit-core'); ?></option>
-        </select>
-        <select id="ezit_ov_ttl" name="ezit_ov_ttl">
-            <option value="4"><?php esc_html_e('for 4 hours', 'ezit-core'); ?></option>
-            <option value="24" selected><?php esc_html_e('for 24 hours', 'ezit-core'); ?></option>
-            <option value="72"><?php esc_html_e('for 3 days', 'ezit-core'); ?></option>
-            <option value="168"><?php esc_html_e('for 7 days', 'ezit-core'); ?></option>
-        </select>
+        <div class="ezit-ov-row">
+            <select id="ezit_ov_mode" name="ezit_ov_mode">
+                <option value="off" <?php selected($ov['mode'], 'off'); ?>><?php esc_html_e('Normal — gate follows license checks', 'ezit-core'); ?></option>
+                <option value="open" <?php selected($ov['mode'], 'open'); ?>><?php esc_html_e('Force OPEN — everyone passes', 'ezit-core'); ?></option>
+                <option value="closed" <?php selected($ov['mode'], 'closed'); ?>><?php esc_html_e('Force CLOSED — everyone gated', 'ezit-core'); ?></option>
+            </select>
+            <select id="ezit_ov_ttl" name="ezit_ov_ttl">
+                <option value="4"><?php esc_html_e('for 4 hours', 'ezit-core'); ?></option>
+                <option value="24" selected><?php esc_html_e('for 24 hours', 'ezit-core'); ?></option>
+                <option value="72"><?php esc_html_e('for 3 days', 'ezit-core'); ?></option>
+                <option value="168"><?php esc_html_e('for 7 days', 'ezit-core'); ?></option>
+            </select>
+        </div>
         <span class="hint"><?php esc_html_e('Overrides always auto-expire — you can\'t forget a force-open site. Select Normal and save to clear early (no code needed).', 'ezit-core'); ?></span>
     </div>
 

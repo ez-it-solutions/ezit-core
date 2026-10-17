@@ -560,10 +560,18 @@ class EzIT_Admin
 
         // Server answered with its maintenance switch on — distinct from
         // "unreachable" (stale_products covers the long-outage case).
-        if ($this->core->licensing()->server_state() === 'maintenance') {
+        $server_state = $this->core->licensing()->server_state();
+        if ($server_state === 'maintenance') {
             printf(
                 '<div class="notice notice-warning"><p>%s</p></div>',
                 esc_html__('The Ez IT license server is in maintenance mode (answering 503 SERVER_UNAVAILABLE). Sites keep their last verdict — no front-end impact — and re-check on the server\'s Retry-After schedule.', 'ezit-core')
+            );
+        } elseif ($server_state === 'down') {
+            printf(
+                '<div class="notice notice-error"><p>%s <a href="%s">%s</a></p></div>',
+                esc_html__('The Ez IT license server is unreachable — licenses are holding their last verified verdicts, but this needs attention before the grace window expires.', 'ezit-core'),
+                esc_url(admin_url('admin.php?page=ezit-core&tab=settings&section=gate')),
+                esc_html__('License status', 'ezit-core')
             );
         }
 

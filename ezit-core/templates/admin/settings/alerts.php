@@ -74,4 +74,17 @@ $saved = EzIT_Alerts::saved();
         <span class="hint"><?php esc_html_e('Empty schedule fields = always visible while the toggle is on.', 'ezit-core'); ?></span>
     </fieldset>
     <?php endforeach; endif; ?>
+
+    <?php $server_state = $core->licensing()->server_state(); ?>
+    <fieldset class="ezit-card" style="margin-bottom:0">
+        <div class="ezit-card__head" style="margin-bottom:10px">
+            <h4 style="margin:0;font-size:14.5px"><?php esc_html_e('License-server outage banner', 'ezit-core'); ?></h4>
+            <span class="ezit-badge <?php echo $server_state === 'up' ? 'is-active' : 'is-inactive'; ?>" style="margin-left:auto">
+                <?php echo $server_state === 'up' ? esc_html__('Standby', 'ezit-core') : esc_html__('Showing', 'ezit-core'); ?>
+            </span>
+        </div>
+        <p class="ezit-meta" style="margin:0">
+            <?php esc_html_e('Automatic — no toggle. While the license server is unreachable or in maintenance, a fixed red stripe pins under the admin bar on every front-end page for logged-in staff (editors and admins), telling them the site is running on its last verified license. Guests and gate users never see it; wp-admin screens show the equivalent notice automatically.', 'ezit-core'); ?>
+        </p>
+    </fieldset>
 </div>

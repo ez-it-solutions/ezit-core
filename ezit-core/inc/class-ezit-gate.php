@@ -33,6 +33,7 @@ class EzIT_Gate
 
     private EzIT_Core $core;
     private static ?self $instance = null;
+    private bool $banner_done = false;
 
     /** The booted instance — for templates that need gate state. */
     public static function instance(): ?self
@@ -48,6 +49,11 @@ class EzIT_Gate
         add_action('init', [$this, 'handle_login']);
         add_action('init', [$this, 'handle_logout']);
         add_action('template_redirect', [$this, 'enforce'], 1);
+
+        // Staff-only outage stripe — wp_body_open where the theme has it,
+        // wp_footer as a fallback (the bar is position:fixed anyway).
+        add_action('wp_body_open', [$this, 'outage_banner']);
+        add_action('wp_footer',    [$this, 'outage_banner']);
     }
 
     public static function settings(): array
