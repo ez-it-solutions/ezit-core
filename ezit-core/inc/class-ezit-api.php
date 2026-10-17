@@ -47,10 +47,21 @@ class EzIT_API
         $json = json_decode($raw, true);
 
         if ($code >= 400) {
-            return new WP_Error(
-                'ezit_http_' . $code,
+            // 503 + SERVER_UNAVAILABLE = the server's maintenance switch
+            // is on — a distinct error code lets callers show "planned
+            // outage" instead of "server down" and honor Retry-After.
+            $err = new WP_Error(
+                ($code === 503 && ($json['status_code'] ?? '') === 'SERVER_UNAVAILABLE')
+                    ? 'ezit_server_unavailable'
+                    : 'ezit_http_' . $code,
                 $json['message'] ?? sprintf('License server returned HTTP %d', $code)
             );
+            $err->add_data([
+                'status_code' => (string) ($json['status_code'] ?? ''),
+                'retry_after' => (int) wp_remote_retrieve_header($response, 'retry-after'),
+                'http'        => $code,
+            ]);
+            return $err;
         }
 
         if ($json === null) {

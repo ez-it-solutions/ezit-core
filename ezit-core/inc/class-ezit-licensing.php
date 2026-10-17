@@ -122,6 +122,11 @@ class EzIT_Licensing
             if ((time() - (int) ($lic['checked_at'] ?? 0)) <= $ttl) {
                 continue;
             }
+            // Outage pacing — don't re-hit a down/maintained server until
+            // its Retry-After window (or our 10-minute floor) has elapsed.
+            if (time() < (int) ($lic['skip_until'] ?? 0)) {
+                continue;
+            }
             $this->verify($slug);
         }
     }
@@ -257,12 +262,22 @@ class EzIT_Licensing
         ]);
 
         if (is_wp_error($res)) {
-            // Transport failure — keep the last verdict (grace), so a
-            // flaky server can't revoke a working site. failing_since
-            // stamps the START of the outage so admin can warn once the
-            // grace window is exceeded.
+            // Server unreachable or in maintenance — keep the last verdict
+            // (grace), so an outage can't revoke a working site.
+            // failing_since stamps the START of the outage for the admin
+            // warning; skip_until paces retries so freshen()/rescue don't
+            // hammer a dead or maintained server once a minute.
             $lic['checked_at']    = time();
             $lic['failing_since'] = $lic['failing_since'] ?? time();
+            $data                 = (array) $res->get_error_data();
+            // 'maintenance' = server answered with its outage switch on;
+            // 'down' = pure transport failure (timeout, DNS, refused);
+            // other WP_Errors are HTTP answers — server is reachable but
+            // erroring, so state stays 'up' while the check still fails.
+            $code = $res->get_error_code();
+            $lic['server_state'] = $code === 'ezit_server_unavailable' ? 'maintenance'
+                : (str_starts_with((string) $code, 'ezit_http_') || $code === 'ezit_bad_json' ? 'up' : 'down');
+            $lic['skip_until']    = time() + min(3600, max(300, (int) ($data['retry_after'] ?? 0) ?: 600));
             $this->save($slug, $lic);
             return ($lic['status'] ?? '') === 'active';
         }
@@ -272,14 +287,20 @@ class EzIT_Licensing
         if (class_exists('EzIT_Config')) {
             EzIT_Config::maybe_sync((int) ($res['config_version'] ?? 0));
         }
-
         // Definitive answer — 'invalid' covers disabled/revoked server-side.
-        $prev              = $lic['status'] ?? '';
-        $ok                = ! empty($res['status']);
-        $lic['status']     = $ok ? 'active' : 'invalid';
-        unset($lic['failing_since']); // a real answer — any outage is over
+        $prev                = $lic['status'] ?? '';
+        $ok                  = ! empty($res['status']);
+        $lic['status']       = $ok ? 'active' : 'invalid';
+        $lic['server_state'] = 'up';
+        unset($lic['failing_since'], $lic['skip_until']); // a real answer — any outage is over
         if ($ok) {
             unset($lic['reason_code'], $lic['reason']); // cleared block
+            // Recovery-code proof — lets an admin force the gate open/closed
+            // even while this server is offline. Digest only; the raw code
+            // lives on the license server (Products → Recovery code).
+            if (! empty($res['recovery_digest'])) {
+                $lic['recovery_digest'] = (string) $res['recovery_digest'];
+            }
         } else {
             // WHY it failed — status_code separates "product withdrawn"
             // from "activation disabled" from "license suspended".
@@ -454,6 +475,42 @@ class EzIT_Licensing
         $msg = trim((string) ($lic['reason'] ?? ''));
         return $msg !== '' ? $msg
             : __('This activation is not valid on the license server. Enter a different license code to re-activate, or contact Ez IT Solutions.', 'ezit-core');
+    }
+
+    /**
+     * Offline emergency-override proof for a product. Delivered inside the
+     * signed cert payload (freshest, product-bound) and stored from every
+     * verify response — the raw recovery code never touches the site.
+     */
+    public function recovery_digest(string $slug): ?string
+    {
+        $lic = $this->license($slug);
+        $payload = self::cert_payload((string) ($lic['license_file'] ?? ''));
+        if (! empty($payload['recovery_digest'])) {
+            return (string) $payload['recovery_digest'];
+        }
+
+        return ! empty($lic['recovery_digest']) ? (string) $lic['recovery_digest'] : null;
+    }
+
+    /**
+     * Worst known license-server reachability: 'down' if any licensed
+     * product can't reach it, else 'maintenance' if any got a 503
+     * SERVER_UNAVAILABLE, else 'up'.
+     */
+    public function server_state(): string
+    {
+        $state = 'up';
+        foreach ($this->all() as $lic) {
+            switch ($lic['server_state'] ?? 'up') {
+                case 'down':
+                    return 'down'; // can't get worse
+                case 'maintenance':
+                    $state = 'maintenance';
+                    break;
+            }
+        }
+        return $state;
     }
 
     // ── cert payload (informational only — HMAC is server-side) ─────

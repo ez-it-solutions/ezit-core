@@ -349,6 +349,42 @@ class EzIT_Admin
             set_transient('ezit_purge_pending', 1, HOUR_IN_SECONDS);
         }
 
+        // Emergency override — only evaluated on the gate section save.
+        // 'open'/'closed' require the product's recovery code (validated
+        // offline against the HMAC digest shipped inside the signed cert).
+        $save_section = sanitize_key(wp_unslash($_POST['section'] ?? ''));
+        if ($save_section === 'gate' || $save_section === '') {
+            $ov_mode = sanitize_key(wp_unslash($_POST['ezit_ov_mode'] ?? 'off'));
+            $ov_ttl  = (int) ($_POST['ezit_ov_ttl'] ?? 24);
+            $ov_ttl  = in_array($ov_ttl, [4, 24, 72, 168], true) ? $ov_ttl : 24;
+            $ov_code = (string) wp_unslash($_POST['ezit_ov_code'] ?? '');
+            $current = EzIT_Gate::override();
+
+            if ($ov_mode === 'off') {
+                delete_option('ezit_gate_override');
+                if ($current['mode'] !== 'off') {
+                    set_transient('ezit_purge_pending', 1, HOUR_IN_SECONDS);
+                }
+            } elseif (! in_array($ov_mode, ['open', 'closed'], true)) {
+                $ov_mode = 'off';
+            } elseif ($ov_mode === $current['mode'] && $ov_code === '') {
+                // Same armed mode, no code entered — leave the existing
+                // override (and its original expiry) untouched. Without
+                // this, every routine settings save would demand the code.
+            } elseif (! EzIT_Gate::recovery_code_valid($this->core, $ov_code)) {
+                $this->redirect('settings', 'error',
+                    __('Invalid recovery code — find it on the license server under Products → Recovery code.', 'ezit-core'),
+                    ['section' => 'gate']);
+            } else {
+                update_option('ezit_gate_override', [
+                    'mode'  => $ov_mode,
+                    'until' => time() + $ov_ttl * HOUR_IN_SECONDS,
+                    'by'    => wp_get_current_user()->user_login,
+                ], false);
+                set_transient('ezit_purge_pending', 1, HOUR_IN_SECONDS);
+            }
+        }
+
         update_option(EzIT_Login::OPTION, [
             'logo'     => esc_url_raw(wp_unslash($_POST['ezit_login_logo'] ?? '')),
             'accent'   => sanitize_hex_color(wp_unslash($_POST['ezit_login_accent'] ?? '')) ?: '',
@@ -501,6 +537,34 @@ class EzIT_Admin
         if (! current_user_can('manage_options')) {
             return;
         }
+
+        // Emergency override armed — never silent: a force-open gate is a
+        // deliberately weakened state and must be impossible to forget.
+        $ov = EzIT_Gate::override();
+        if ($ov['mode'] !== 'off') {
+            printf(
+                '<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>',
+                sprintf(
+                    /* translators: 1: open|closed, 2: expiry time, 3: who armed it */
+                    esc_html__('License gate override is ACTIVE — force-%1$s until %2$s (set by %3$s).', 'ezit-core'),
+                    esc_html($ov['mode']),
+                    esc_html(wp_date('M j, g:i a', (int) $ov['until'])),
+                    esc_html($ov['by'] ?: 'admin')
+                ),
+                esc_url(admin_url('admin.php?page=ezit-core&tab=settings&section=gate')),
+                esc_html__('Site gate settings', 'ezit-core')
+            );
+        }
+
+        // Server answered with its maintenance switch on — distinct from
+        // "unreachable" (stale_products covers the long-outage case).
+        if ($this->core->licensing()->server_state() === 'maintenance') {
+            printf(
+                '<div class="notice notice-warning"><p>%s</p></div>',
+                esc_html__('The Ez IT license server is in maintenance mode (answering 503 SERVER_UNAVAILABLE). Sites keep their last verdict — no front-end impact — and re-check on the server\'s Retry-After schedule.', 'ezit-core')
+            );
+        }
+
         // Verify-outage warning — a license can't be remotely re-checked
         // past the grace window. Last verdict still stands; nothing on the
         // front end changes — this only nags the admin to check the server.

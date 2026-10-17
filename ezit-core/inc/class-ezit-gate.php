@@ -140,10 +140,70 @@ class EzIT_Gate
         if (is_user_logged_in() && current_user_can('edit_posts')) {
             return true;
         }
+
+        // Emergency override — armed by an admin + recovery code on
+        // Settings → Site gate. 'open' bypasses every check (survives a
+        // total license-server outage); 'closed' gates everyone.
+        $ov = self::override();
+        if ($ov['mode'] === 'open') {
+            return true;
+        }
+        if ($ov['mode'] === 'closed') {
+            return false;
+        }
+
         if ($this->valid_access_cookie()) {
             return true;
         }
         return $this->gate_licensed();
+    }
+
+    // ── emergency override ──────────────────────────────────────────
+
+    private const OVERRIDE_OPTION = 'ezit_gate_override';
+
+    /**
+     * Active override — ['mode' => 'off|open|closed', 'until' => ts, 'by' => user].
+     * Self-expiring: once 'until' passes the gate returns to normal checks.
+     */
+    public static function override(): array
+    {
+        $ov = wp_parse_args((array) get_option(self::OVERRIDE_OPTION, []), [
+            'mode' => 'off', 'until' => 0, 'by' => '',
+        ]);
+        if (($ov['until'] ?? 0) < time()) {
+            $ov['mode'] = 'off';
+        }
+        return $ov;
+    }
+
+    public static function override_active(): bool
+    {
+        return self::override()['mode'] !== 'off';
+    }
+
+    /**
+     * Validate a recovery code against any registered product — fully
+     * offline. Sites only ever hold the code's HMAC digest (inside the
+     * signed cert / stored from verify responses), keyed with that
+     * product's api_key; the raw code lives on the license server.
+     */
+    public static function recovery_code_valid(EzIT_Core $core, string $code): bool
+    {
+        $code = strtoupper(trim($code));
+        if ($code === '') {
+            return false;
+        }
+        $licensing = $core->licensing();
+        foreach ($core->products() as $slug => $p) {
+            $api_key = (string) ($p['api_key'] ?? '');
+            $digest  = $licensing->recovery_digest($slug);
+            if ($api_key !== '' && $digest
+                && hash_equals($digest, hash_hmac('sha256', 'recovery|' . $code, $api_key))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -364,7 +424,14 @@ class EzIT_Gate
             $this->render_uc(sanitize_key($_GET['ezit_uc_preview']), true);
         }
 
-        if ($s['mode'] === 'off') {
+        // Emergency override outranks the mode switch: force-open
+        // releases the site no matter what; force-closed gates guests
+        // even when the mode itself is 'off'.
+        $ov = self::override();
+        if ($ov['mode'] === 'open') {
+            return;
+        }
+        if ($s['mode'] === 'off' && $ov['mode'] !== 'closed') {
             return;
         }
         // Armed gate: never let a page cache store guest HTML while the
@@ -439,6 +506,8 @@ class EzIT_Gate
         }
         $report = [
             'mode'            => $s['mode'],
+            'override'        => self::override(),
+            'server_state'    => $licensing->server_state(),
             'raw_option'      => array_diff_key(get_option(self::OPTION, []), ['uc_message' => 1]),
             'access_cookie'   => $this->valid_access_cookie(),
             'gate_licensed'   => $this->gate_licensed(),
