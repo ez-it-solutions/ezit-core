@@ -39,7 +39,9 @@ Failed `verify_license` calls never count as a denial. Three states:
 
 While the server isn't `up`: every wp-admin page shows an immediate
 notice, and a red stripe pins under the admin bar on every front-end
-page for logged-in staff (guests never see it). Past the
+page for logged-in staff. Guests never see it by default — Settings →
+Alerts → "Show the banner to guests too" opts them into a generic
+maintenance notice (no licensing details). Past the
 `ezit_license_grace_days` window (default 3 days) the verify path emails
 `admin_email` once a day — verdicts stay preserved indefinitely; only
 the silence is bounded.

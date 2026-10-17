@@ -83,8 +83,14 @@ $saved = EzIT_Alerts::saved();
                 <?php echo $server_state === 'up' ? esc_html__('Standby', 'ezit-core') : esc_html__('Showing', 'ezit-core'); ?>
             </span>
         </div>
+        <div class="ezit-field ezit-field--check" style="margin-bottom:10px">
+            <label>
+                <input type="checkbox" name="ezit_outage_guests" value="1" <?php checked(get_option('ezit_outage_banner_guests')); ?>>
+                <?php esc_html_e('Show the banner to guests too', 'ezit-core'); ?>
+            </label>
+        </div>
         <p class="ezit-meta" style="margin:0">
-            <?php esc_html_e('Automatic — no toggle. While the license server is unreachable or in maintenance, a fixed red stripe pins under the admin bar on every front-end page for logged-in staff (editors and admins), telling them the site is running on its last verified license. Guests and gate users never see it; wp-admin screens show the equivalent notice automatically.', 'ezit-core'); ?>
+            <?php esc_html_e('Automatic. While the license server is unreachable or in maintenance, a fixed red stripe pins under the admin bar on every front-end page for logged-in staff (editors and admins), telling them the site is running on its last verified license. With the box checked, guests and gate users also see a generic maintenance notice — it never mentions licensing. wp-admin screens show the equivalent notice automatically.', 'ezit-core'); ?>
         </p>
     </fieldset>
 </div>

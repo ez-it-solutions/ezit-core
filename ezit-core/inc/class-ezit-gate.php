@@ -489,16 +489,18 @@ class EzIT_Gate
     }
 
     /**
-     * Staff-only outage stripe — front-end counterpart of the wp-admin
-     * notice. Fires on wp_body_open AND wp_footer (themes without the
-     * former), so banner_done ensures it prints exactly once. Guests and
-     * gate users never see it; only logged-in editors/admins do.
+     * Outage stripe — front-end counterpart of the wp-admin notice.
+     * Fires on wp_body_open AND wp_footer (themes without the former),
+     * so banner_done ensures it prints exactly once. Logged-in
+     * editors/admins always see the staff copy; guests and gate users
+     * only see a generic notice when Settings → Alerts opts them in
+     * (ezit_outage_banner_guests).
      */
     public function outage_banner(): void
     {
+        $staff = is_user_logged_in() && current_user_can('edit_posts');
         if ($this->banner_done
-            || ! is_user_logged_in()
-            || ! current_user_can('edit_posts')) {
+            || (! $staff && ! get_option('ezit_outage_banner_guests'))) {
             return;
         }
         $state = $this->core->licensing()->server_state();
@@ -506,9 +508,11 @@ class EzIT_Gate
             return;
         }
         $this->banner_done = true;
-        $msg = $state === 'maintenance'
-            ? __('Ez IT license server: maintenance mode — site is running on its last verified license.', 'ezit-core')
-            : __('Ez IT license server: unreachable — site is running on its last verified license.', 'ezit-core');
+        $msg = ! $staff
+            ? __('This site is undergoing maintenance — content may be temporarily limited.', 'ezit-core')
+            : ($state === 'maintenance'
+                ? __('Ez IT license server: maintenance mode — site is running on its last verified license.', 'ezit-core')
+                : __('Ez IT license server: unreachable — site is running on its last verified license.', 'ezit-core'));
         // Pin under the WP admin bar (32px desktop, 46px below 782px);
         // top:0 when the toolbar is disabled for this user.
         $show_admin_bar = is_admin_bar_showing();

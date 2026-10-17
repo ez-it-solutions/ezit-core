@@ -415,6 +415,11 @@ class EzIT_Admin
                 ];
             }
             update_option(EzIT_Alerts::OPTION, $clean, false);
+
+            // Outage banner guest visibility — same section-gated write
+            // (unchecked checkbox POSTs nothing → 0).
+            update_option('ezit_outage_banner_guests',
+                ! empty($_POST['ezit_outage_guests']) ? 1 : 0, false);
         }
 
         // Site Studio — theme-mod writes for declared fields.
