@@ -503,7 +503,17 @@ class EzIT_Gate
             || (! $staff && ! get_option('ezit_outage_banner_guests'))) {
             return;
         }
-        $state = $this->core->licensing()->server_state();
+        $licensing = $this->core->licensing();
+        $state     = $licensing->server_state();
+        // Showing the banner = the same "prove it" moment as the UC page —
+        // while the stored state says outage, re-verify on the spot so a
+        // just-recovered server clears the stripe on this very request.
+        // Self-throttled by checked_at + skip_until, so at most one remote
+        // call per window hits a dead server; never fires while healthy.
+        if ($state !== 'up') {
+            $licensing->freshen((int) apply_filters('ezit_gate_reverify_ttl', MINUTE_IN_SECONDS));
+            $state = $licensing->server_state();
+        }
         if ($state === 'up') {
             return;
         }
