@@ -562,16 +562,14 @@ class EzIT_Admin
         // "unreachable" (stale_products covers the long-outage case).
         $server_state = $this->core->licensing()->server_state();
         if ($server_state === 'maintenance') {
-            printf(
-                '<div class="notice notice-warning"><p>%s</p></div>',
-                esc_html__('The Ez IT license server is in maintenance mode (answering 503 SERVER_UNAVAILABLE). Sites keep their last verdict — no front-end impact — and re-check on the server\'s Retry-After schedule.', 'ezit-core')
+            $this->outage_stripe(
+                __('The Ez IT license server is in maintenance mode (answering 503 SERVER_UNAVAILABLE). Sites keep their last verdict — no front-end impact — and re-check on the server\'s Retry-After schedule.', 'ezit-core')
             );
         } elseif ($server_state === 'down') {
-            printf(
-                '<div class="notice notice-error"><p>%s <a href="%s">%s</a></p></div>',
-                esc_html__('The Ez IT license server is unreachable — licenses are holding their last verified verdicts, but this needs attention before the grace window expires.', 'ezit-core'),
-                esc_url(admin_url('admin.php?page=ezit-core&tab=settings&section=gate')),
-                esc_html__('License status', 'ezit-core')
+            $this->outage_stripe(
+                __('The Ez IT license server is unreachable — licenses are holding their last verified verdicts, but this needs attention before the grace window expires.', 'ezit-core')
+                . ' <a href="' . esc_url(admin_url('admin.php?page=ezit-core&tab=settings&section=gate')) . '">'
+                . esc_html__('License status', 'ezit-core') . '</a>'
             );
         }
 
@@ -615,6 +613,25 @@ class EzIT_Admin
                 );
             }
         }
+    }
+
+    /**
+     * License-server outage stripe — same look as the front-end banner
+     * (EzIT_Gate::outage_banner): full-width red bar, centered white text.
+     * $html is pre-escaped; a License-status link may ride along.
+     */
+    private function outage_stripe(string $html): void
+    {
+        printf(
+            '<div class="ezit-outage-stripe" role="alert"
+                  style="margin:15px 20px 10px 0;padding:8px 14px;background:#b3483a;color:#fff;
+                         text-align:center;font:600 13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;
+                         box-shadow:0 2px 8px rgba(0,0,0,.25)">
+                %s
+             </div>
+             <style>.ezit-outage-stripe a{color:#fff;text-decoration:underline}</style>',
+            wp_kses_post($html)
+        );
     }
 
     private function guard(string $action, string $nonce_field): void
