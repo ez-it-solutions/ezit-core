@@ -271,12 +271,11 @@ class EzIT_Licensing
             $lic['failing_since'] = $lic['failing_since'] ?? time();
             $data                 = (array) $res->get_error_data();
             // 'maintenance' = server answered with its outage switch on;
-            // 'down' = pure transport failure (timeout, DNS, refused);
-            // other WP_Errors are HTTP answers — server is reachable but
-            // erroring, so state stays 'up' while the check still fails.
-            $code = $res->get_error_code();
-            $lic['server_state'] = $code === 'ezit_server_unavailable' ? 'maintenance'
-                : (str_starts_with((string) $code, 'ezit_http_') || $code === 'ezit_bad_json' ? 'up' : 'down');
+            // everything else counts as 'down' — a 4xx/5xx/garbage body on
+            // the API path means the endpoint is gone or misconfigured,
+            // which is unreachable as far as licensing is concerned.
+            $lic['server_state'] = $res->get_error_code() === 'ezit_server_unavailable'
+                ? 'maintenance' : 'down';
             $lic['skip_until']    = time() + min(3600, max(300, (int) ($data['retry_after'] ?? 0) ?: 600));
             $this->save($slug, $lic);
             return ($lic['status'] ?? '') === 'active';

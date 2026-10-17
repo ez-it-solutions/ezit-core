@@ -349,11 +349,13 @@ class EzIT_Admin
             set_transient('ezit_purge_pending', 1, HOUR_IN_SECONDS);
         }
 
-        // Emergency override — only evaluated on the gate section save.
-        // 'open'/'closed' require the product's recovery code (validated
-        // offline against the HMAC digest shipped inside the signed cert).
+        // Emergency override — only evaluated on an explicit gate-section
+        // save. Every section shares this one form, so ezit_ov_* arrives on
+        // every POST; an empty/absent section means the server panel was
+        // viewed (JS keeps the hidden field in sync) — evaluating 'off'
+        // there would silently disarm an armed override.
         $save_section = sanitize_key(wp_unslash($_POST['section'] ?? ''));
-        if ($save_section === 'gate' || $save_section === '') {
+        if ($save_section === 'gate') {
             $ov_mode = sanitize_key(wp_unslash($_POST['ezit_ov_mode'] ?? 'off'));
             $ov_ttl  = (int) ($_POST['ezit_ov_ttl'] ?? 24);
             $ov_ttl  = in_array($ov_ttl, [4, 24, 72, 168], true) ? $ov_ttl : 24;
