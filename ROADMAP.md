@@ -63,9 +63,13 @@ Client sends headers `LB-API-KEY`, `LB-URL`, `LB-IP`, `LB-LANG` on every call.
 | `POST /api/check_update` | `product_id, current_version` | Updater (12 h cache) |
 | `HEAD /api/get_update_size/{id}` | — | update screen size display |
 | `POST /api/download_update/main/{id}` | `product_id, license_file` | `upgrader_pre_download` |
+| `POST /api/get_config` | — | `EzIT_Config` — versioned server config |
 
 `license_file` = the signed cert returned as `lic_response` (HMAC + base64url JSON).
 Core stores it in `ezit_licenses` option per product and echoes it back on verify.
+`verify_license`/`check_update` responses also carry `config_version` — a
+higher number makes the site re-read `get_config` (published `api_base`,
+endpoint map, services, notices).
 
 ## Phases
 
@@ -92,6 +96,20 @@ Core stores it in `ezit_licenses` option per product and echoes it back on verif
       breaks
 - [x] Offline tolerance: cert presence + `expires_at`/`domain` check without phoning
       home *(gate validates cert locally; transport failure keeps last verdict)*
+- [x] Gate↔cache interop — armed gate emits `DONOTCACHEPAGE` + LiteSpeed
+      no-cache (file caches ignore headers); every verdict flip purges 12+
+      cache backends + reverse proxies, with a front-end retry flag for
+      flips detected in cron/REST
+- [x] Server-published config (1.1.0) — `EzIT_Config` caches the server's
+      `get_config` doc; `api_base` repoints every site without a plugin
+      deploy. Repoints are honored only for HTTPS hosts under
+      `ez-it-solutions.com` (`ezit_allowed_api_hosts` to extend) so an
+      unsigned doc can't leak `LB-API-KEY` off-platform
+- [x] Reason codes (1.2.0) — `status_code` from failed activate/verify is
+      stored and mapped to admin copy (`PRODUCT_DISABLED` → "Product
+      retired", `ACTIVATION_DISABLED`, `LICENSE_SUSPENDED`, …); retired
+      products disable the activate form and block theme-switch to the
+      affected theme
 
 ### Phase 3 — Marketplace
 - [ ] **Server: `GET /api/catalog` not built yet** — core fetch exists and fails

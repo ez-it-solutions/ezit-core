@@ -616,6 +616,37 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 
 /* Neutral state badge (installed, not active) */
 .ezit-pg .ezit-badge.is-neutral { background: #eef0f5; color: #5c5f6b; }
+.ezit-pg .ezit-badge.is-warn { background: #fff3cd; color: #856404; }
+
+/* ── License block notice — icon sits on the same line as the text ── */
+.ezit-pg .ezit-notice {
+    display: flex; align-items: flex-start; gap: 9px;
+    padding: 11px 13px; border-radius: 9px;
+    font-size: 13px; line-height: 1.5;
+}
+.ezit-pg .ezit-notice svg { flex-shrink: 0; margin-top: 1px; }
+.ezit-pg .ezit-notice p { margin: 0; }
+.ezit-pg .ezit-notice.is-err { background: #fdecea; color: #a02c21; }
+.ezit-pg .ezit-notice.is-warn { background: #fff3cd; color: #856404; }
+
+/* Reason line under the theme-card badges. */
+.ezit-pg .ezit-theme__note {
+    margin: 0; font-size: 12px; line-height: 1.45; color: #a02c21;
+}
+
+/* Card actions reveal on hover/focus — keeps the grid clean; keyboard
+   users get the same reveal via :focus-within, touch gets always-on. */
+.ezit-pg .ezit-theme__actions {
+    opacity: 0; transform: translateY(4px);
+    transition: opacity .18s ease, transform .18s ease;
+}
+.ezit-pg .ezit-theme:hover .ezit-theme__actions,
+.ezit-pg .ezit-theme:focus-within .ezit-theme__actions {
+    opacity: 1; transform: none;
+}
+@media (hover: none) {
+    .ezit-pg .ezit-theme__actions { opacity: 1; transform: none; }
+}
 
 /* Secondary link-styled button next to .ezt__cta in panel footers */
 .ezit-pg .ezit-linkbtn {

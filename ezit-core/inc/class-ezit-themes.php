@@ -57,6 +57,7 @@ class EzIT_Themes
             // registers under `treziseinsurance`.
             $reg = $products[sanitize_key($stylesheet)] ?? null;
 
+            $lic = $reg !== null ? ($licensing->license($stylesheet) ?: []) : [];
             $rows[] = [
                 'stylesheet' => $stylesheet,
                 'name'       => $theme->display('Name'),
@@ -67,6 +68,11 @@ class EzIT_Themes
                 'ezit'       => $pid !== '' || $reg !== null,
                 'registered' => $reg !== null,
                 'licensed'   => $reg !== null && $licensing->is_active($stylesheet),
+                // WHY it's unlicensed — status_code from the server
+                // (PRODUCT_DISABLED, ACTIVATION_DISABLED, …).
+                'reason'     => $reg !== null && ! $licensing->is_active($stylesheet)
+                                ? EzIT_Licensing::blocked_label($lic) : '',
+                'reason_code'=> (string) ($lic['reason_code'] ?? ''),
             ];
         }
 
@@ -133,6 +139,7 @@ class EzIT_Themes
                 }
                 $slug = dirname($file) === '.' ? basename($file, '.php') : dirname($file);
                 $reg  = $products[$slug] ?? null;
+                $lic = $reg !== null ? ($licensing->license($slug) ?: []) : [];
                 $items[] = [
                     'slug'       => $slug,
                     'type'       => 'plugin',
@@ -142,6 +149,8 @@ class EzIT_Themes
                     'state'      => is_plugin_active($file) ? 'active' : 'installed',
                     'registered' => $reg !== null,
                     'licensed'   => $reg !== null ? $licensing->is_active($slug) : null,
+                    'reason'     => ($reg !== null && ! $licensing->is_active($slug))
+                                    ? EzIT_Licensing::blocked_label($lic) : '',
                 ];
             }
         }
@@ -153,6 +162,7 @@ class EzIT_Themes
             if ($pid === '' && $reg === null) {
                 continue;
             }
+            $lic = $reg !== null ? ($licensing->license($stylesheet) ?: []) : [];
             $items[] = [
                 'slug'       => $stylesheet,
                 'type'       => 'theme',
@@ -162,6 +172,8 @@ class EzIT_Themes
                 'state'      => $stylesheet === get_stylesheet() ? 'active' : 'installed',
                 'registered' => $reg !== null,
                 'licensed'   => $reg !== null ? $licensing->is_active($stylesheet) : null,
+                'reason'     => ($reg !== null && ! $licensing->is_active($stylesheet))
+                                ? EzIT_Licensing::blocked_label($lic) : '',
             ];
         }
 

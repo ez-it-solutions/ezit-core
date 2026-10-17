@@ -212,11 +212,15 @@ class EzIT_Admin
         $products   = $this->core->products();
         $licensed   = 0;
         $unlicensed = 0;
+        $unlicensed_themes = 0;
         foreach ($products as $slug => $p) {
             if ($licensing->is_active($slug)) {
                 $licensed++;
             } elseif ($p['product_id'] !== '') {
                 $unlicensed++;
+                if (($p['type'] ?? 'theme') === 'theme') {
+                    $unlicensed_themes++;
+                }
             }
         }
         $stats = [
@@ -241,6 +245,7 @@ class EzIT_Admin
             'themes' => [
                 'label'    => __('Themes', 'ezit-core'),
                 'template' => $dir . 'themes.php',
+                'badge'    => $unlicensed_themes ?: null,
                 'vars'     => '--panel-bg:#f5f2ec; --panel-deco:rgba(20,21,31,.06);' . $light,
             ],
             'licenses' => [
@@ -459,6 +464,13 @@ class EzIT_Admin
         $stylesheet = sanitize_key(wp_unslash($_POST['stylesheet'] ?? ''));
         $theme      = wp_get_theme($stylesheet);
         if ($stylesheet !== '' && $theme->exists()) {
+            // Registered-but-unlicensed products UC-gate the front end —
+            // switching to one would take the site down for guests.
+            if ($this->core->product($stylesheet) !== null
+                && ! $this->core->licensing()->is_active($stylesheet)) {
+                $this->redirect('themes', 'error',
+                    __('That theme\'s license isn\'t active — activation is disabled until it\'s licensed or its product is re-enabled.', 'ezit-core'));
+            }
             switch_theme($stylesheet);
             $this->redirect('themes', 'switched');
         }

@@ -110,16 +110,29 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                                     <span class="ezit-badge is-active"><?php esc_html_e('Ez IT', 'ezit-core'); ?></span>
                                     <?php if ($t['registered']) : ?>
                                         <span class="ezit-badge <?php echo $t['licensed'] ? 'is-active' : 'is-inactive'; ?>">
-                                            <?php echo $t['licensed'] ? esc_html__('Licensed', 'ezit-core') : esc_html__('Unlicensed', 'ezit-core'); ?>
+                                            <?php
+                                            echo $t['licensed'] ? esc_html__('Licensed', 'ezit-core')
+                                                : (($t['reason_code'] ?? '') === 'PRODUCT_DISABLED'
+                                                    ? esc_html__('Product retired', 'ezit-core')
+                                                    : esc_html__('Unlicensed', 'ezit-core'));
+                                            ?>
                                         </span>
                                     <?php else : ?>
                                         <span class="ezit-badge is-inactive"><?php esc_html_e('Not registered', 'ezit-core'); ?></span>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </div>
+                            <?php if ($t['registered'] && ! $t['licensed'] && ($t['reason'] ?? '') !== '') : ?>
+                                <p class="ezit-theme__note"><?php echo esc_html($t['reason']); ?></p>
+                            <?php endif; ?>
                             <div class="ezit-theme__actions">
                                 <?php if ($t['is_active']) : ?>
                                     <a class="ezit-btn" href="<?php echo esc_url(admin_url('customize.php')); ?>"><?php esc_html_e('Customize', 'ezit-core'); ?></a>
+                                <?php elseif ($t['registered'] && ! $t['licensed']) : ?>
+                                    <button type="button" class="ezit-btn" disabled
+                                            title="<?php echo esc_attr($t['reason'] !== '' ? $t['reason'] : __('License required before activating this theme.', 'ezit-core')); ?>">
+                                        <?php esc_html_e('Activate', 'ezit-core'); ?>
+                                    </button>
                                 <?php elseif ($can_swap) : ?>
                                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                                         <?php wp_nonce_field('ezit_switch_theme', 'ezit_theme_nonce'); ?>

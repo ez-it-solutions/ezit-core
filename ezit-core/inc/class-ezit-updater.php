@@ -88,7 +88,7 @@ class EzIT_Updater
             'current_version' => $product['version'] ?: '0',
         ]);
 
-        if (! is_wp_error($res)) {
+        if (! is_wp_error($res) && class_exists('EzIT_Config')) {
             EzIT_Config::maybe_sync((int) ($res['config_version'] ?? 0));
         }
 

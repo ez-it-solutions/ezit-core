@@ -69,7 +69,12 @@ $products  = $core->products();
             <td><?php echo esc_html($p['version'] ?: '—'); ?></td>
             <td><span class="ezit-badge <?php echo $active ? 'is-active' : 'is-inactive'; ?>">
                 <?php echo $active ? esc_html__('Active', 'ezit-core') : esc_html__('Inactive', 'ezit-core'); ?>
-            </span></td>
+            </span>
+            <?php if (! $active && ! empty($lic['reason_code'])) : ?>
+                <div class="ezit-meta" style="margin-top:4px;max-width:32ch">
+                    <?php echo esc_html(EzIT_Licensing::blocked_label($lic)); ?>
+                </div>
+            <?php endif; ?></td>
             <td><?php echo esc_html($payload['client_name'] ?? '—'); ?></td>
         </tr>
         <?php endforeach; ?>

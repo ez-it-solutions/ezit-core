@@ -52,6 +52,13 @@ class EzIT_Config
      * Host base URL from the published config (e.g. the doc's
      * "https://ezops.ez-it-solutions.com/api/" → "...com"). Null if no
      * doc cached yet — callers fall back to the bootstrap URL.
+     *
+     * Trust boundary: api_base decides where LB-API-KEY is POSTed.
+     * The doc is unsigned, so a repoint is only honored for hosts
+     * under our own root domains (see host_allowed) — anything else
+     * is ignored and the bootstrap URL keeps serving. To trust an
+     * additional host (e.g. a customer-managed mirror), extend the
+     * `ezit_allowed_api_hosts` filter.
      */
     public static function api_base(): ?string
     {
@@ -59,7 +66,38 @@ class EzIT_Config
         if (! is_string($base) || $base === '') {
             return null;
         }
-        return preg_replace('#/api/?$#', '', trim($base)) ?: null;
+        $base = trim($base);
+        return self::host_allowed($base)
+            ? (preg_replace('#/api/?$#', '', $base) ?: null)
+            : null;
+    }
+
+    /** api_base may only send product keys to HTTPS Ez IT hosts (or a
+     *  local dev box). Unknown hosts are silently ignored. */
+    private static function host_allowed(string $base): bool
+    {
+        $scheme = strtolower((string) wp_parse_url($base, PHP_URL_SCHEME));
+        $host   = strtolower((string) wp_parse_url($base, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+        $local = in_array($host, ['localhost', '127.0.0.1', '::1'], true)
+              || str_ends_with($host, '.test')
+              || str_ends_with($host, '.local');
+        if (! $local && $scheme !== 'https') {
+            return false; // keys never travel plaintext off-box
+        }
+        if ($local) {
+            return true;
+        }
+        $roots = (array) apply_filters('ezit_allowed_api_hosts', ['ez-it-solutions.com']);
+        foreach ($roots as $root) {
+            $root = strtolower(trim((string) $root));
+            if ($root !== '' && ($host === $root || str_ends_with($host, '.' . $root))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Resolved endpoint path for a logical name, or null to use as-is. */

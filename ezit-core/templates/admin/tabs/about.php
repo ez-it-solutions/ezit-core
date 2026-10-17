@@ -72,6 +72,9 @@ $detected = EzIT_Themes::detected($core);
                     <span class="ezit-badge <?php echo $d['licensed'] ? 'is-active' : 'is-inactive'; ?>">
                         <?php echo $d['licensed'] ? esc_html__('Licensed', 'ezit-core') : esc_html__('Unlicensed', 'ezit-core'); ?>
                     </span>
+                    <?php if (! $d['licensed'] && ($d['reason'] ?? '') !== '') : ?>
+                        <div class="ezit-meta" style="margin-top:4px;max-width:34ch"><?php echo esc_html($d['reason']); ?></div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </td>
         </tr>

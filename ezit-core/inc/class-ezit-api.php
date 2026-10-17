@@ -26,7 +26,7 @@ class EzIT_API
         // Endpoint map from the server config — lets the server rename
         // endpoints without a plugin deploy. Only bare names remap;
         // parameterized paths ('download_update/main/x') pass through.
-        if (strpos($endpoint, '/') === false) {
+        if (strpos($endpoint, '/') === false && class_exists('EzIT_Config')) {
             $endpoint = EzIT_Config::endpoint($endpoint) ?? $endpoint;
         }
 

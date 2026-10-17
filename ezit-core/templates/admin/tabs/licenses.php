@@ -101,29 +101,34 @@ $products  = $core->products();
             <button class="ezit-btn ezit-btn--ghost"><?php esc_html_e('Deactivate', 'ezit-core'); ?></button>
         </form>
         <?php else :
-            $revoked = ! empty($lic['revoked']);
+            $revoked     = ! empty($lic['revoked']);
+            $reason_code = (string) ($lic['reason_code'] ?? '');
+            $blocked     = $revoked || $reason_code !== '';
+            // Withdrawn product — nothing the admin can re-enter will
+            // activate, so the form submits are disabled outright.
+            $retired     = $reason_code === 'PRODUCT_DISABLED';
         ?>
-        <?php if ($revoked) : ?>
-        <div class="ezit-notice">
+        <?php if ($blocked) : ?>
+        <div class="ezit-notice <?php echo $retired ? 'is-warn' : 'is-err'; ?>">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg>
-            <p><?php esc_html_e('This activation was disabled on the license server. Enter a different license code to re-activate, or contact Ez IT Solutions.', 'ezit-core'); ?></p>
+            <p><?php echo esc_html(EzIT_Licensing::blocked_label($lic)); ?></p>
         </div>
         <?php endif; ?>
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"<?php echo $revoked ? ' data-requires-change' : ''; ?>>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"<?php echo $revoked && ! $retired ? ' data-requires-change' : ''; ?>>
             <?php wp_nonce_field('ezit_license', 'ezit_license_nonce'); ?>
             <input type="hidden" name="action" value="ezit_activate">
             <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
             <div class="ezit-field">
                 <label for="ezit-code-<?php echo esc_attr($slug); ?>"><?php esc_html_e('License code', 'ezit-core'); ?></label>
                 <input id="ezit-code-<?php echo esc_attr($slug); ?>" type="text" name="license_code"
-                       value="<?php echo esc_attr($p['license_code'] ?? ''); ?>" required>
+                       value="<?php echo esc_attr($p['license_code'] ?? ''); ?>"<?php echo $retired ? ' disabled' : ' required'; ?>>
             </div>
             <div class="ezit-field">
                 <label for="ezit-name-<?php echo esc_attr($slug); ?>"><?php esc_html_e('License name (optional)', 'ezit-core'); ?></label>
-                <input id="ezit-name-<?php echo esc_attr($slug); ?>" type="text" name="client_name">
+                <input id="ezit-name-<?php echo esc_attr($slug); ?>" type="text" name="client_name"<?php echo $retired ? ' disabled' : ''; ?>>
                 <span class="hint"><?php esc_html_e('Label shown as "Licensed to" on the license server — e.g. the client or site name.', 'ezit-core'); ?></span>
             </div>
-            <button class="ezit-btn"<?php echo $revoked ? ' disabled' : ''; ?>><?php esc_html_e('Activate license', 'ezit-core'); ?></button>
+            <button class="ezit-btn"<?php echo ($revoked || $retired) ? ' disabled' : ''; ?>><?php esc_html_e('Activate license', 'ezit-core'); ?></button>
         </form>
         <?php endif; ?>
     </div>

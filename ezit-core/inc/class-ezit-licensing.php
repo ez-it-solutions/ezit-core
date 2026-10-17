@@ -31,7 +31,9 @@ class EzIT_Licensing
             wp_schedule_event(time() + 300, 'hourly', self::CRON);
         }
         add_action(self::CRON, [$this, 'verify_all']);
-        add_action(self::CRON, [EzIT_Config::class, 'refresh_if_stale']);
+        if (class_exists('EzIT_Config')) {
+            add_action(self::CRON, [EzIT_Config::class, 'refresh_if_stale']);
+        }
 
         // Freshness guarantees — three layers:
         // 1. admin_init: synchronous re-verify of stale licenses on every
@@ -185,6 +187,15 @@ class EzIT_Licensing
                 'status'       => 'active',
                 'checked_at'   => time(),
             ]);
+        } else {
+            // Failed activate carries the server's status_code too —
+            // e.g. PRODUCT_DISABLED when the product was withdrawn.
+            // Persist it so the UI shows the real reason, not a guess.
+            $lic = $this->license($slug) ?: [];
+            $lic['reason_code'] = (string) ($res['status_code'] ?? '');
+            $lic['reason']      = (string) ($res['message'] ?? '');
+            $lic['checked_at']  = time();
+            $this->save($slug, $lic);
         }
 
         return [
@@ -250,13 +261,23 @@ class EzIT_Licensing
 
         // Config staleness hint rides every verify response — re-read
         // get_config when the published version moved.
-        EzIT_Config::maybe_sync((int) ($res['config_version'] ?? 0));
+        if (class_exists('EzIT_Config')) {
+            EzIT_Config::maybe_sync((int) ($res['config_version'] ?? 0));
+        }
 
         // Definitive answer — 'invalid' covers disabled/revoked server-side.
         $prev              = $lic['status'] ?? '';
         $ok                = ! empty($res['status']);
         $lic['status']     = $ok ? 'active' : 'invalid';
         unset($lic['failing_since']); // a real answer — any outage is over
+        if ($ok) {
+            unset($lic['reason_code'], $lic['reason']); // cleared block
+        } else {
+            // WHY it failed — status_code separates "product withdrawn"
+            // from "activation disabled" from "license suspended".
+            $lic['reason_code'] = (string) ($res['status_code'] ?? '');
+            $lic['reason']      = (string) ($res['message'] ?? '');
+        }
         // Sticky marker: active → invalid means disabled/revoked server-side
         // (vs. never activated). Cleared by a fresh activate().
         if ($prev === 'active' && ! $ok) {
@@ -402,6 +423,29 @@ class EzIT_Licensing
                 } catch (\Throwable $e) { /* switching away must never fatal */ }
             }
         }
+    }
+
+    /**
+     * Human label for a blocked product — driven by the server's
+     * reason_code, falling back to its message, then a generic string.
+     */
+    public static function blocked_label(?array $lic): string
+    {
+        $code = (string) ($lic['reason_code'] ?? '');
+        $map  = [
+            'PRODUCT_DISABLED'    => __('This product is no longer available. Contact Ez IT Solutions.', 'ezit-core'),
+            'ACTIVATION_DISABLED' => __('This activation was disabled on the license server. Enter a different license code to re-activate, or contact Ez IT Solutions.', 'ezit-core'),
+            'LICENSE_SUSPENDED'   => __('This license has been suspended. Contact Ez IT Solutions.', 'ezit-core'),
+            'LICENSE_EXPIRED'     => __('This license has expired. Contact Ez IT Solutions to renew.', 'ezit-core'),
+            'LICENSE_INACTIVE'    => __('This license is not active. Contact Ez IT Solutions.', 'ezit-core'),
+            'DOMAIN_NOT_ACTIVATED'=> __('This license is not activated for this domain. Re-enter your license code to activate.', 'ezit-core'),
+        ];
+        if (isset($map[$code])) {
+            return $map[$code];
+        }
+        $msg = trim((string) ($lic['reason'] ?? ''));
+        return $msg !== '' ? $msg
+            : __('This activation is not valid on the license server. Enter a different license code to re-activate, or contact Ez IT Solutions.', 'ezit-core');
     }
 
     // ── cert payload (informational only — HMAC is server-side) ─────

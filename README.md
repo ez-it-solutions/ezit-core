@@ -24,8 +24,10 @@ The plugin itself lives in `ezit-core/` (upload to `wp-content/plugins/`).
 | `ezit-core.php` | bootstrap, constants, module loader |
 | `inc/class-ezit-core.php` | singleton + product registry (`register_product()`) |
 | `inc/class-ezit-api.php` | LicenseBox API client (`check_update`, `activate_license`, …) |
-| `inc/class-ezit-licensing.php` | per-product license state, verify cron, cert signing |
+| `inc/class-ezit-config.php` | server-published config (`get_config`) — repoints `api_base`, endpoint map, services, notices |
+| `inc/class-ezit-licensing.php` | per-product license state, verify cron, cert signing, `status_code` reason labels |
 | `inc/class-ezit-updater.php` | injects licensed updates into WP's update transients |
+| `inc/class-ezit-themes.php` | Ez IT product inventory (themes + plugins) for the Themes/About tabs |
 | `inc/class-ezit-marketplace.php` | registered-product list + remote catalog fetch |
 | `inc/class-ezit-gate.php` | maintenance-mode gate + "Under Construction" page |
 | `inc/class-ezit-admin.php` | tabbed admin dashboard (Overview/Licenses/Marketplace/Settings) |

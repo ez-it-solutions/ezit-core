@@ -37,13 +37,51 @@ Every request from a site carries the LicenseBox header contract:
 forces an immediate re-verify. Call it whenever a license status/feature
 set changes so sites converge in seconds instead of at the next cron.
 
+### Reason codes (client ≥ 1.2.0)
+
+Failed `activate_license` / `verify_license` responses may carry
+`status_code` — core persists it and maps it to admin-facing copy:
+
+| `status_code` | Client behavior |
+|---|---|
+| `PRODUCT_DISABLED` | "Product retired" — activate form disabled, theme-switch to the product blocked |
+| `ACTIVATION_DISABLED` | "Activation disabled server-side" — form stays open for a different code |
+| `LICENSE_SUSPENDED` / `LICENSE_EXPIRED` / `LICENSE_INACTIVE` | Labeled notice; form open |
+| `DOMAIN_NOT_ACTIVATED` | "Activate this license for this domain" prompt |
+
+Unknown/missing codes fall back to the response `message`. Always send
+`message` as the human string; `status_code` is the machine discriminator.
+
 ---
 
 ## 2. Already implemented (nothing to build)
 
 `check_connection_ext`, `activate_license`, `verify_license`,
 `deactivate_license`, `check_update`, `get_update_size/{id}`,
-`download_update/main/{id}`.
+`download_update/main/{id}`, `get_config` (+ Server Config admin tab).
+
+### `POST /api/get_config` — published server config (client ≥ 1.1.0)
+
+```json
+{
+  "status": true,
+  "config_version": 1,
+  "config": {
+    "api_base": "https://license.ez-it-solutions.com/api/",
+    "endpoints": { "verify_license": "verify_license" },
+    "services":  { "marketplace": "…", "support": "…" },
+    "notices":   []
+  }
+}
+```
+
+- `config_version` rides every `verify_license`/`check_update` response;
+  bump it to force sites to re-read (hourly staleness floor otherwise).
+- `api_base` repoints ALL client calls — **trust rule**: clients only
+  honor HTTPS hosts under `*.ez-it-solutions.com` (`ezit_allowed_api_hosts`
+  filter for customer mirrors). Publishing an off-platform base is ignored.
+- `endpoints` remaps *bare* endpoint names only — parameterized paths
+  (`download_update/main/x`) pass through unchanged.
 
 ---
 

@@ -1,4 +1,4 @@
-# Upgrade plan — license server + EzIT Core 1.1.0
+# Upgrade plan — license server + EzIT Core 1.1.0 → 1.2.0
 
 Two deploys, in order. Server first (it's backward-compatible), then Core.
 
@@ -14,7 +14,9 @@ Safe to upload over the live copy — **all changes are additive**:
   config v1 on next request). No existing tables/columns touched.
 - **Wire format:** every existing response is unchanged; `verify_license`
   and `check_update` now also return `config_version` (clients that don't
-  read it are unaffected).
+  read it are unaffected). Blocked `activate_license`/`verify_license`
+  responses carry `status_code` (`PRODUCT_DISABLED`, `ACTIVATION_DISABLED`,
+  …) — see the reason-code table in `LICENSE-SERVER.md`.
 
 Steps:
 
@@ -25,11 +27,11 @@ Steps:
 4. Rollback = swap the old `src/`/`views/`/`assets/` back; `server_configs`
    is inert on old code.
 
-## B. EzIT Core — 1.0.2 → 1.1.0 (this plugin)
+## B. EzIT Core — 1.0.2 → 1.2.0 (this plugin)
 
 Not strictly required — old Core keeps working against the new server.
 Required **only if** you want sites to follow server-published config
-(the point of the feature).
+and surface per-block reason codes.
 
 New/changed behavior:
 
@@ -46,6 +48,21 @@ New/changed behavior:
   Hourly cron calls `refresh_if_stale()` (12h floor). Sync retry falls
   back to the bootstrap URL so a dead `api_base` can't wedge a site.
 - **`uninstall.php`** drops `ezit_server_config`.
+
+**1.2.0 adds:**
+
+- **`api_base` trust boundary** — repoints honored only for HTTPS hosts
+  under `*.ez-it-solutions.com` (`ezit_allowed_api_hosts` filter to
+  extend); an unsigned doc can no longer leak `LB-API-KEY` off-platform.
+- **Reason codes** — `status_code`/`message` from failed activate/verify
+  stored as `reason_code`/`reason`; `EzIT_Licensing::blocked_label()`
+  maps codes (`PRODUCT_DISABLED` → "Product retired" + disabled form,
+  `ACTIVATION_DISABLED`, `LICENSE_SUSPENDED`, …) to admin copy across
+  Licenses/Themes/Dashboard/About. `class_exists('EzIT_Config')` guards
+  on every callsite — a partial deploy can't fatal.
+- **Theme-switch guard** — Ez IT Themes tab refuses switching to a
+  registered-but-unlicensed product (would UC-gate the front end).
+  WP's own Appearance → Themes switcher stays unguarded by design.
 
 Deploy = replace the plugin folder (or just the changed files). No
 migrations — option is created on first sync.
