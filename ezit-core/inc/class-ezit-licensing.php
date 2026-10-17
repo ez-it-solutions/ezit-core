@@ -293,14 +293,15 @@ class EzIT_Licensing
         $lic['status']       = $ok ? 'active' : 'invalid';
         $lic['server_state'] = 'up';
         unset($lic['failing_since'], $lic['skip_until']); // a real answer — any outage is over
+        // Recovery-code proof — rides EVERY definitive response, denials
+        // included (a suspended site is exactly where you want the offline
+        // override to work). Digest only; the raw code lives on the license
+        // server (Products → Recovery code).
+        if (! empty($res['recovery_digest'])) {
+            $lic['recovery_digest'] = (string) $res['recovery_digest'];
+        }
         if ($ok) {
             unset($lic['reason_code'], $lic['reason']); // cleared block
-            // Recovery-code proof — lets an admin force the gate open/closed
-            // even while this server is offline. Digest only; the raw code
-            // lives on the license server (Products → Recovery code).
-            if (! empty($res['recovery_digest'])) {
-                $lic['recovery_digest'] = (string) $res['recovery_digest'];
-            }
         } else {
             // WHY it failed — status_code separates "product withdrawn"
             // from "activation disabled" from "license suspended".

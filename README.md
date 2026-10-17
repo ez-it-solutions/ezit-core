@@ -102,7 +102,9 @@ site. Clearing early needs no code.
 
 Caveat: the digest must already be on file when the server goes dark —
 it arrives via cert/verify, so a site needs one successful verify against
-the updated server before overrides can arm during an outage.
+the updated server before overrides can arm during an outage. Rotating a
+product's `api_key` server-side mints a new recovery code (and digest) —
+the old code stops working once the site picks up the new digest.
 
 ## license-push
 

@@ -77,6 +77,11 @@ product's code arms the override on its site. If no digest is on file
 yet the arming UI shows "No recovery code on file" — additive rollout
 is safe; old clients ignore the field.
 
+Storage/rotation (already live server-side): raw codes are show-once +
+sha256-hashed; rotating a product's `api_key` automatically mints a new
+recovery code — so key rotation rotates the digest too, and the old code
+stops working site-side once the new digest arrives via cert/verify.
+
 ### Maintenance switch (client ≥ 1.2.0)
 
 A global outage switch the license dashboard can flip. While on, **every**
