@@ -25,3 +25,67 @@ activation server.
 3. Ez IT → Licenses → paste the license code issued in the license
    dashboard → Activate.
 4. Ez IT → Settings only if pointing at a non-default server.
+
+== License Server Outages ==
+
+Failed `verify_license` calls never count as a denial. Three states:
+
+* Maintenance — server answered 503 `SERVER_UNAVAILABLE` (its planned
+  switch). Prior verdict preserved; re-checks honor `Retry-After`
+  (clamped 5 min – 1 h, default 10 min).
+* Down — every other failure (HTTP error, malformed JSON, transport).
+  Same preservation and pacing.
+* Real denial — a successful `status:false` JSON: authoritative.
+
+While the server isn't `up`: every wp-admin page shows an immediate
+notice, and a red stripe pins under the admin bar on every front-end
+page for logged-in staff (guests never see it). Past the
+`ezit_license_grace_days` window (default 3 days) the verify path emails
+`admin_email` once a day — verdicts stay preserved indefinitely; only
+the silence is bounded.
+
+== Emergency Override ==
+
+Ez IT → Settings → Site gate → Emergency override forces the gate `open`
+(survives a total server outage) or `closed` for 4/24/72/168 h — always
+auto-expires, and armed overrides announce themselves on every admin
+screen.
+
+Arming requires the product's recovery code (license server → Products).
+Validation is fully offline: the server ships
+`recovery_digest = HMAC-SHA256("recovery|" + code, api_key)` inside the
+signed cert and every verify response; the site recomputes and
+`hash_equals`-compares. The raw code never touches the site.
+
+Caveat: the digest must already be on file when the server goes dark —
+it arrives via cert/verify, so a site needs one successful verify against
+the updated server before overrides can arm during an outage.
+
+== license-push ==
+
+`POST /wp-json/ezit/v1/license-push` with `key=<api_key>` is a server →
+site wake-up only — it carries no verdict; the site re-verifies over
+HTTPS itself, so a forged push can't disable anything. Throttled 15
+s/site; redirects are never followed.
+
+== Security Notes ==
+
+* Certs are `<hmac><base64url payload>` — `HMAC-SHA256(server_secret|api_key)`
+  over a payload pinning domain + product_id. The site decodes payloads
+  informationally; remote verify remains the authority.
+* `recovery_code_valid` treats `recovery_digest` as a reference value
+  only — arming still requires the raw code. Forging a matching digest
+  would take option/DB writes, where an attacker already owns the site;
+  the boundary defended is admin-session compromise, not database access.
+* Gate-user cookies (`ezit_access`) are HMAC tokens verified locally.
+* `EZIT_API_URL` (wp-config) or Settings overrides the server base;
+  outbound calls are HTTPS to the Ez IT allowlist.
+
+== Filters ==
+
+* `ezit_license_grace_days` — days of failed verify before the product is
+  reported stale + admin email escalation (default 3)
+* `ezit_gate_reverify_ttl` — seconds between synchronous re-verifies on
+  the gate path (default 60)
+* `ezit_uc_layouts` — available UC page layouts
+* `ezit_uc_stylesheets` — theme CSS pulled into UC pages

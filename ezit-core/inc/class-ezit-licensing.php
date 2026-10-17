@@ -278,6 +278,7 @@ class EzIT_Licensing
                 ? 'maintenance' : 'down';
             $lic['skip_until']    = time() + min(3600, max(300, (int) ($data['retry_after'] ?? 0) ?: 600));
             $this->save($slug, $lic);
+            $this->maybe_alert_outage();
             return ($lic['status'] ?? '') === 'active';
         }
 
@@ -474,6 +475,32 @@ class EzIT_Licensing
         $msg = trim((string) ($lic['reason'] ?? ''));
         return $msg !== '' ? $msg
             : __('This activation is not valid on the license server. Enter a different license code to re-activate, or contact Ez IT Solutions.', 'ezit-core');
+    }
+
+    /**
+     * Long-outage escalation — emails the site admin once a day while any
+     * product is past the grace window. Fires from the verify path (cron),
+     * so the owner hears about it even when nobody visits wp-admin. The
+     * verdict itself is never bounded — only the silence is.
+     */
+    private function maybe_alert_outage(): void
+    {
+        $stale = $this->stale_products();
+        if (! $stale || get_transient('ezit_outage_mail')) {
+            return;
+        }
+        set_transient('ezit_outage_mail', 1, DAY_IN_SECONDS);
+
+        $days = max(1, (int) apply_filters('ezit_license_grace_days', 3));
+        wp_mail(
+            (string) get_option('admin_email'),
+            sprintf(__('[%s] License server unreachable (%d+ days)', 'ezit-core'), wp_specialchars_decode(get_bloginfo('name'), ENT_QUOTES), $days),
+            sprintf(
+                /* translators: %d: grace days */
+                __("The Ez IT license server has been unreachable for more than %d days.\n\nLicenses are holding their last verified verdicts — the site is still working — but activations, renewals and the emergency-override recovery codes stay frozen until it answers.\n\nIf you didn't plan this outage, contact Ez IT Solutions.", 'ezit-core'),
+                $days
+            )
+        );
     }
 
     /**
