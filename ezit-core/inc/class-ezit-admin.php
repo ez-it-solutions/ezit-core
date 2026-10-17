@@ -410,6 +410,7 @@ class EzIT_Admin
                     'detail' => sanitize_text_field(wp_unslash($in['detail'] ?? '')),
                     'cta'    => sanitize_text_field(wp_unslash($in['cta'] ?? '')),
                     'url'    => sanitize_text_field(wp_unslash($in['url'] ?? '')),
+                    'custom' => wp_kses_post(wp_unslash((string) ($in['custom'] ?? ''))),
                     'start'  => sanitize_text_field(wp_unslash($in['start'] ?? '')),
                     'end'    => sanitize_text_field(wp_unslash($in['end'] ?? '')),
                 ];

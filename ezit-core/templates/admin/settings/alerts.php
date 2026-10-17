@@ -61,6 +61,13 @@ $saved = EzIT_Alerts::saved();
                        placeholder="/contact/ or https://…">
             </div>
         </div>
+        <div class="ezit-field">
+            <label><?php esc_html_e('Custom content (optional)', 'ezit-core'); ?></label>
+            <textarea name="ezit_slots[<?php echo esc_attr($key); ?>][custom]" rows="2"
+                      placeholder="<?php esc_attr_e('Replaces Label / Detail / CTA when filled — basic HTML allowed (<strong>, <em>, <a>)', 'ezit-core'); ?>"
+            ><?php echo esc_textarea($cfg['custom'] ?? ''); ?></textarea>
+            <span class="hint"><?php esc_html_e('Free-form bar copy with formatting — include your own <a href> if it should link; the structured fields are ignored while this is set.', 'ezit-core'); ?></span>
+        </div>
         <div class="ezit-field-grid">
             <div class="ezit-field">
                 <label><?php esc_html_e('Show from (optional)', 'ezit-core'); ?></label>
@@ -105,10 +112,12 @@ $saved = EzIT_Alerts::saved();
                 <?php endforeach; ?>
                 <?php foreach ($slots as $key => $slot) :
                     $slot_cfg  = array_merge($slot['defaults'] ?? [], $saved[$key] ?? []);
-                    $slot_text = trim(implode(' — ', array_filter([
-                        (string) ($slot_cfg['label'] ?? ''),
-                        (string) ($slot_cfg['detail'] ?? ''),
-                    ])));
+                    $slot_text = trim((string) ($slot_cfg['custom'] ?? '')) !== ''
+                        ? wp_strip_all_tags((string) $slot_cfg['custom'])
+                        : trim(implode(' — ', array_filter([
+                            (string) ($slot_cfg['label'] ?? ''),
+                            (string) ($slot_cfg['detail'] ?? ''),
+                        ])));
                 ?>
                 <option value="slot:<?php echo esc_attr($key); ?>"
                         data-text="<?php echo esc_attr($slot_text); ?>"

@@ -554,9 +554,9 @@ class EzIT_Gate
 
     /**
      * Resolve the guest banner text from the saved mode: a preset key,
-     * 'slot:<key>' (a declared Alerts slot's label + detail), or 'custom'
-     * free text. Any miss falls back to the default preset so the banner
-     * can never render empty.
+     * 'slot:<key>' (a declared Alerts slot's custom content, else its
+     * label + detail), or 'custom' free text. Any miss falls back to the
+     * default preset so the banner can never render empty.
      */
     private function outage_guest_message(): string
     {
@@ -573,7 +573,12 @@ class EzIT_Gate
             $key      = substr($mode, 5);
             $declared = EzIT_Alerts::declared_slots()[$key] ?? null;
             if ($declared) {
-                $cfg   = array_merge($declared['defaults'] ?? [], EzIT_Alerts::saved()[$key] ?? []);
+                $cfg    = array_merge($declared['defaults'] ?? [], EzIT_Alerts::saved()[$key] ?? []);
+                $custom = trim((string) ($cfg['custom'] ?? ''));
+                if ($custom !== '') {
+                    // Stripe is plain text — drop the slot's markup.
+                    return wp_strip_all_tags($custom);
+                }
                 $parts = array_filter([
                     trim((string) ($cfg['label'] ?? '')),
                     trim((string) ($cfg['detail'] ?? '')),
