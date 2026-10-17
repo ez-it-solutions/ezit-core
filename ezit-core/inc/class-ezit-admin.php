@@ -420,6 +420,16 @@ class EzIT_Admin
             // (unchecked checkbox POSTs nothing → 0).
             update_option('ezit_outage_banner_guests',
                 ! empty($_POST['ezit_outage_guests']) ? 1 : 0, false);
+
+            // Guest copy: preset key | slot:<declared-slot> | custom.
+            $msg_mode = (string) ($_POST['ezit_outage_msg_mode'] ?? 'default');
+            $msg_mode = strpos($msg_mode, 'slot:') === 0
+                ? 'slot:' . sanitize_key(substr($msg_mode, 5))
+                : sanitize_key($msg_mode);
+            update_option('ezit_outage_guest_msg', $msg_mode, false);
+            update_option('ezit_outage_guest_msg_custom',
+                sanitize_text_field(wp_unslash((string) ($_POST['ezit_outage_msg_custom'] ?? ''))),
+                false);
         }
 
         // Site Studio — theme-mod writes for declared fields.

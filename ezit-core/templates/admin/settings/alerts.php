@@ -89,8 +89,65 @@ $saved = EzIT_Alerts::saved();
                 <?php esc_html_e('Show the banner to guests too', 'ezit-core'); ?>
             </label>
         </div>
+        <?php
+        $guest_mode   = (string) get_option('ezit_outage_guest_msg', 'default');
+        $guest_custom = (string) get_option('ezit_outage_guest_msg_custom', '');
+        ?>
+        <div class="ezit-field">
+            <label for="ezit_outage_msg_mode"><?php esc_html_e('Guest message', 'ezit-core'); ?></label>
+            <select id="ezit_outage_msg_mode" name="ezit_outage_msg_mode" style="max-width:100%">
+                <?php foreach (EzIT_Gate::outage_guest_presets() as $k => $text) : ?>
+                <option value="<?php echo esc_attr($k); ?>"
+                        data-text="<?php echo esc_attr($text); ?>"
+                        <?php selected($guest_mode, $k); ?>>
+                    <?php echo esc_html($text); ?>
+                </option>
+                <?php endforeach; ?>
+                <?php foreach ($slots as $key => $slot) :
+                    $slot_cfg  = array_merge($slot['defaults'] ?? [], $saved[$key] ?? []);
+                    $slot_text = trim(implode(' — ', array_filter([
+                        (string) ($slot_cfg['label'] ?? ''),
+                        (string) ($slot_cfg['detail'] ?? ''),
+                    ])));
+                ?>
+                <option value="slot:<?php echo esc_attr($key); ?>"
+                        data-text="<?php echo esc_attr($slot_text); ?>"
+                        <?php selected($guest_mode, 'slot:' . $key); ?>>
+                    <?php echo esc_html(sprintf(__('Use the "%s" banner text', 'ezit-core'), $slot['label'] ?? $key)); ?>
+                </option>
+                <?php endforeach; ?>
+                <option value="custom" <?php selected($guest_mode, 'custom'); ?>>
+                    <?php esc_html_e('Custom message…', 'ezit-core'); ?>
+                </option>
+            </select>
+        </div>
+        <div class="ezit-field" id="ezit-outage-custom-row"<?php echo $guest_mode === 'custom' ? '' : ' style="display:none"'; ?>>
+            <label for="ezit_outage_msg_custom"><?php esc_html_e('Custom message', 'ezit-core'); ?></label>
+            <input type="text" id="ezit_outage_msg_custom" name="ezit_outage_msg_custom"
+                   value="<?php echo esc_attr($guest_custom); ?>"
+                   placeholder="<?php esc_attr_e('This site is undergoing maintenance — content may be temporarily limited.', 'ezit-core'); ?>">
+        </div>
         <p class="ezit-meta" style="margin:0">
-            <?php esc_html_e('Automatic. While the license server is unreachable or in maintenance, a fixed red stripe pins under the admin bar on every front-end page for logged-in staff (editors and admins), telling them the site is running on its last verified license. With the box checked, guests and gate users also see a generic maintenance notice — it never mentions licensing. wp-admin screens show the equivalent notice automatically.', 'ezit-core'); ?>
+            <?php esc_html_e('Automatic. While the license server is unreachable or in maintenance, a fixed red stripe pins under the admin bar on every front-end page for logged-in staff (editors and admins), telling them the site is running on its last verified license. With the box checked, guests and gate users also see the chosen notice — it never mentions licensing. Picking "Custom message" pre-fills the field with the option you had selected, as a starting point. wp-admin screens show the equivalent notice automatically.', 'ezit-core'); ?>
         </p>
+<script>
+(function () {
+    var sel = document.getElementById('ezit_outage_msg_mode');
+    var row = document.getElementById('ezit-outage-custom-row');
+    var inp = document.getElementById('ezit_outage_msg_custom');
+    if (!sel || !row || !inp) return;
+    var prev = sel.value;
+    sel.addEventListener('change', function () {
+        row.style.display = sel.value === 'custom' ? '' : 'none';
+        // Seed the custom field with whatever was selected before, so
+        // the user starts from real copy instead of a blank box.
+        if (sel.value === 'custom' && inp.value.trim() === '') {
+            var prevOpt = sel.querySelector('option[value="' + CSS.escape(prev) + '"]');
+            if (prevOpt && prevOpt.dataset.text) inp.value = prevOpt.dataset.text;
+        }
+        prev = sel.value;
+    });
+})();
+</script>
     </fieldset>
 </div>

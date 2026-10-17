@@ -519,7 +519,7 @@ class EzIT_Gate
         }
         $this->banner_done = true;
         $msg = ! $staff
-            ? __('This site is undergoing maintenance — content may be temporarily limited.', 'ezit-core')
+            ? $this->outage_guest_message()
             : ($state === 'maintenance'
                 ? __('Ez IT license server: maintenance mode — site is running on its last verified license.', 'ezit-core')
                 : __('Ez IT license server: unreachable — site is running on its last verified license.', 'ezit-core'));
@@ -537,6 +537,55 @@ class EzIT_Gate
 <style>@media (max-width: 782px) { #ezit-outage-bar { top: 46px; } }</style>
 <?php endif; ?>
         <?php
+    }
+
+    /**
+     * Guest-facing outage copy — preset key => text. 'default' is what
+     * sites shipped with; the rest are selectable in Settings → Alerts.
+     */
+    public static function outage_guest_presets(): array
+    {
+        return [
+            'default'   => __('This site is undergoing maintenance — content may be temporarily limited.', 'ezit-core'),
+            'scheduled' => __('Scheduled maintenance is in progress — we\'ll be back shortly.', 'ezit-core'),
+            'updates'   => __('We\'re performing site updates — some features may be temporarily unavailable.', 'ezit-core'),
+        ];
+    }
+
+    /**
+     * Resolve the guest banner text from the saved mode: a preset key,
+     * 'slot:<key>' (a declared Alerts slot's label + detail), or 'custom'
+     * free text. Any miss falls back to the default preset so the banner
+     * can never render empty.
+     */
+    private function outage_guest_message(): string
+    {
+        $mode = (string) get_option('ezit_outage_guest_msg', 'default');
+
+        if ($mode === 'custom') {
+            $custom = trim((string) get_option('ezit_outage_guest_msg_custom', ''));
+            if ($custom !== '') {
+                return $custom;
+            }
+        } elseif (strpos($mode, 'slot:') === 0 && class_exists('EzIT_Alerts')) {
+            // Text reuse only — the slot's own on/off/schedule governs the
+            // theme's bar, not this banner, so read the merged config raw.
+            $key      = substr($mode, 5);
+            $declared = EzIT_Alerts::declared_slots()[$key] ?? null;
+            if ($declared) {
+                $cfg   = array_merge($declared['defaults'] ?? [], EzIT_Alerts::saved()[$key] ?? []);
+                $parts = array_filter([
+                    trim((string) ($cfg['label'] ?? '')),
+                    trim((string) ($cfg['detail'] ?? '')),
+                ]);
+                if ($parts) {
+                    return implode(' — ', $parts);
+                }
+            }
+        }
+
+        $presets = self::outage_guest_presets();
+        return $presets[$mode] ?? $presets['default'];
     }
 
     /** Gate decision state — shared by the debug endpoint + settings card. */
