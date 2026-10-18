@@ -350,41 +350,41 @@ class EzIT_Marketplace
                             <?php if (! empty($item['excerpt'])) : ?>
                                 <p class="ezit-card-excerpt"><?php echo esc_html($item['excerpt']); ?></p>
                             <?php endif; ?>
-                            <span class="ezit-badge <?php echo $installed ? 'is-active' : ($free ? 'is-free' : 'is-paid'); ?>">
-                                <?php
-                                echo $installed ? esc_html__('Installed', 'ezit-core')
-                                    : ($free ? esc_html__('Free', 'ezit-core')
-                                    : esc_html(isset($item['price']) ? '$' . number_format((float) $item['price'], 2) : __('Paid', 'ezit-core')));
-                                ?>
-                            </span>
-                            <?php if ($newer) : ?>
-                                <span class="ezit-badge is-update">
-                                    <?php printf(esc_html__('Update &rarr; v%s', 'ezit-core'), esc_html((string) $item['version'])); ?>
+                            <div class="ezit-card__foot">
+                                <span class="ezit-badge <?php echo $installed ? 'is-active' : ($free ? 'is-free' : 'is-paid'); ?>">
+                                    <?php
+                                    echo $installed ? esc_html__('Installed', 'ezit-core')
+                                        : ($free ? esc_html__('Free', 'ezit-core')
+                                        : esc_html(isset($item['price']) ? '$' . number_format((float) $item['price'], 2) : __('Paid', 'ezit-core')));
+                                    ?>
                                 </span>
-                            <?php endif; ?>
-                            <?php if ($newer) : ?>
-                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                                    <input type="hidden" name="action" value="ezit_market_install">
-                                    <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
-                                    <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
-                                    <input type="hidden" name="from" value="marketplace">
-                                    <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
-                                    <button type="submit" class="ezit-btn"><?php esc_html_e('Update', 'ezit-core'); ?></button>
-                                </form>
-                            <?php elseif (! $installed && $free) : ?>
-                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                                    <input type="hidden" name="action" value="ezit_market_install">
-                                    <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
-                                    <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
-                                    <input type="hidden" name="from" value="marketplace">
-                                    <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
-                                    <button type="submit" class="ezit-btn"><?php esc_html_e('Install', 'ezit-core'); ?></button>
-                                </form>
-                            <?php elseif (! $installed) : ?>
-                                <button class="ezit-btn ezit-btn--ghost" disabled title="<?php esc_attr_e('Checkout ships with Phase 5', 'ezit-core'); ?>">
-                                    <?php esc_html_e('Purchase', 'ezit-core'); ?>
-                                </button>
-                            <?php endif; ?>
+                                <?php if ($newer) : ?>
+                                    <span class="ezit-badge is-update">
+                                        <?php printf(esc_html__('Update &rarr; v%s', 'ezit-core'), esc_html((string) $item['version'])); ?>
+                                    </span>
+                                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                        <input type="hidden" name="action" value="ezit_market_install">
+                                        <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
+                                        <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
+                                        <input type="hidden" name="from" value="marketplace">
+                                        <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
+                                        <button type="submit" class="ezit-btn"><?php esc_html_e('Update', 'ezit-core'); ?></button>
+                                    </form>
+                                <?php elseif (! $installed && $free) : ?>
+                                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                        <input type="hidden" name="action" value="ezit_market_install">
+                                        <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
+                                        <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
+                                        <input type="hidden" name="from" value="marketplace">
+                                        <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
+                                        <button type="submit" class="ezit-btn"><?php esc_html_e('Install', 'ezit-core'); ?></button>
+                                    </form>
+                                <?php elseif (! $installed) : ?>
+                                    <button class="ezit-btn ezit-btn--ghost" disabled title="<?php esc_attr_e('Checkout ships with Phase 5', 'ezit-core'); ?>">
+                                        <?php esc_html_e('Purchase', 'ezit-core'); ?>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>

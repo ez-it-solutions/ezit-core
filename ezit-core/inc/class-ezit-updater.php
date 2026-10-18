@@ -48,8 +48,12 @@ class EzIT_Updater
             }
             $info = $this->check($slug, $product);
             if ($info && version_compare($info['version'], $product['version'] ?: '0', '>')) {
-                $transient->response[$slug] = [
-                    'theme'        => $slug,
+                // WP keys theme updates by stylesheet (dir name), which the
+                // registry stores in $product['slug'] — the array KEY is the
+                // sanitize_key()'d registry id and won't match wp_get_themes().
+                $stylesheet = (string) ($product['slug'] ?: $slug);
+                $transient->response[$stylesheet] = [
+                    'theme'        => $stylesheet,
                     'new_version'  => $info['version'],
                     'url'          => admin_url('admin.php?page=ezit-core'),
                     'package'      => 'ezit://' . $slug . '/' . $info['update_id'],
