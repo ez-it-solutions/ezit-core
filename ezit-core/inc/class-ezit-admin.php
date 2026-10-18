@@ -701,13 +701,14 @@ class EzIT_Admin
         if ($code === '') {
             return '';
         }
-        $ok = in_array($code, ['activated', 'deactivated', 'saved', 'switched'], true);
+        $ok = in_array($code, ['activated', 'deactivated', 'saved', 'switched', 'installed'], true);
         $detail = sanitize_text_field(wp_unslash($_GET['ezit_detail'] ?? ''));
         $label = [
             'activated'   => __('License activated.', 'ezit-core'),
             'deactivated' => __('License deactivated.', 'ezit-core'),
             'saved'       => __('Settings saved.', 'ezit-core'),
             'switched'    => __('Theme switched.', 'ezit-core'),
+            'installed'   => __('Done.', 'ezit-core'),
             'error'       => __('Something went wrong.', 'ezit-core'),
         ][$code] ?? $code;
         // Server detail supersedes the generic label (avoids "X. X succeeded.").
