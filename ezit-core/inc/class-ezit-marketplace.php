@@ -247,7 +247,7 @@ class EzIT_Marketplace
                         }
                         ?>
                     </span>
-                    <a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=ezit-core&tab=marketplace')); ?>">
+                    <a class="ezit-btn ezit-btn--ghost" href="<?php echo esc_url(admin_url('admin.php?page=ezit-core&tab=marketplace')); ?>">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
                         <?php esc_html_e('Refresh', 'ezit-core'); ?>
                     </a>
@@ -288,10 +288,10 @@ class EzIT_Marketplace
                                     <input type="hidden" name="action" value="ezit_market_install">
                                     <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
                                     <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
-                                    <button type="submit" class="button button-primary"><?php esc_html_e('Install', 'ezit-core'); ?></button>
+                                    <button type="submit" class="ezit-btn"><?php esc_html_e('Install', 'ezit-core'); ?></button>
                                 </form>
                             <?php elseif (! $installed) : ?>
-                                <button class="button" disabled title="<?php esc_attr_e('Checkout ships with Phase 5', 'ezit-core'); ?>">
+                                <button class="ezit-btn ezit-btn--ghost" disabled title="<?php esc_attr_e('Checkout ships with Phase 5', 'ezit-core'); ?>">
                                     <?php esc_html_e('Purchase', 'ezit-core'); ?>
                                 </button>
                             <?php endif; ?>

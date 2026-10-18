@@ -562,6 +562,8 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-badge.is-free { background: #eef5e2; color: #41620f; }
 .ezit-pg .ezit-badge.is-paid { background: #fdf1e3; color: #b3500a; }
 .ezit-pg .ezit-card form { margin: 0; }
+.ezit-pg .ezit-card .ezit-btn,
+.ezit-pg .ezit-card form .ezit-btn { margin-top: 12px; }
 .ezit-pg .ezit-market-head {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
@@ -569,10 +571,11 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0;
 }
 .ezit-pg .ezit-catalog-at { font-size: 12px; font-weight: 400; color: var(--pg-muted); }
-.ezit-pg .ezit-market-actions .button {
-    display: inline-flex; align-items: center; gap: 5px; line-height: 1.6;
+.ezit-pg .ezit-market-actions .ezit-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; font-size: 12.5px;
 }
-.ezit-pg .ezit-market-actions .button svg { flex: none; }
+.ezit-pg .ezit-market-actions .ezit-btn svg { flex: none; }
 
 /* ── Themes tab — installed-theme grid ─────────────────────────────── */
 .ezit-pg .ezit-themes {
