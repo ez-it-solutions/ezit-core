@@ -29,6 +29,7 @@ class EzIT_Admin
         add_action('admin_post_ezit_settings',   [$this, 'handle_settings']);
         add_action('admin_post_ezit_switch_theme', [$this, 'handle_switch_theme']);
         add_action('admin_post_ezit_credit',     [$this, 'handle_credit']);
+        add_action('admin_post_ezit_market_install', [$this, 'handle_market_install']);
         add_action('wp_ajax_ezit_maillog',       [$this, 'handle_maillog']);
         add_action('admin_post_ezit_maillog_view', [$this, 'handle_maillog_view']);
     }
@@ -548,6 +549,17 @@ class EzIT_Admin
         set_theme_mod(EzIT_Themes::CREDIT_TXT,
             sanitize_text_field(wp_unslash($_POST['credit_text'] ?? '')));
         $this->redirect('themes', 'saved', '', ['section' => 'credit']);
+    }
+
+    /**
+     * Marketplace install — free catalog items only (Phase 5 adds
+     * purchase flow for paid). Delegates to EzIT_Marketplace::install().
+     */
+    public function handle_market_install(): void
+    {
+        $this->guard('ezit_market_install', 'ezit_market_nonce');
+        $res = (new EzIT_Marketplace($this->core))->install(sanitize_key($_POST['slug'] ?? ''));
+        $this->redirect('marketplace', $res['status'] ? 'installed' : 'error', $res['message']);
     }
 
     // ── helpers ─────────────────────────────────────────────────────

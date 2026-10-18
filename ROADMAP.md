@@ -112,12 +112,16 @@ endpoint map, services, notices).
       affected theme
 
 ### Phase 3 — Marketplace
-- [ ] **Server: `GET /api/catalog` not built yet** — core fetch exists and fails
-      soft (empty catalog, hourly cache). This is the real Phase 3 blocker.
-      **Full server build spec: `core/LICENSE-SERVER.md`.**
-- Server: `GET /api/catalog` (public product listing: slug, name, thumb, price, version)
-- Server: `GET /api/catalog/{slug}` detail + `POST /api/purchase` (Phase 5)
-- Core: browse/install/activate in-admin (`install_theme` flow w/ licensed download)
+- [x] Server: `GET /api/catalog` (public product listing: slug, name, thumb,
+      price, version, type, installed flag) + `GET /api/catalog/{slug}` detail —
+      free items expose `api_key`; paid items need purchase first (Phase 5)
+- [x] Server: `download_update` accepts published `is_free` listings without a
+      license cert — api_key + LB-URL authenticate the install
+- [x] Core: browse catalog in-admin with cards (name, type, version, category,
+      free/paid, installed badge) + nonce'd `admin_post_ezit_market_install`
+      install flow (detail → check_update → zip via download_update →
+      WP_Upgrader; plugins auto-activate, themes switch via the Themes tab)
+- Server: `POST /api/purchase` (Phase 5)
 - Categories/tags mirroring the Envato browsing model (church, business, portfolio…)
 
 ### Phase 4 — Communication & help desk
