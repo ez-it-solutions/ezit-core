@@ -18,20 +18,35 @@ class EzIT_Marketplace
 {
     private EzIT_Core $core;
 
+    /** True when the last catalog() call failed and we're serving the
+     *  cached copy — the UI uses it to flag stale data. */
+    private bool $stale = false;
+
     public function __construct(EzIT_Core $core)
     {
         $this->core = $core;
     }
 
-    /**
-     * Remote catalog — array of items or [] (cached; never WP_Error so the
-     * UI can render uniformly).
-     */
-    public function catalog(): array
+    /** Unix time the catalog last fetched successfully (0 = never). */
+    public function catalog_fetched_at(): int
     {
-        $cached = get_transient('ezit_catalog');
-        if ($cached !== false) {
-            return is_array($cached) ? $cached : [];
+        return (int) get_option('ezit_catalog_at', 0);
+    }
+
+    /**
+     * Remote catalog — array of items or [] (never WP_Error so the UI can
+     * render uniformly). $fresh bypasses the cache; the Marketplace tab
+     * always calls it fresh, so ezit_catalog doubles as a week-long stale
+     * fallback when the server is unreachable, and ezit_catalog_at stamps
+     * the last successful fetch for the "updated X ago" display.
+     */
+    public function catalog(bool $fresh = false): array
+    {
+        if (! $fresh) {
+            $cached = get_transient('ezit_catalog');
+            if (is_array($cached)) {
+                return $cached;
+            }
         }
 
         $res = wp_remote_get($this->core->api_url() . '/api/catalog', [
@@ -42,15 +57,19 @@ class EzIT_Marketplace
             ],
         ]);
 
-        $items = [];
         if (! is_wp_error($res) && wp_remote_retrieve_response_code($res) < 400) {
             $json  = json_decode(wp_remote_retrieve_body($res), true);
             $items = is_array($json['items'] ?? null) ? $json['items'] : [];
+            set_transient('ezit_catalog', $items, WEEK_IN_SECONDS);
+            update_option('ezit_catalog_at', time(), false);
+            $this->stale = false;
+            return $items;
         }
 
-        // short cache — a 404/500 shouldn't spam the server on every page load
-        set_transient('ezit_catalog', $items, HOUR_IN_SECONDS);
-        return $items;
+        // Fetch failed — serve the last good copy rather than an empty grid.
+        $this->stale = true;
+        $stale = get_transient('ezit_catalog');
+        return is_array($stale) ? $stale : [];
     }
 
     /**
@@ -182,8 +201,9 @@ class EzIT_Marketplace
     public function render(): void
     {
         $products = $this->core->products();
-        $catalog  = $this->catalog();
+        $catalog  = $this->catalog(true); // every tab load re-fetches
         $licensing = $this->core->licensing();
+        $fetched  = $this->catalog_fetched_at();
         ?>
         <div class="ezit-grid">
             <h2><?php esc_html_e('Installed on this site', 'ezit-core'); ?></h2>
@@ -207,10 +227,36 @@ class EzIT_Marketplace
                 </div>
             <?php endif; ?>
 
-            <h2><?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?></h2>
+            <h2 class="ezit-market-head">
+                <?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?>
+                <span class="ezit-market-actions">
+                    <span class="ezit-catalog-at">
+                        <?php
+                        if ($fetched > 0) {
+                            printf(
+                                /* translators: %s: human-readable time difference */
+                                esc_html__('Fetched %s ago', 'ezit-core'),
+                                esc_html(human_time_diff($fetched, time()))
+                            );
+                        } else {
+                            esc_html_e('Never fetched', 'ezit-core');
+                        }
+                        if ($this->stale) {
+                            echo ' ';
+                            esc_html_e('— showing the cached copy (server unreachable)', 'ezit-core');
+                        }
+                        ?>
+                    </span>
+                    <a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=ezit-core&tab=marketplace')); ?>">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                        <?php esc_html_e('Refresh', 'ezit-core'); ?>
+                    </a>
+                </span>
+            </h2>
             <?php if (! $catalog) : ?>
                 <p class="ezit-muted">
                     <?php esc_html_e('Nothing published yet — listings appear here once the license server catalog goes live.', 'ezit-core'); ?>
+                    <?php esc_html_e('(Listings restricted to specific licenses only appear on sites holding one.)', 'ezit-core'); ?>
                 </p>
             <?php else : ?>
                 <div class="ezit-cards">
