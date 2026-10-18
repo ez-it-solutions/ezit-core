@@ -215,24 +215,23 @@ class EzIT_Marketplace
 
         require_once ABSPATH . 'wp-admin/includes/file.php';
         require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
+        require_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
 
-        $skin = new WP_Upgrader_Skin();
-        if ($type === 'plugin') {
-            require_once ABSPATH . 'wp-admin/includes/plugin.php';
-            $upgrader = new Plugin_Upgrader($skin);
-        } else {
-            $upgrader = new Theme_Upgrader($skin);
-        }
-        // clear_destination lets install() double as an in-place upgrade —
-        // same trick WP's own "replace current with uploaded" flow uses.
-        $ok = $upgrader->install($tmp, ['overwrite_package' => true, 'clear_destination' => true]);
+        $skin     = class_exists('Automatic_Upgrader_Skin')
+            ? new Automatic_Upgrader_Skin() : new WP_Upgrader_Skin();
+        $upgrader = $type === 'plugin' ? new Plugin_Upgrader($skin) : new Theme_Upgrader($skin);
+        ob_start();
+        $ok = $upgrader->install($tmp, [
+            'overwrite_package' => true,
+            'clear_destination' => true,
+        ]);
+        ob_end_clean();
         @unlink($tmp);
-
-        if (is_wp_error($ok) || $ok === false) {
-            return ['status' => false, 'message' => is_wp_error($ok)
-                ? $ok->get_error_message()
-                : __('Install failed — the package may not be a valid theme/plugin zip.', 'ezit-core')];
+        if ($ok !== true) {
+            $detail = is_wp_error($ok) ? $ok->get_error_message()
+                : implode(' ', array_filter((array) $skin->get_upgrade_messages()));
+            return ['status' => false, 'message' => __('Package install failed.', 'ezit-core')
+                . ($detail !== '' ? ' ' . $detail : '')];
         }
 
         delete_transient('ezit_catalog'); // the "installed" flag is stale now
