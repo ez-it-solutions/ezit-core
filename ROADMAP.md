@@ -227,6 +227,32 @@ surface.
 - **Onboarding wizard** — first-run checklist per vertical: license →
   owner account → payment method → branding → content import.
 
+### Phase 11 — Observability: system log, filters & retention
+
+One place to see exactly what the plugin is doing — every outbound call,
+verdict and event lands in a unified stream instead of scattered
+transients and ad-hoc logs.
+
+- [ ] **System log** — a single event table under Settings recording
+  licensing calls (activate/verify/deactivate), update checks, catalog
+  fetches, config syncs, gate decisions and mail sends. Each entry:
+  timestamp, source, level, summary — plus a **raw request/response
+  viewer** so the exact Marketplace and license-server exchange is
+  inspectable end-to-end.
+- [ ] **Thunderbird-style filters** — saved filter rules built from
+  match conditions (source, level, text match, date range) with
+  include/exclude logic; a quick-filter bar plus column sorting and
+  search. Filters are named, reorderable, and apply to both the view
+  and retention plans below.
+- [ ] **Smart retention plans** — per-source / per-level policies (e.g.
+  keep errors 90 days, routine verifies 7, strip raw bodies after 30)
+  pruned on cron, with size caps and an export-before-purge escape
+  hatch. Filter-based rules reuse the same condition engine, so "keep
+  all `source=gate` failures" is one clause.
+- [ ] **Email Log migrates in** — Settings → Email log becomes the
+  `mail` source of the unified stream, gaining the same filtering and
+  retention as every other source.
+
 ## Conventions
 
 - Core classes are `EzIT_*`, prefixed functions `ezit_*`, options `ezit_*`,

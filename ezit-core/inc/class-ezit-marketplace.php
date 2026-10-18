@@ -22,6 +22,11 @@ class EzIT_Marketplace
      *  cached copy — the UI uses it to flag stale data. */
     private bool $stale = false;
 
+    /** Seconds a cached catalog counts as fresh. The transient itself
+     *  lives a week as the outage fallback — this window is only about
+     *  when we bother the server again. */
+    private const FRESH_TTL = 300;
+
     public function __construct(EzIT_Core $core)
     {
         $this->core = $core;
@@ -35,16 +40,20 @@ class EzIT_Marketplace
 
     /**
      * Remote catalog — array of items or [] (never WP_Error so the UI can
-     * render uniformly). $fresh bypasses the cache; the Marketplace tab
-     * always calls it fresh, so ezit_catalog doubles as a week-long stale
-     * fallback when the server is unreachable, and ezit_catalog_at stamps
-     * the last successful fetch for the "updated X ago" display.
+     * render uniformly). $fresh bypasses the cache; the transient doubles
+     * as a week-long stale fallback when the server is unreachable, and
+     * ezit_catalog_at stamps the last successful fetch — the FRESH_TTL
+     * window decides when we hit the network again.
      */
     public function catalog(bool $fresh = false): array
     {
         if (! $fresh) {
             $cached = get_transient('ezit_catalog');
-            if (is_array($cached)) {
+            // The transient doubles as a week-long outage fallback, so
+            // the fetch timestamp — not the transient — decides whether
+            // we can skip the network call.
+            if (is_array($cached)
+                && (time() - (int) get_option('ezit_catalog_at', 0)) < self::FRESH_TTL) {
                 return $cached;
             }
         }
@@ -264,7 +273,12 @@ class EzIT_Marketplace
     public function render(): void
     {
         $products = $this->core->products();
-        $catalog  = $this->catalog(true); // every tab load re-fetches
+        // Only the Refresh button forces a live pull — otherwise the
+        // 5-minute freshness window applies, so "Fetched N ago" is a
+        // real age instead of always "1 second ago".
+        $fresh    = isset($_GET['ezit_refresh']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended.NonceVerification — verified below
+            && wp_verify_nonce(sanitize_key($_GET['_wpnonce'] ?? ''), 'ezit_refresh'); // phpcs:ignore
+        $catalog  = $this->catalog($fresh);
         $licensing = $this->core->licensing();
         $fetched  = $this->catalog_fetched_at();
         ?>
@@ -294,23 +308,27 @@ class EzIT_Marketplace
                 <?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?>
                 <span class="ezit-market-actions">
                     <span class="ezit-catalog-at">
-                        <?php
-                        if ($fetched > 0) {
-                            printf(
-                                /* translators: %s: human-readable time difference */
-                                esc_html__('Fetched %s ago', 'ezit-core'),
-                                esc_html(human_time_diff($fetched, time()))
-                            );
-                        } else {
-                            esc_html_e('Never fetched', 'ezit-core');
-                        }
-                        if ($this->stale) {
-                            echo ' ';
-                            esc_html_e('— showing the cached copy (server unreachable)', 'ezit-core');
-                        }
-                        ?>
+                        <?php if ($fetched > 0) : ?>
+                            <span class="ezit-catalog-at__age"
+                                  data-ts="<?php echo (int) $fetched; ?>"
+                                  data-label="<?php esc_attr_e('Fetched', 'ezit-core'); ?>"
+                                  title="<?php echo esc_attr(wp_date(get_option('date_format') . ' ' . get_option('time_format'), $fetched)); ?>">
+                                <?php
+                                printf(
+                                    /* translators: %s: human-readable time difference */
+                                    esc_html__('Fetched %s ago', 'ezit-core'),
+                                    esc_html(human_time_diff($fetched, time()))
+                                );
+                                ?>
+                            </span>
+                        <?php else : ?>
+                            <?php esc_html_e('Never fetched', 'ezit-core'); ?>
+                        <?php endif; ?>
+                        <?php if ($this->stale) : ?>
+                            <?php esc_html_e('— showing the cached copy (server unreachable)', 'ezit-core'); ?>
+                        <?php endif; ?>
                     </span>
-                    <a class="ezit-btn ezit-btn--ghost" href="<?php echo esc_url(admin_url('admin.php?page=ezit-core&tab=marketplace')); ?>">
+                    <a class="ezit-btn ezit-btn--ghost" href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=ezit-core&tab=marketplace&ezit_refresh=1'), 'ezit_refresh')); ?>">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
                         <?php esc_html_e('Refresh', 'ezit-core'); ?>
                     </a>

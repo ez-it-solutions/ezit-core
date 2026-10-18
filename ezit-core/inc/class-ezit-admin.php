@@ -138,6 +138,8 @@ class EzIT_Admin
             filemtime(EZIT_CORE_PATH . 'assets/ezt/tabs.js'), true);
         wp_enqueue_style('ezit-admin', EZIT_CORE_ASSETS . 'admin.css', ['ezt-tabs'],
             filemtime(EZIT_CORE_PATH . 'assets/admin.css'));
+        wp_enqueue_script('ezit-admin', EZIT_CORE_ASSETS . 'admin.js', [],
+            filemtime(EZIT_CORE_PATH . 'assets/admin.js'), true);
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_script('wp-color-picker');
         wp_add_inline_script('wp-color-picker',
