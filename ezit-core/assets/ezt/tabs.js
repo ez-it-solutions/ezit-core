@@ -304,10 +304,15 @@
                     });
                     history.replaceState(null, '', u);
                 }
-                // Keep the page breadcrumb in step with the active tab.
-                const crumb = document.querySelector('.pg-bar__crumb');
-                const label = this.tabs[index].querySelector('.ezt__tab-label');
-                if (crumb && label) crumb.textContent = label.textContent.trim();
+                // Keep the page breadcrumb in step with the active tab —
+                // but only the OUTERMOST tabs instance owns it; nested
+                // side-tab groups (Settings sections, etc.) would stamp
+                // their own active sub-tab on top during init.
+                if (!this.root.parentElement.closest('.ezt')) {
+                    const crumb = document.querySelector('.pg-bar__crumb');
+                    const label = this.tabs[index].querySelector('.ezt__tab-label');
+                    if (crumb && label) crumb.textContent = label.textContent.trim();
+                }
             }
 
             this.restart();

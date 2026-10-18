@@ -110,7 +110,7 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                                 <span class="ezit-theme__slug"><?php echo esc_html($t['stylesheet']); ?></span>
                                 <div class="ezit-theme__actions">
                                     <?php if ($new_v !== '' && $t['product_id'] !== '') : ?>
-                                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                        <form class="ezit-theme__update" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                                             <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
                                             <input type="hidden" name="action" value="ezit_market_install">
                                             <input type="hidden" name="product_id" value="<?php echo esc_attr($t['product_id']); ?>">

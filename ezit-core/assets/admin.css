@@ -613,10 +613,11 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-theme__title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .ezit-pg .ezit-theme__title strong { font-size: 14.5px; color: var(--pg-ink); }
 .ezit-pg .ezit-theme__badges { display: flex; gap: 6px; flex-wrap: wrap; min-height: 20px; }
-.ezit-pg .ezit-theme__actions { display: flex; gap: 8px; width: 100%; }
-.ezit-pg .ezit-theme__actions .ezit-btn { flex: 1; padding-inline: 10px; text-align: center; }
+.ezit-pg .ezit-theme__actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+.ezit-pg .ezit-theme__actions .ezit-btn { flex: 1; padding-inline: 10px; text-align: center; white-space: nowrap; }
 .ezit-pg .ezit-theme__actions form { flex: 1; display: flex; margin: 0; }
 .ezit-pg .ezit-theme__actions form .ezit-btn { width: 100%; }
+.ezit-pg .ezit-theme__actions form.ezit-theme__update { flex: 0 0 100%; }
 
 /* Per-page selector above the grid */
 .ezit-pg .ezit-perpage {
