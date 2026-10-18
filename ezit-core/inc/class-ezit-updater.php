@@ -67,12 +67,32 @@ class EzIT_Updater
     }
 
     /**
-     * /api/check_update — cached per product so the transient filter
-     * doesn't hit the server on every admin page load.
+     * Latest server release for a registered product, or null — this is
+     * the public answer our admin tabs use instead of scraping WP's
+     * update transient (which only refreshes on WP's own cadence and
+     * can hold a stale 'none' for up to CACHE_TTL).
+     * $fresh skips the 12h transient — the Themes tab asks live, same
+     * as the Marketplace catalog.
      */
-    private function check(string $slug, array $product): ?array
+    public function update_for(string $slug, bool $fresh = false): ?array
     {
-        if (isset($this->updates[$slug])) {
+        $product = $this->core->product($slug);
+        if (! $product) {
+            return null;
+        }
+        $info = $this->check(sanitize_key($slug), $product, $fresh);
+        return ($info && version_compare($info['version'], $product['version'] ?: '0', '>'))
+            ? $info : null;
+    }
+
+    /**
+     * /api/check_update — cached per product so the transient filter
+     * doesn't hit the server on every admin page load. $fresh bypasses
+     * the transient read (a fresh result still re-stamps it).
+     */
+    private function check(string $slug, array $product, bool $fresh = false): ?array
+    {
+        if (! $fresh && isset($this->updates[$slug])) {
             return $this->updates[$slug];
         }
 
@@ -82,9 +102,11 @@ class EzIT_Updater
         }
 
         $cache_key = 'ezit_update_' . $slug;
-        $cached    = get_transient($cache_key);
-        if ($cached !== false) {
-            return $this->updates[$slug] = ($cached === 'none') ? null : $cached;
+        if (! $fresh) {
+            $cached = get_transient($cache_key);
+            if ($cached !== false) {
+                return $this->updates[$slug] = ($cached === 'none') ? null : $cached;
+            }
         }
 
         $res = EzIT_API::post('check_update', $product, [

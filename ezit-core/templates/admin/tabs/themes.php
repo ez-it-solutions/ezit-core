@@ -12,14 +12,12 @@ $themes   = EzIT_Themes::inventory($core);
 $can_edit = current_user_can('edit_theme_options');
 $can_swap = current_user_can('switch_themes');
 
-// Theme update availability — wp_update_themes() throttles itself to
-// WP's normal cadence; when it does run, EzIT_Updater injects the
-// server-side check_update results into the transient we read here.
+// Theme update availability — ask the updater live per registered
+// product (same fresh-first posture as the Marketplace catalog); its
+// results also re-stamp the 12h transient WP's own UI reads.
 require_once ABSPATH . 'wp-admin/includes/update.php';
 wp_update_themes();
-$site_upd = get_site_transient('update_themes');
-$upd_resp = is_object($site_upd) && isset($site_upd->response)
-    ? (array) $site_upd->response : [];
+$ezit_upd = $core->updater();
 
 $credit_on  = (bool) get_theme_mod(EzIT_Themes::CREDIT_ON, true);
 $credit_txt = (string) get_theme_mod(EzIT_Themes::CREDIT_TXT, '');
@@ -95,7 +93,8 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
             <div class="ezt__panel-inner">
                 <div class="ezit-themes">
                 <?php foreach ($themes as $t) :
-                    $new_v = (string) ($upd_resp[$t['stylesheet']]['new_version'] ?? '');
+                    $upd   = ! empty($t['registered']) ? $ezit_upd->update_for($t['stylesheet'], true) : null;
+                    $new_v = (string) ($upd['version'] ?? '');
                 ?>
                     <div class="ezit-theme<?php echo $t['is_active'] ? ' is-active' : ''; ?>">
                         <div class="ezit-theme__shot">

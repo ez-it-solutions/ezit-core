@@ -74,6 +74,15 @@ class EzIT_Core
         return $this->licensing ??= new EzIT_Licensing($this);
     }
 
+    /** Shared updater — one instance feeds WP's update transients AND
+     *  answers "is there an update?" for our own admin tabs. */
+    private ?EzIT_Updater $updater = null;
+
+    public function updater(): EzIT_Updater
+    {
+        return $this->updater ??= new EzIT_Updater($this);
+    }
+
     /**
      * Bootstrap URL — the hardcoded/option address the site can always
      * reach home on. Server config's api_base overrides this at runtime

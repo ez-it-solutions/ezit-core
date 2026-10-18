@@ -52,7 +52,7 @@ add_action('plugins_loaded', function () {
     EzIT_Themes::boot(); // exposes the `EzIT Product` product header
     $core = ezit_core();
     $core->licensing(); // boots the shared licensing module + cron
-    new EzIT_Updater($core);
+    $core->updater();   // shared instance — WP filters + admin tabs
     new EzIT_Marketplace($core);
     new EzIT_Gate($core);     // maintenance mode — front-end enforcement
     // Optional modules are class_exists-guarded: a partial upload that
