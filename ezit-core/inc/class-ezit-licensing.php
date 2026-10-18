@@ -274,11 +274,17 @@ class EzIT_Licensing
             // everything else counts as 'down' — a 4xx/5xx/garbage body on
             // the API path means the endpoint is gone or misconfigured,
             // which is unreachable as far as licensing is concerned.
+            $prev_state           = $lic['server_state'] ?? 'up';
             $lic['server_state'] = $res->get_error_code() === 'ezit_server_unavailable'
                 ? 'maintenance' : 'down';
             $lic['skip_until']    = time() + min(3600, max(300, (int) ($data['retry_after'] ?? 0) ?: 600));
             $this->save($slug, $lic);
             $this->maybe_alert_outage();
+            // Outage onset must be visible NOW — evict cached pages so
+            // the next request reaches PHP and can render the stripe.
+            if ($lic['server_state'] !== $prev_state) {
+                $this->purge_caches();
+            }
             return ($lic['status'] ?? '') === 'active';
         }
 
@@ -289,6 +295,7 @@ class EzIT_Licensing
         }
         // Definitive answer — 'invalid' covers disabled/revoked server-side.
         $prev                = $lic['status'] ?? '';
+        $prev_state          = $lic['server_state'] ?? 'up';
         $ok                  = ! empty($res['status']);
         $lic['status']       = $ok ? 'active' : 'invalid';
         $lic['server_state'] = 'up';
@@ -316,9 +323,10 @@ class EzIT_Licensing
         $lic['checked_at'] = time();
         $this->save($slug, $lic);
 
-        // A verdict flip must be visible to guests NOW — purge every page
-        // cache we know about so the next request reaches PHP.
-        if ($lic['status'] !== $prev) {
+        // A verdict OR server-state flip must be visible to guests NOW —
+        // purge every page cache we know about so the next request reaches
+        // PHP (recovery must evict pages still carrying the outage stripe).
+        if ($lic['status'] !== $prev || $lic['server_state'] !== $prev_state) {
             $this->purge_caches();
         }
 

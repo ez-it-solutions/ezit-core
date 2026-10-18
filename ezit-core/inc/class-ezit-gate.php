@@ -54,6 +54,9 @@ class EzIT_Gate
         // wp_footer as a fallback (the bar is position:fixed anyway).
         add_action('wp_body_open', [$this, 'outage_banner']);
         add_action('wp_footer',    [$this, 'outage_banner']);
+        // send_headers is early enough to mark the response uncacheable —
+        // wp_body_open fires after output starts, too late for headers.
+        add_action('send_headers', [$this, 'outage_no_cache']);
     }
 
     public static function settings(): array
@@ -489,6 +492,35 @@ class EzIT_Gate
     }
 
     /**
+     * While the stored server state says outage AND the stripe could render
+     * for this visitor, the page must not be cached — a file cache storing
+     * the banner would serve it to guests forever, never running
+     * outage_banner() → freshen(), so recovery would be invisible. Runs at
+     * send_headers (early enough for real headers); file caches honor the
+     * constant regardless of when it's defined. Same escape hatch as the
+     * armed gate.
+     */
+    public function outage_no_cache(): void
+    {
+        if (is_admin()) {
+            return;
+        }
+        $eligible = (is_user_logged_in() && current_user_can('edit_posts'))
+            || get_option('ezit_outage_banner_guests');
+        if (! $eligible
+            || $this->core->licensing()->server_state() === 'up') {
+            return;
+        }
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+        if (apply_filters('ezit_gate_no_cache', true)) {
+            header('X-LiteSpeed-Cache-Control: no-cache');
+            nocache_headers();
+        }
+    }
+
+    /**
      * Outage stripe — front-end counterpart of the wp-admin notice.
      * Fires on wp_body_open AND wp_footer (themes without the former),
      * so banner_done ensures it prints exactly once. Logged-in
@@ -516,6 +548,11 @@ class EzIT_Gate
         }
         if ($state === 'up') {
             return;
+        }
+        // Header caches were handled at send_headers; file caches read the
+        // constant at shutdown, so a late define still spares this response.
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
         }
         $this->banner_done = true;
         $msg = ! $staff
