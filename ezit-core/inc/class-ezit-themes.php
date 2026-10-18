@@ -66,6 +66,7 @@ class EzIT_Themes
                 'screenshot' => $theme->get_screenshot(),
                 'is_active'  => $stylesheet === $active,
                 'ezit'       => $pid !== '' || $reg !== null,
+                'product_id' => $pid !== '' ? $pid : (string) ($reg['product_id'] ?? ''),
                 'registered' => $reg !== null,
                 'licensed'   => $reg !== null && $licensing->is_active($stylesheet),
                 // WHY it's unlicensed — status_code from the server

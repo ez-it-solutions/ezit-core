@@ -12,6 +12,15 @@ $themes   = EzIT_Themes::inventory($core);
 $can_edit = current_user_can('edit_theme_options');
 $can_swap = current_user_can('switch_themes');
 
+// Theme update availability — wp_update_themes() throttles itself to
+// WP's normal cadence; when it does run, EzIT_Updater injects the
+// server-side check_update results into the transient we read here.
+require_once ABSPATH . 'wp-admin/includes/update.php';
+wp_update_themes();
+$site_upd = get_site_transient('update_themes');
+$upd_resp = is_object($site_upd) && isset($site_upd->response)
+    ? (array) $site_upd->response : [];
+
 $credit_on  = (bool) get_theme_mod(EzIT_Themes::CREDIT_ON, true);
 $credit_txt = (string) get_theme_mod(EzIT_Themes::CREDIT_TXT, '');
 
@@ -85,7 +94,9 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                  style="<?php echo esc_attr($pvars); ?>">
             <div class="ezt__panel-inner">
                 <div class="ezit-themes">
-                <?php foreach ($themes as $t) : ?>
+                <?php foreach ($themes as $t) :
+                    $new_v = (string) ($upd_resp[$t['stylesheet']]['new_version'] ?? '');
+                ?>
                     <div class="ezit-theme<?php echo $t['is_active'] ? ' is-active' : ''; ?>">
                         <div class="ezit-theme__shot">
                             <?php if ($t['screenshot']) : ?>
@@ -99,6 +110,17 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                             <div class="ezit-theme__overlay">
                                 <span class="ezit-theme__slug"><?php echo esc_html($t['stylesheet']); ?></span>
                                 <div class="ezit-theme__actions">
+                                    <?php if ($new_v !== '' && $t['product_id'] !== '') : ?>
+                                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                            <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
+                                            <input type="hidden" name="action" value="ezit_market_install">
+                                            <input type="hidden" name="product_id" value="<?php echo esc_attr($t['product_id']); ?>">
+                                            <input type="hidden" name="from" value="themes">
+                                            <button type="submit" class="ezit-btn">
+                                                <?php printf(esc_html__('Update to v%s', 'ezit-core'), esc_html($new_v)); ?>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                     <?php if ($t['is_active']) : ?>
                                         <a class="ezit-btn" href="<?php echo esc_url(admin_url('customize.php')); ?>"><?php esc_html_e('Customize', 'ezit-core'); ?></a>
                                     <?php elseif ($t['registered'] && ! $t['licensed']) : ?>
@@ -140,6 +162,11 @@ $pvars = '--panel-bg:#eef0f2; --panel-fg:#14151f; --panel-muted:#5c5f6b;'
                                         </span>
                                     <?php else : ?>
                                         <span class="ezit-badge is-inactive"><?php esc_html_e('Not registered', 'ezit-core'); ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($new_v !== '') : ?>
+                                        <span class="ezit-badge is-update">
+                                            <?php printf(esc_html__('Update &rarr; v%s', 'ezit-core'), esc_html($new_v)); ?>
+                                        </span>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </div>

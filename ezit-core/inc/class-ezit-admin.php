@@ -552,14 +552,21 @@ class EzIT_Admin
     }
 
     /**
-     * Marketplace install — free catalog items only (Phase 5 adds
-     * purchase flow for paid). Delegates to EzIT_Marketplace::install().
+     * Marketplace install / update — free listings install unlicensed;
+     * already-registered products take the licensed update path inside
+     * EzIT_Marketplace::install(). 'from' sends the admin back to the
+     * tab the button lived on.
      */
     public function handle_market_install(): void
     {
         $this->guard('ezit_market_install', 'ezit_market_nonce');
-        $res = (new EzIT_Marketplace($this->core))->install(sanitize_key($_POST['slug'] ?? ''));
-        $this->redirect('marketplace', $res['status'] ? 'installed' : 'error', $res['message']);
+        $res = (new EzIT_Marketplace($this->core))->install(
+            sanitize_key($_POST['slug'] ?? ''),
+            sanitize_text_field($_POST['product_id'] ?? '')
+        );
+        $tab = in_array($_POST['from'] ?? '', ['marketplace', 'themes'], true)
+            ? sanitize_key($_POST['from']) : 'marketplace';
+        $this->redirect($tab, $res['status'] ? 'installed' : 'error', $res['message']);
     }
 
     // ── helpers ─────────────────────────────────────────────────────

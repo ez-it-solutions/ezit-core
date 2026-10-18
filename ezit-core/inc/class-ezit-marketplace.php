@@ -111,18 +111,45 @@ class EzIT_Marketplace
     }
 
     /**
-     * Install a catalog item — currently limited to free listings (paid
-     * purchases arrive with Phase 5). Returns [status, message, extra].
+     * Install OR update a catalog item. Fresh installs are limited to
+     * free listings (paid purchases arrive with Phase 5); items already
+     * registered on this site take the licensed update path — their own
+     * api_key + license_file — so paid products can update too.
+     * Returns [status, message].
+     *
+     * Accepts the catalog slug, or a bare product_id (the Themes tab
+     * knows products, not catalog slugs) which we resolve via catalog().
      *
      * Flow: detail (api_key) → check_update (latest package id) →
-     * download_update zip → WP_Upgrader install → plugins auto-activate,
-     * themes wait for the Themes tab switch.
+     * download_update zip → WP_Upgrader install w/ clear_destination →
+     * plugins auto-activate, themes wait for the Themes tab switch.
      */
-    public function install(string $slug): array
+    public function install(string $slug, string $product_id = ''): array
     {
-        $item = $this->detail($slug);
-        if (is_wp_error($item)) {
-            return ['status' => false, 'message' => $item->get_error_message()];
+        $slug       = sanitize_key($slug);
+        $product_id = sanitize_text_field($product_id);
+
+        // Resolve the catalog item.
+        $item = null;
+        if ($slug !== '') {
+            $r = $this->detail($slug);
+            if (! is_wp_error($r)) {
+                $item = $r;
+            }
+        }
+        if ($item === null && $product_id !== '') {
+            foreach ($this->catalog() as $c) {
+                if (($c['product_id'] ?? '') === $product_id) {
+                    $r = $this->detail((string) ($c['slug'] ?? ''));
+                    if (! is_wp_error($r)) {
+                        $item = $r;
+                    }
+                    break;
+                }
+            }
+        }
+        if ($item === null) {
+            return ['status' => false, 'message' => __('Catalog item not found.', 'ezit-core')];
         }
 
         // Capability per declared type — same gates wp-admin enforces.
@@ -133,18 +160,41 @@ class EzIT_Marketplace
             return ['status' => false, 'message' => __('You cannot install this product type.', 'ezit-core')];
         }
 
-        if (empty($item['free']) || empty($item['api_key'])) {
-            return ['status' => false, 'message' => __('Paid items install after checkout — the purchase flow ships with Phase 5.', 'ezit-core')];
+        // Already registered on this site? Then this is an update —
+        // authenticate as the installed product and let its license cert
+        // satisfy paid items; fresh installs keep the free-item gate.
+        $pid        = (string) ($item['product_id'] ?? '');
+        $local_slug = null;
+        $local      = null;
+        if ($pid !== '') {
+            foreach ($this->core->products() as $ps => $p) {
+                if (($p['product_id'] ?? '') === $pid) {
+                    $local_slug = $ps;
+                    $local      = $p;
+                    break;
+                }
+            }
         }
 
-        // The detail response IS the trust anchor: api_key + product_id
-        // let us authenticate update calls before the product self-registers.
-        $pseudo = ['api_key' => (string) $item['api_key']];
+        $lic = [];
+        if ($local !== null) {
+            $creds      = $local;
+            $lic        = $this->core->licensing()->license($local_slug) ?: [];
+            $check_body = [
+                'product_id'      => (string) $local['product_id'],
+                'current_version' => (string) ($local['version'] ?? '0'),
+            ];
+        } else {
+            if (empty($item['free']) || empty($item['api_key'])) {
+                return ['status' => false, 'message' => __('Paid items install after checkout — the purchase flow ships with Phase 5.', 'ezit-core')];
+            }
+            // The detail response IS the trust anchor: api_key + product_id
+            // let us authenticate update calls before the product self-registers.
+            $creds      = ['api_key' => (string) $item['api_key']];
+            $check_body = ['product_id' => $pid, 'current_version' => '0'];
+        }
 
-        $upd = EzIT_API::post('check_update', $pseudo, [
-            'product_id'      => (string) $item['product_id'],
-            'current_version' => '0',
-        ]);
+        $upd = EzIT_API::post('check_update', $creds, $check_body);
         if (is_wp_error($upd)) {
             return ['status' => false, 'message' => $upd->get_error_message()];
         }
@@ -152,9 +202,13 @@ class EzIT_Marketplace
             return ['status' => false, 'message' => __('No package published for this item yet.', 'ezit-core')];
         }
 
-        // Free items install unlicensed — the server accepts api_key alone
-        // for published free listings (no license_file exists yet).
-        $tmp = EzIT_API::download('download_update/main/' . rawurlencode((string) $upd['update_id']), $pseudo);
+        // Download — licensed products send their cert, free listings
+        // authenticate with api_key alone.
+        $dl_body = ['product_id' => $pid];
+        if (! empty($lic['license_file'])) {
+            $dl_body['license_file'] = $lic['license_file'];
+        }
+        $tmp = EzIT_API::download('download_update/main/' . rawurlencode((string) $upd['update_id']), $creds, $dl_body);
         if (is_wp_error($tmp)) {
             return ['status' => false, 'message' => $tmp->get_error_message()];
         }
@@ -170,7 +224,9 @@ class EzIT_Marketplace
         } else {
             $upgrader = new Theme_Upgrader($skin);
         }
-        $ok = $upgrader->install($tmp, ['overwrite_package' => true]);
+        // clear_destination lets install() double as an in-place upgrade —
+        // same trick WP's own "replace current with uploaded" flow uses.
+        $ok = $upgrader->install($tmp, ['overwrite_package' => true, 'clear_destination' => true]);
         @unlink($tmp);
 
         if (is_wp_error($ok) || $ok === false) {
@@ -180,21 +236,29 @@ class EzIT_Marketplace
         }
 
         delete_transient('ezit_catalog'); // the "installed" flag is stale now
+        if ($local_slug !== null) {
+            delete_transient('ezit_update_' . $local_slug); // …and so is the update check
+        }
 
-        $name = (string) ($item['name'] ?? $slug);
+        $name    = (string) ($item['name'] ?? $slug);
+        $updated = $local !== null;
         if ($type === 'plugin' && method_exists($upgrader, 'plugin_info')) {
             $file = $upgrader->plugin_info();
             if ($file && ! is_plugin_active($file)) {
                 activate_plugin($file); // runs the product's own bootstrap → it self-registers
             }
-            return ['status' => true, 'message' => sprintf(
+            return ['status' => true, 'message' => $updated
                 /* translators: %s: product name */
-                __('%s installed and activated — it self-registers now, license it under the Licenses tab.', 'ezit-core'), $name)];
+                ? sprintf(__('%s updated.', 'ezit-core'), $name)
+                /* translators: %s: product name */
+                : sprintf(__('%s installed and activated — it self-registers now, license it under the Licenses tab.', 'ezit-core'), $name)];
         }
 
-        return ['status' => true, 'message' => sprintf(
+        return ['status' => true, 'message' => $updated
             /* translators: %s: product name */
-            __('%s installed — switch to it (or license it first) under the Themes tab.', 'ezit-core'), $name)];
+            ? sprintf(__('%s updated — the new version is live.', 'ezit-core'), $name)
+            /* translators: %s: product name */
+            : sprintf(__('%s installed — switch to it (or license it first) under the Themes tab.', 'ezit-core'), $name)];
     }
 
     /** Render the marketplace grid (called by EzIT_Admin's page callback). */
@@ -264,6 +328,16 @@ class EzIT_Marketplace
                         $slug      = (string) ($item['slug'] ?? '');
                         $installed = ! empty($item['installed']);
                         $free      = ! empty($item['free']);
+                        // Match the locally registered product (same product_id)
+                        // so we can flag when the catalog is ahead.
+                        $local = null;
+                        foreach ($products as $lp) {
+                            if (($lp['product_id'] ?? '') !== '' && ($lp['product_id'] ?? '') === ($item['product_id'] ?? '')) {
+                                $local = $lp;
+                                break;
+                            }
+                        }
+                        $newer = $local && version_compare((string) ($item['version'] ?? '0'), (string) ($local['version'] ?? '0'), '>');
                         ?>
                         <div class="ezit-card">
                             <?php if (! empty($item['thumb'])) : ?>
@@ -283,10 +357,26 @@ class EzIT_Marketplace
                                     : esc_html(isset($item['price']) ? '$' . number_format((float) $item['price'], 2) : __('Paid', 'ezit-core')));
                                 ?>
                             </span>
-                            <?php if (! $installed && $free) : ?>
+                            <?php if ($newer) : ?>
+                                <span class="ezit-badge is-update">
+                                    <?php printf(esc_html__('Update &rarr; v%s', 'ezit-core'), esc_html((string) $item['version'])); ?>
+                                </span>
+                            <?php endif; ?>
+                            <?php if ($newer) : ?>
                                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                                     <input type="hidden" name="action" value="ezit_market_install">
                                     <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
+                                    <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
+                                    <input type="hidden" name="from" value="marketplace">
+                                    <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
+                                    <button type="submit" class="ezit-btn"><?php esc_html_e('Update', 'ezit-core'); ?></button>
+                                </form>
+                            <?php elseif (! $installed && $free) : ?>
+                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                    <input type="hidden" name="action" value="ezit_market_install">
+                                    <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
+                                    <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
+                                    <input type="hidden" name="from" value="marketplace">
                                     <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
                                     <button type="submit" class="ezit-btn"><?php esc_html_e('Install', 'ezit-core'); ?></button>
                                 </form>

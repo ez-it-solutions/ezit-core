@@ -561,6 +561,7 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-card-excerpt { margin: 0; font-size: 13px; color: var(--pg-muted); }
 .ezit-pg .ezit-badge.is-free { background: #eef5e2; color: #41620f; }
 .ezit-pg .ezit-badge.is-paid { background: #fdf1e3; color: #b3500a; }
+.ezit-pg .ezit-badge.is-update { background: #e3ecfa; color: #1e4f9e; }
 .ezit-pg .ezit-card form { margin: 0; }
 .ezit-pg .ezit-card .ezit-btn,
 .ezit-pg .ezit-card form .ezit-btn { margin-top: 12px; }
