@@ -554,6 +554,17 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 /* Marketplace (EzIT_Marketplace::render markup) */
 .ezit-pg .ezit-grid h2 { margin: 4px 0 14px; font-size: 17px; font-weight: 700; color: var(--pg-ink); }
 .ezit-pg .ezit-grid h2 ~ h2 { margin-top: 26px; }
+/* Card hover — lift + green ring, matching the installed-theme cards. */
+.ezit-pg .ezit-card {
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.ezit-pg .ezit-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(118,185,0,.45);
+    box-shadow: 0 14px 30px rgba(20,21,31,.13);
+}
+.ezit-pg .ezit-card .ezit-card-thumb { transition: filter .25s ease; }
+.ezit-pg .ezit-card:hover .ezit-card-thumb { filter: brightness(1.06); }
 .ezit-pg .ezit-card-thumb {
     width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block;
     border-radius: 10px; background: #14161a;

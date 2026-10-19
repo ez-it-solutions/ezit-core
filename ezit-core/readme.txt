@@ -130,6 +130,10 @@ stops pending runs). Works for themes too — same flag.
 
 == Changelog ==
 
+= 1.4.4 =
+* Marketplace: card hover — lift + green ring + thumbnail brighten,
+  matching the installed-theme cards
+
 = 1.4.3 =
 * Forced releases: new POST /wp-json/ezit/v1/update-push — the license
   server pushes a forced release and the site applies it within
