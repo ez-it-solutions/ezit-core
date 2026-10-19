@@ -130,14 +130,21 @@ stops pending runs). Works for themes too — same flag.
 
 == Changelog ==
 
+= 1.4.3 =
+* Forced releases: new POST /wp-json/ezit/v1/update-push — the license
+  server pushes a forced release and the site applies it within
+  seconds (spawn_cron runs the upgrade in a background request)
+* Forced releases: ezit_updates_scan tightened to a custom 15-minute
+  schedule (self-reschedules from the old hourly event) as the
+  fallback for sites a push can't reach
+* Marketplace: installing over an existing plugin dir reports
+  "updated" not "installed"; self products skip the license prompt
+
 = 1.4.2 =
-* Forced releases: server license-push now wakes the update scan too —
-  a forced flag lands in seconds on every site the server knows
-* Forced releases: 15-minute ezit_updates_scan fresh-checks every product
-  as the fallback for sites a push couldn't reach
+* Forced releases: ezit_updates_scan fresh-checks every product so a
+  flag set after the last check propagates quickly instead of waiting
+  on the 12h transient + an admin page load
 * Marketplace: empty-state tile shows the product name (no initials)
-* Marketplace install: an existing plugin dir reports "updated" not
-  "installed", and self products drop the license nag
 
 = 1.4.1 =
 * Marketplace: locally registered products (incl. EzIT Core itself)
