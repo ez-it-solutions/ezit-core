@@ -247,8 +247,14 @@ class EzIT_Updater
             return null;
         }
         $info = $this->check(sanitize_key($slug), $product, $fresh);
-        return ($info && version_compare($info['version'], $product['version'] ?: '0', '>'))
-            ? $info : null;
+        if ($info && version_compare($info['version'], $product['version'] ?: '0', '>')) {
+            // The flag surfaced on a UI path (marketplace/themes badge)
+            // — arm it here too so a forced release never waits on the
+            // inject filter or the cron scan to notice it.
+            $this->maybe_force(sanitize_key($slug), (string) ($product['type'] ?? 'theme'), $info);
+            return $info;
+        }
+        return null;
     }
 
     /**

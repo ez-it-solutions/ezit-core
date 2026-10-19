@@ -130,6 +130,11 @@ stops pending runs). Works for themes too — same flag.
 
 == Changelog ==
 
+= 1.4.5 =
+* Forced releases: update_for() arms the forced flag when a UI badge
+  path surfaces it — a release no longer waits on the inject filter
+  or the cron scan to be noticed
+
 = 1.4.4 =
 * Marketplace: card hover — lift + green ring + thumbnail brighten,
   matching the installed-theme cards
