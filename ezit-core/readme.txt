@@ -131,10 +131,13 @@ stops pending runs). Works for themes too — same flag.
 == Changelog ==
 
 = 1.4.2 =
-* Forced releases: hourly ezit_updates_scan fresh-checks every product
-  so a flag set after the last check propagates within ~1h instead of
-  waiting on the 12h transient + an admin page load
+* Forced releases: server license-push now wakes the update scan too —
+  a forced flag lands in seconds on every site the server knows
+* Forced releases: 15-minute ezit_updates_scan fresh-checks every product
+  as the fallback for sites a push couldn't reach
 * Marketplace: empty-state tile shows the product name (no initials)
+* Marketplace install: an existing plugin dir reports "updated" not
+  "installed", and self products drop the license nag
 
 = 1.4.1 =
 * Marketplace: locally registered products (incl. EzIT Core itself)

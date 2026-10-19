@@ -248,18 +248,31 @@ class EzIT_Marketplace
             delete_transient('ezit_update_' . $local_slug); // …and so is the update check
         }
 
-        $name    = (string) ($item['name'] ?? $slug);
-        $updated = $local !== null;
+        $name = (string) ($item['name'] ?? $slug);
+
+        // A plugin dir already on disk means this "Install" was an update
+        // in disguise — EzIT Core reinstalls itself through this path when
+        // its self-product constants aren't configured ($local never
+        // matches). Self products never need a license either.
+        $is_self = $slug === 'ezit-core'
+            || ($pid !== '' && defined('EZIT_CORE_PRODUCT_ID') && $pid === EZIT_CORE_PRODUCT_ID);
+        $updated = $local !== null
+            || ($type === 'plugin' && $slug !== '' && is_dir(WP_PLUGIN_DIR . '/' . $slug));
+
         if ($type === 'plugin' && method_exists($upgrader, 'plugin_info')) {
             $file = $upgrader->plugin_info();
             if ($file && ! is_plugin_active($file)) {
                 activate_plugin($file); // runs the product's own bootstrap → it self-registers
             }
-            return ['status' => true, 'message' => $updated
+            return ['status' => true, 'message' =>
+                $updated
                 /* translators: %s: product name */
-                ? sprintf(__('%s updated.', 'ezit-core'), $name)
-                /* translators: %s: product name */
-                : sprintf(__('%s installed and activated — it self-registers now, license it under the Licenses tab.', 'ezit-core'), $name)];
+                ? sprintf(__('%s updated — the new version is live.', 'ezit-core'), $name)
+                : ($is_self
+                    /* translators: %s: product name */
+                    ? sprintf(__('%s installed and activated.', 'ezit-core'), $name)
+                    /* translators: %s: product name */
+                    : sprintf(__('%s installed and activated — it self-registers now, license it under the Licenses tab.', 'ezit-core'), $name))];
         }
 
         return ['status' => true, 'message' => $updated

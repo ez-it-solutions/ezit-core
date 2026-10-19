@@ -33,29 +33,92 @@ class EzIT_Updater
         add_filter('upgrader_pre_download', [$this, 'licensed_download'], 10, 4);
         add_action('ezit_force_update', [$this, 'apply_forced'], 10, 2);
         add_action('ezit_updates_scan', [$this, 'scan']);
+        add_filter('cron_schedules', [$this, 'cron_schedules']);
+
+        // Server → site push for updates: the license server POSTs
+        // /wp-json/ezit/v1/update-push (key = a product api_key) when a
+        // forced release goes live — sites apply it within seconds
+        // instead of waiting for the next 15-minute scan.
+        add_action('rest_api_init', function (): void {
+            register_rest_route('ezit/v1', '/update-push', [
+                'methods'             => 'POST',
+                'callback'            => [$this, 'rest_update_push'],
+                'permission_callback' => [$this, 'rest_push_auth'],
+            ]);
+        });
 
         // check() caches for 12h — a forced flag set server-side after the
-        // last check would sit unseen until expiry. A dedicated hourly scan
-        // fresh-checks everything so forced releases propagate within the
-        // hour on any site that gets traffic (WP-Cron still needs hits).
-        if (! wp_next_scheduled('ezit_updates_scan')) {
-            wp_schedule_event(time() + wp_rand(60, 600), 'hourly', 'ezit_updates_scan');
+        // last check would sit unseen until expiry. A dedicated scan
+        // fresh-checks everything so forced releases propagate quickly on
+        // any site that gets traffic (WP-Cron still needs hits — it's
+        // pull, not push).
+        $ev = function_exists('wp_get_scheduled_event') ? wp_get_scheduled_event('ezit_updates_scan') : null;
+        if ($ev && $ev->schedule === 'hourly') {
+            wp_clear_scheduled_hook('ezit_updates_scan');
+            $ev = null; // reschedule on the tighter cadence
+        }
+        if (! $ev && ! wp_next_scheduled('ezit_updates_scan')) {
+            wp_schedule_event(time() + wp_rand(30, 300), 'ezit_15min', 'ezit_updates_scan');
         }
     }
 
+    /** Register our 15-minute interval for the update scan. */
+    public function cron_schedules(array $schedules): array
+    {
+        if (! isset($schedules['ezit_15min'])) {
+            $schedules['ezit_15min'] = [
+                'interval' => 15 * MINUTE_IN_SECONDS,
+                'display'  => __('Every 15 minutes (EzIT update scan)', 'ezit-core'),
+            ];
+        }
+        return $schedules;
+    }
+
     /**
-     * Hourly fresh check of every registered product. Discovers updates
-     * (and newly-forced ones) without waiting for a wp-admin update page
-     * load or the 12h transient to expire.
+     * Fresh check of every registered product. Discovers updates (and
+     * newly-forced ones) without waiting for a wp-admin update page load
+     * or the 12h transient to expire. $now schedules due forced releases
+     * to fire immediately — used by the update-push endpoint.
      */
-    public function scan(): void
+    public function scan(bool $now = false): void
     {
         foreach ($this->core->products() as $slug => $product) {
             $info = $this->check($slug, $product, true);
             if ($info && version_compare($info['version'], $product['version'] ?: '0', '>')) {
-                $this->maybe_force($slug, (string) ($product['type'] ?? 'theme'), $info);
+                $this->maybe_force($slug, (string) ($product['type'] ?? 'theme'), $info, $now);
             }
         }
+    }
+
+    /** Push auth — same rule as license-push: a registered product api_key. */
+    public function rest_push_auth(WP_REST_Request $r): bool
+    {
+        $key = (string) $r->get_param('key');
+        if ($key === '') {
+            return false;
+        }
+        foreach ($this->core->products() as $p) {
+            if (($p['api_key'] ?? '') !== '' && hash_equals((string) $p['api_key'], $key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Update push handler — fresh check now, schedule any due forced
+     * release for THIS request's spawned cron, and kick wp-cron so the
+     * upgrade runs in a background request (the server's 5s push window
+     * stays intact). Own throttle, independent of license-push.
+     */
+    public function rest_update_push(WP_REST_Request $r): WP_REST_Response
+    {
+        if (! get_transient('ezit_upush_recent')) {
+            set_transient('ezit_upush_recent', 1, 15);
+            $this->scan(true);
+            spawn_cron();
+        }
+        return new WP_REST_Response(['ok' => true]);
     }
 
     // ── surface updates in WP's own UI ──────────────────────────────
@@ -273,7 +336,7 @@ class EzIT_Updater
      * event that applies it silently. Capped at 3 attempts per update_id
      * so a persistently failing upgrade stops hammering the site.
      */
-    private function maybe_force(string $slug, string $type, array $info): void
+    private function maybe_force(string $slug, string $type, array $info, bool $now = false): void
     {
         if (empty($info['forced']) || empty($info['update_id'])) {
             return;
@@ -286,7 +349,9 @@ class EzIT_Updater
             return;
         }
         update_option($key, (int) get_option($key, 0) + 1, false);
-        wp_schedule_single_event(time() + 2 * MINUTE_IN_SECONDS, 'ezit_force_update', [$slug, $type]);
+        // Organic path waits a beat for the current request to settle;
+        // push-driven scans ($now) want it due for spawn_cron() at once.
+        wp_schedule_single_event(time() + ($now ? 0 : 2 * MINUTE_IN_SECONDS), 'ezit_force_update', [$slug, $type]);
     }
 
     /**
