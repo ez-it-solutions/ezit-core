@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -69,6 +69,27 @@ the updated server before overrides can arm during an outage.
 site wake-up only — it carries no verdict; the site re-verifies over
 HTTPS itself, so a forged push can't disable anything. Throttled 15
 s/site; redirects are never followed.
+
+== Server-initiated admin login (EzIT_Sso) ==
+
+The license server can mint one-time wp-login URLs for any account on a
+licensed site (dashboard → Activations → Log in):
+
+* `GET /wp-json/ezit/v1/sso/users?key=&nonce=&sig=` — user list
+* `POST /wp-json/ezit/v1/sso/token` — one-time login URL
+
+Requests must present the product `api_key` plus a timestamped nonce
+signed `HMAC-SHA256(nonce, api_key)`; nonces older than 5 minutes are
+rejected, so captured requests can't be replayed.
+
+Modes: `first_admin` (classic panel-login), `user` (any account — role
+testing), `credentials` (`wp_authenticate`, rate-limited 10/min),
+`provision` (create/reset a user with any WP role).
+
+Tokens land in `user_meta ezit_sso_tokens` as `sha256 → expiry` (2-minute
+TTL, consumed on use); `wp-login.php?ezit_sso_uid&ezit_sso_token` does
+`wp_set_auth_cookie` and redirects to wp-admin. Full protocol docs:
+`docs/SITE-LOGIN.md` in the license-server repo.
 
 == Security Notes ==
 

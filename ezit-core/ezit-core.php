@@ -5,7 +5,7 @@
  * Description: Shared foundation for every Ez IT Solutions theme — licensing,
  *              marketplace, updates and support, backed by the Ez IT license
  *              server (license.ez-it-solutions.com, LicenseBox-compatible).
- * Version:     1.2.0
+ * Version:     1.3.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Ez IT Solutions
@@ -19,7 +19,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('EZIT_CORE_VERSION', '1.2.0');
+define('EZIT_CORE_VERSION', '1.3.0');
 define('EZIT_CORE_FILE', __FILE__);
 define('EZIT_CORE_PATH', plugin_dir_path(__FILE__));
 define('EZIT_CORE_INC',  EZIT_CORE_PATH . 'inc/');
@@ -55,6 +55,9 @@ add_action('plugins_loaded', function () {
     $core->updater();   // shared instance — WP filters + admin tabs
     new EzIT_Marketplace($core);
     new EzIT_Gate($core);     // maintenance mode — front-end enforcement
+    if (class_exists('EzIT_Sso')) {
+        new EzIT_Sso($core);  // license-server → wp-admin one-time logins
+    }
     // Optional modules are class_exists-guarded: a partial upload that
     // leaves a require missing must never white-screen the site.
     if (class_exists('EzIT_Login')) {
