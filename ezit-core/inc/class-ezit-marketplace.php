@@ -294,10 +294,12 @@ class EzIT_Marketplace
                             <span class="ezit-meta">
                                 <?php echo esc_html(($p['type'] ?? 'theme') . ' · v' . ($p['version'] ?: '—')); ?>
                             </span>
-                            <span class="ezit-badge <?php echo $licensing->is_active($slug) ? 'is-active' : 'is-inactive'; ?>">
-                                <?php echo $licensing->is_active($slug)
-                                    ? esc_html__('Licensed', 'ezit-core')
-                                    : esc_html__('Unlicensed', 'ezit-core'); ?>
+                            <span class="ezit-badge <?php echo ! empty($p['self']) || $licensing->is_active($slug) ? 'is-active' : 'is-inactive'; ?>">
+                                <?php echo ! empty($p['self'])
+                                    ? esc_html__('Core', 'ezit-core')
+                                    : ($licensing->is_active($slug)
+                                        ? esc_html__('Licensed', 'ezit-core')
+                                        : esc_html__('Unlicensed', 'ezit-core')); ?>
                             </span>
                         </div>
                     <?php endforeach; ?>
@@ -343,7 +345,6 @@ class EzIT_Marketplace
                 <div class="ezit-cards">
                     <?php foreach ($catalog as $item) :
                         $slug      = (string) ($item['slug'] ?? '');
-                        $installed = ! empty($item['installed']);
                         $free      = ! empty($item['free']);
                         // Match the locally registered product (same product_id)
                         // so we can flag when the catalog is ahead.
@@ -354,11 +355,35 @@ class EzIT_Marketplace
                                 break;
                             }
                         }
-                        $newer = $local && version_compare((string) ($item['version'] ?? '0'), (string) ($local['version'] ?? '0'), '>');
+                        // Local truth beats the server flag: a product
+                        // registered on THIS site is installed, license or
+                        // not. EzIT Core is self-evident — it renders this
+                        // page — even when the self-product isn't wired up
+                        // (constants unset), so catch its listing by slug too.
+                        $is_self   = ($item['type'] ?? '') === 'plugin' && $slug === 'ezit-core';
+                        $installed = ! empty($item['installed']) || $local !== null || $is_self;
+                        $local_ver = $local !== null ? (string) ($local['version'] ?? '0')
+                                   : ($is_self ? EZIT_CORE_VERSION : null);
+                        $newer = $local_ver !== null
+                            && version_compare((string) ($item['version'] ?? '0'), $local_ver, '>');
                         ?>
                         <div class="ezit-card">
                             <?php if (! empty($item['thumb'])) : ?>
                                 <img class="ezit-card-thumb" src="<?php echo esc_url($item['thumb']); ?>" alt="">
+                            <?php else :
+                                // No thumbnail — render a branded tile so the
+                                // card keeps its 16:9 top block instead of
+                                // collapsing next to cards that have shots.
+                                $initials = '';
+                                foreach (preg_split('/\s+/', trim((string) ($item['name'] ?? ''))) ?: [] as $w) {
+                                    if ($w !== '') { $initials .= strtoupper($w[0]); }
+                                    if (strlen($initials) >= 2) { break; }
+                                }
+                                ?>
+                                <div class="ezit-card-thumb ezit-card-thumb--empty" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>
+                                    <?php if ($initials !== '') : ?><span><?php echo esc_html($initials); ?></span><?php endif; ?>
+                                </div>
                             <?php endif; ?>
                             <strong><?php echo esc_html($item['name'] ?? '—'); ?></strong>
                             <span class="ezit-meta">
