@@ -158,9 +158,12 @@ class EzIT_Admin
             . 'var s=getSelection();s.removeAllRanges();s.addRange(r);});'
             . '});'
             // Busy spinner on every submit button — one click only.
+            // data-busy-label swaps the text ("Update" → "Updating…").
             . 'document.addEventListener("submit",function(e){'
             . 'var b=e.submitter||e.target.querySelector("button[type=submit],button:not([type])");'
             . 'if(!b||b.disabled)return;'
+            . 'var t=b.getAttribute("data-busy-label");'
+            . 'if(t)b.textContent=t;'
             . 'b.classList.add("is-busy");b.disabled=true;'
             . '});'
             // Settings subnav: the tabs component rewrites ?section= via

@@ -418,7 +418,7 @@ class EzIT_Marketplace
                                         <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
                                         <input type="hidden" name="from" value="marketplace">
                                         <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
-                                        <button type="submit" class="ezit-btn"><?php esc_html_e('Update', 'ezit-core'); ?></button>
+                                        <button type="submit" class="ezit-btn" data-busy-label="<?php esc_attr_e('Updating…', 'ezit-core'); ?>"><?php esc_html_e('Update', 'ezit-core'); ?></button>
                                     </form>
                                 <?php elseif (! $installed && $free) : ?>
                                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
@@ -427,7 +427,7 @@ class EzIT_Marketplace
                                         <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
                                         <input type="hidden" name="from" value="marketplace">
                                         <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
-                                        <button type="submit" class="ezit-btn"><?php esc_html_e('Install', 'ezit-core'); ?></button>
+                                        <button type="submit" class="ezit-btn" data-busy-label="<?php esc_attr_e('Installing…', 'ezit-core'); ?>"><?php esc_html_e('Install', 'ezit-core'); ?></button>
                                     </form>
                                 <?php elseif (! $installed) : ?>
                                     <button class="ezit-btn ezit-btn--ghost" disabled title="<?php esc_attr_e('Checkout ships with Phase 5', 'ezit-core'); ?>">

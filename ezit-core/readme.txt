@@ -130,6 +130,11 @@ stops pending runs). Works for themes too — same flag.
 
 == Changelog ==
 
+= 1.4.6 =
+* Marketplace: Install/Update buttons get a real busy state — dark
+  spinner docked left of a readable label (data-busy-label), fixing the
+  green-on-green spinner + transparent text that read as a blank pill
+
 = 1.4.5 =
 * Forced releases: update_for() arms the forced flag when a UI badge
   path surfaces it — a release no longer waits on the inject filter
