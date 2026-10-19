@@ -32,6 +32,30 @@ class EzIT_Updater
         add_filter('plugins_api', [$this, 'plugin_info'], 10, 3);
         add_filter('upgrader_pre_download', [$this, 'licensed_download'], 10, 4);
         add_action('ezit_force_update', [$this, 'apply_forced'], 10, 2);
+        add_action('ezit_updates_scan', [$this, 'scan']);
+
+        // check() caches for 12h — a forced flag set server-side after the
+        // last check would sit unseen until expiry. A dedicated hourly scan
+        // fresh-checks everything so forced releases propagate within the
+        // hour on any site that gets traffic (WP-Cron still needs hits).
+        if (! wp_next_scheduled('ezit_updates_scan')) {
+            wp_schedule_event(time() + wp_rand(60, 600), 'hourly', 'ezit_updates_scan');
+        }
+    }
+
+    /**
+     * Hourly fresh check of every registered product. Discovers updates
+     * (and newly-forced ones) without waiting for a wp-admin update page
+     * load or the 12h transient to expire.
+     */
+    public function scan(): void
+    {
+        foreach ($this->core->products() as $slug => $product) {
+            $info = $this->check($slug, $product, true);
+            if ($info && version_compare($info['version'], $product['version'] ?: '0', '>')) {
+                $this->maybe_force($slug, (string) ($product['type'] ?? 'theme'), $info);
+            }
+        }
     }
 
     // ── surface updates in WP's own UI ──────────────────────────────

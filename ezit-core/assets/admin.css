@@ -558,7 +558,7 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block;
     border-radius: 10px; background: #14161a;
 }
-/* No thumbnail uploaded — same 16:9 block, brand-dark tile + initials. */
+/* No thumbnail uploaded — same 16:9 block, brand-dark tile + name. */
 .ezit-pg .ezit-card-thumb--empty {
     display: grid; place-content: center; justify-items: center; gap: 6px;
     background: linear-gradient(135deg, #191919 0%, #232323 100%);
@@ -566,8 +566,10 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 }
 .ezit-pg .ezit-card-thumb--empty svg { opacity: .45; }
 .ezit-pg .ezit-card-thumb--empty span {
-    font-size: 13px; font-weight: 800; letter-spacing: .14em;
+    font-size: 13px; font-weight: 800; letter-spacing: .06em;
+    text-transform: uppercase; text-align: center; padding: 0 18px;
     color: rgba(255,255,255,.55);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .ezit-pg .ezit-card-excerpt { margin: 0; font-size: 13px; color: var(--pg-muted); }
 .ezit-pg .ezit-badge.is-free { background: #eef5e2; color: #41620f; }
