@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -129,6 +129,12 @@ in `check_update`: each site applies it silently via WP-Cron +
 stops pending runs). Works for themes too — same flag.
 
 == Changelog ==
+
+= 1.4.1 =
+* Marketplace: locally registered products (incl. EzIT Core itself)
+  count as installed — no more Install button on running products
+* Marketplace: branded empty-state tile (icon + initials) for
+  listings without a thumbnail; self products badge as Core
 
 = 1.4.0 =
 * Self-update: EzIT Core registers itself as a plugin product and
