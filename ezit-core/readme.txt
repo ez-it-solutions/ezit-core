@@ -130,6 +130,13 @@ stops pending runs). Works for themes too — same flag.
 
 == Changelog ==
 
+= 1.4.7 =
+* Self-update out of the box: EzIT Core registers unconditionally and
+  resolves its product_id/api_key lazily from the free catalog listing
+  (EzIT_Core::self_credentials, 12h cache). Sites without constants now
+  call check_update, register in product_sites, and accept update-push —
+  forced releases reach them with zero licenses and zero configuration
+
 = 1.4.6 =
 * Marketplace: Install/Update buttons get a real busy state — dark
   spinner docked left of a readable label (data-busy-label), fixing the

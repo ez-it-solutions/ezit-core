@@ -84,6 +84,60 @@ class EzIT_Core
     }
 
     /**
+     * EzIT Core's own product credentials on the license server.
+     *
+     * Constants (wp-config.php or packaged) win; otherwise resolve from
+     * the unauthenticated free catalog — GET /api/catalog/ezit-core
+     * returns product_id, and free published items publish their
+     * api_key. Cached 12h; a 5-minute negative entry keeps a downed
+     * server from stalling every request.
+     *
+     * @return array{product_id:string, api_key:string}
+     */
+    public function self_credentials(): array
+    {
+        if (EZIT_CORE_PRODUCT_ID !== '' && EZIT_CORE_PRODUCT_KEY !== '') {
+            return [
+                'product_id' => EZIT_CORE_PRODUCT_ID,
+                'api_key'    => EZIT_CORE_PRODUCT_KEY,
+            ];
+        }
+
+        $cached = get_transient('ezit_self_cred');
+        if ($cached === 'none') {
+            return ['product_id' => '', 'api_key' => ''];
+        }
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $creds = ['product_id' => '', 'api_key' => ''];
+        $res = wp_remote_get($this->api_url() . '/api/catalog/ezit-core', [
+            'timeout' => 10,
+            'headers' => [
+                'LB-URL'  => home_url(),
+                'LB-LANG' => get_locale() ?: 'en',
+            ],
+        ]);
+        if (! is_wp_error($res) && wp_remote_retrieve_response_code($res) < 400) {
+            $json = json_decode(wp_remote_retrieve_body($res), true);
+            $item = is_array($json['item'] ?? null) ? $json['item'] : [];
+            if (($item['product_id'] ?? '') !== '' && ($item['api_key'] ?? '') !== '') {
+                $creds = [
+                    'product_id' => (string) $item['product_id'],
+                    'api_key'    => (string) $item['api_key'],
+                ];
+            }
+        }
+        set_transient(
+            'ezit_self_cred',
+            $creds['api_key'] !== '' ? $creds : 'none',
+            $creds['api_key'] !== '' ? 12 * HOUR_IN_SECONDS : 5 * MINUTE_IN_SECONDS
+        );
+        return $creds;
+    }
+
+    /**
      * Bootstrap URL — the hardcoded/option address the site can always
      * reach home on. Server config's api_base overrides this at runtime
      * once synced (see EzIT_Config).

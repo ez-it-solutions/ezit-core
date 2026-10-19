@@ -98,7 +98,13 @@ class EzIT_Updater
             return false;
         }
         foreach ($this->core->products() as $p) {
-            if (($p['api_key'] ?? '') !== '' && hash_equals((string) $p['api_key'], $key)) {
+            $expected = (string) ($p['api_key'] ?? '');
+            // Self products may ship without constants — their key is
+            // resolved lazily from the free catalog listing.
+            if ($expected === '' && ! empty($p['self'])) {
+                $expected = (string) ($this->core->self_credentials()['api_key'] ?? '');
+            }
+            if ($expected !== '' && hash_equals($expected, $key)) {
                 return true;
             }
         }
@@ -270,8 +276,13 @@ class EzIT_Updater
 
         $lic = $this->licensing->license($slug);
         // 'self' products (EzIT Core itself) hold no license code — the
-        // server authenticates check_update by api_key alone.
+        // server authenticates check_update by api_key alone. Sites that
+        // never had the constants defined resolve them on demand from
+        // the free catalog listing.
         $self = ! empty($product['self']);
+        if ($self && ($product['product_id'] === '' || ($product['api_key'] ?? '') === '')) {
+            $product = array_merge($product, array_filter($this->core->self_credentials()));
+        }
         if ($product['product_id'] === '' || (! $self && (! $lic || empty($lic['license_file'])))) {
             return $this->updates[$slug] = null;
         }
@@ -319,6 +330,9 @@ class EzIT_Updater
         $product = $this->core->product($slug);
         $lic     = $this->licensing->license($slug);
         $self    = $product && ! empty($product['self']);
+        if ($self && (($product['api_key'] ?? '') === '' || ($product['product_id'] ?? '') === '')) {
+            $product = array_merge($product, array_filter($this->core->self_credentials()));
+        }
 
         // Self products ship an empty license_file — the server only
         // permits that when the product's catalog listing is free +
