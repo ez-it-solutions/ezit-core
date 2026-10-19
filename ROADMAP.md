@@ -213,27 +213,38 @@ questions — lives in `ROADMAP-BILLING.md` next to this file.*
 
 ### Phase 10 — Roles, verticals & onboarding *(owner access — discuss before build)*
 
-The site owner gets **their own limited slice of Ez IT Core** — not an
-admin view with things hidden, a deliberately small surface.
+The site owner gets **their own limited slice of wp-admin** — not an
+admin view with things hidden, a deliberately small surface. This is
+site-wide, not just inside Ez IT Core: custom admin navigation and very
+limited backend access.
 
+- **Site-wide backend roles** — roles/permissions apply across the whole
+  WordPress back-end, not just our pages: a custom admin navigation
+  (most stock WP menus hidden or consolidated), a deliberately tiny
+  owner dashboard, and URL-level guards so admin screens can't be
+  reached by guessing.
 - **Owner-visible surfaces** — a "Site Owner" role sees a minimal Ez IT
   Core menu: **Customize Theme** (Studio fields / the Customizer face)
   and a slimmed **Ez IT Core** page (Themes card, Billing tab when
   Phase 9 lands). No licensing internals, gate settings, server config,
   alerts management, or Marketplace admin.
+- **Per-site access config** — every client site is different, so owner
+  caps aren't hardcoded: the license cert carries an `access` block
+  declaring which owner capabilities this site grants (theme updates
+  on/off, Studio fields visible, billing self-service…). Configurable
+  per-site, per-role — building it in now beats retrofitting.
 - **Per-tab capabilities** — every tab/section declares its required cap
   (`manage_options` vs `ezit_owner`/`ezit_studio`/`ezit_billing`) instead
-  of one big capability gate; the tab registry filters the menu, so an
-  owner can't reach admin URLs by guessing them.
+  of one big capability gate; the tab registry filters the menu.
 - **Role model** — core registers `ezit_owner`, `ezit_studio`,
   `ezit_billing`… mapped to the owner role. Each vertical names its own
   owner: Pastor (church), Principal/Dean (school), City Manager (gov). A
   manifest `roles` map lets a theme suggest the roles/caps its vertical
   needs; core provisions them on theme activation.
-- **Open questions to discuss:** exactly which tabs/cards the owner
-  sees, whether they get the theme Update button or just view state,
-  whether license activation is owner-visible, and what "minimal Ez IT
-  Core" shows when a product is unlicensed.
+- **Open questions to discuss:** exactly which stock WP menus the owner
+  keeps (posts? media? nothing?), whether the `access` block defaults
+  are per-vertical, and what "minimal Ez IT Core" shows when a product
+  is unlicensed.
 - **Verticals** — manifest field `vertical: church|school|athletics|gov|
   dental|law|business|generic` drives Studio sections, marketplace
   categories, suggested roles, and industry-specific field sets
@@ -243,7 +254,10 @@ admin view with things hidden, a deliberately small surface.
   separate features) or as a linked sub-site — the registry already keys
   everything per-slug, so both work without core changes.
 - **Onboarding wizard** — first-run checklist per vertical: license →
-  owner account → payment method → branding → content import.
+  owner account → payment method → branding → content import. The
+  site-provisioning half of this is the staff-facing "Log In" wizard in
+  `ROADMAP-BILLING.md` (Phase 9g): connect → pick/create customer →
+  choose products & services → install → billing live.
 
 ### Phase 11 — Observability: system log, filters & retention
 
