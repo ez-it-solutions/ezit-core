@@ -186,36 +186,54 @@ extensions or declared hooks, and all writes go to standard WP storage
   fields the Studio already renders. Build Studio first; the builder is a
   UI layer over the same data.
 
-### Phase 9 — Billing & feature entitlements
+### Phase 9 — Billing, customers & entitlements *(see ROADMAP-BILLING.md)*
 
 Billing lives at **billing.ez-it-solutions.com (Invoice Ninja)** — the site
-never stores cards or runs a checkout, so no WooCommerce and minimal PCI
-surface.
+never stores cards or runs a checkout. The **license server talks to the
+billing server directly** (REST + signed webhooks); sites only ever talk
+to the license server they already trust.
 
-- **License carries entitlements** — the cert payload gains a `features:[]`
-  list (e.g. `studio`, `page_builder`, `footer_credit_off`, `custom_login`).
-  Core exposes `ezit_feature_enabled($feature)`; themes/plugins gate UI on
-  it. A license status change (missed payment → server deactivates) already
-  flows through the existing verify/gate machinery — entitlements just ride
-  inside the same cert.
-- **Invoice Ninja integration** — recurring invoices/subscriptions per
-  client+product; Invoice Ninja handles the payment gateway (Stripe et al.) —
-  it *is* the payment frontend, no separate processor needed. Webhook /
-  license-server sync flips `status` + `features` on payment events.
-- **Billing tab in core** — shows plan, renewal date, enabled features
-  (decoded from the stored cert — no live call needed), and deep-links into
-  the Invoice Ninja client portal for card/payment-method updates.
-- **Owner vs admin split** — site owners (client role) see Billing,
-  Studio, and Themes; licensing internals stay behind `manage_options`.
-  See Roles contract below.
+- **Customers** — first-class on the license server: collect, create,
+  CSV-import and manage every customer, linked to licenses → sites and
+  to their Invoice Ninja client record.
+- **Sync** — IN payment events (paid / failed / cancelled) webhook into
+  the license server → license `status` + `features` transition → sites
+  pick it up on the existing verify cadence. Outbound API calls create
+  clients and invoices; a daily reconciliation job catches drift.
+- **Entitlements** — the cert gains a `features:[]` list; core exposes
+  `ezit_feature_enabled($feature)` and products gate UI on features,
+  not on "is licensed".
+- **Billing tab** — cert-decoded plan, renewal date and features plus a
+  signed deep-link into the client portal. Owner-visible (Phase 10).
+- **Dunning** — missed payment → `past_due` → grace → suspend, never
+  instant kill; payment auto-restores on the same webhook path.
 
-### Phase 10 — Roles, verticals & onboarding
+*The full design — data model, webhook contract, build order and open
+questions — lives in `ROADMAP-BILLING.md` next to this file.*
 
-- **Role model** — core registers a custom capability set (`ezit_owner`,
-  `ezit_studio`, `ezit_billing`…) mapped to a "Site Owner" role. Each
-  vertical names its own owner: Pastor (church), Principal/Dean (school),
-  City Manager (gov). A manifest `roles` map lets a theme suggest the
-  roles/caps its vertical needs; core provisions them on theme activation.
+### Phase 10 — Roles, verticals & onboarding *(owner access — discuss before build)*
+
+The site owner gets **their own limited slice of Ez IT Core** — not an
+admin view with things hidden, a deliberately small surface.
+
+- **Owner-visible surfaces** — a "Site Owner" role sees a minimal Ez IT
+  Core menu: **Customize Theme** (Studio fields / the Customizer face)
+  and a slimmed **Ez IT Core** page (Themes card, Billing tab when
+  Phase 9 lands). No licensing internals, gate settings, server config,
+  alerts management, or Marketplace admin.
+- **Per-tab capabilities** — every tab/section declares its required cap
+  (`manage_options` vs `ezit_owner`/`ezit_studio`/`ezit_billing`) instead
+  of one big capability gate; the tab registry filters the menu, so an
+  owner can't reach admin URLs by guessing them.
+- **Role model** — core registers `ezit_owner`, `ezit_studio`,
+  `ezit_billing`… mapped to the owner role. Each vertical names its own
+  owner: Pastor (church), Principal/Dean (school), City Manager (gov). A
+  manifest `roles` map lets a theme suggest the roles/caps its vertical
+  needs; core provisions them on theme activation.
+- **Open questions to discuss:** exactly which tabs/cards the owner
+  sees, whether they get the theme Update button or just view state,
+  whether license activation is owner-visible, and what "minimal Ez IT
+  Core" shows when a product is unlicensed.
 - **Verticals** — manifest field `vertical: church|school|athletics|gov|
   dental|law|business|generic` drives Studio sections, marketplace
   categories, suggested roles, and industry-specific field sets
