@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.3.1
+Stable tag: 1.4.0
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -112,3 +112,31 @@ TTL, consumed on use); `wp-login.php?ezit_sso_uid&ezit_sso_token` does
   the gate path (default 60)
 * `ezit_uc_layouts` — available UC page layouts
 * `ezit_uc_stylesheets` — theme CSS pulled into UC pages
+
+== Self-Updates & Forced Releases ==
+
+EzIT Core registers itself as a `plugin` product on the license server
+(`EZIT_CORE_PRODUCT_ID` / `EZIT_CORE_PRODUCT_KEY` — wp-config or edit
+`ezit-core.php`). Sites then see real WP "update available" badges for
+the plugin and one-click updates through the licensed
+download endpoint — no license code needed, the server authenticates
+self-products by `api_key` and requires a **free + published** catalog
+listing for package downloads.
+
+Publishing an update with **Force update** ticked marks `forced:true`
+in `check_update`: each site applies it silently via WP-Cron +
+`Plugin_Upgrader`/`Theme_Upgrader` (max 3 attempts, retracting the flag
+stops pending runs). Works for themes too — same flag.
+
+== Changelog ==
+
+= 1.4.0 =
+* Self-update: EzIT Core registers itself as a plugin product and
+  updates through the license server like every other product
+* Forced releases: `check_update` `forced` flag auto-applies updates
+  via WP-Cron without a manual click
+* Plugin update support in the shared updater (plugins_api details
+  overlay included)
+
+= 1.3.1 =
+* SSO users endpoint returns the site's registered role map

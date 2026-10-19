@@ -5,7 +5,7 @@
  * Description: Shared foundation for every Ez IT Solutions theme — licensing,
  *              marketplace, updates and support, backed by the Ez IT license
  *              server (license.ez-it-solutions.com, LicenseBox-compatible).
- * Version:     1.3.1
+ * Version:     1.4.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Ez IT Solutions
@@ -19,7 +19,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('EZIT_CORE_VERSION', '1.3.1');
+define('EZIT_CORE_VERSION', '1.4.0');
 define('EZIT_CORE_FILE', __FILE__);
 define('EZIT_CORE_PATH', plugin_dir_path(__FILE__));
 define('EZIT_CORE_INC',  EZIT_CORE_PATH . 'inc/');
@@ -30,6 +30,18 @@ define('EZIT_CORE_ASSETS', EZIT_CORE_URL . 'assets/');
 // Settings → Ez IT Core. No trailing slash.
 if (! defined('EZIT_API_URL')) {
     define('EZIT_API_URL', 'https://license.ez-it-solutions.com');
+}
+
+// EzIT Core is its own product on the license server — the same zip-drop
+// pipeline ships plugin updates to every site (including forced ones).
+// Fill in once the product exists (license dashboard → Products → Edit →
+// API key). Blank = self-update off; everything else keeps working.
+// Overridable in wp-config.php per site.
+if (! defined('EZIT_CORE_PRODUCT_ID')) {
+    define('EZIT_CORE_PRODUCT_ID', '');
+}
+if (! defined('EZIT_CORE_PRODUCT_KEY')) {
+    define('EZIT_CORE_PRODUCT_KEY', '');
 }
 
 // Load every module in inc/ — sorted for determinism. Modules only
@@ -51,6 +63,25 @@ function ezit_core(): EzIT_Core
 add_action('plugins_loaded', function () {
     EzIT_Themes::boot(); // exposes the `EzIT Product` product header
     $core = ezit_core();
+
+    // Self-update: register EzIT Core as a 'plugin' product so the
+    // updater feeds it into update_plugins and can force-apply flagged
+    // releases. 'self' → check/download authenticate by api_key alone
+    // (no license cert — the server's free-catalog path covers it).
+    if (EZIT_CORE_PRODUCT_ID !== '' && EZIT_CORE_PRODUCT_KEY !== '') {
+        $core->register_product([
+            'slug'        => 'ezit-core',
+            'type'        => 'plugin',
+            'name'        => 'Ez IT Core',
+            'version'     => EZIT_CORE_VERSION,
+            'product_id'  => EZIT_CORE_PRODUCT_ID,
+            'api_key'     => EZIT_CORE_PRODUCT_KEY,
+            'gated'       => false,
+            'marketplace' => false,
+            'self'        => true,
+        ]);
+    }
+
     $core->licensing(); // boots the shared licensing module + cron
     $core->updater();   // shared instance — WP filters + admin tabs
     new EzIT_Marketplace($core);
