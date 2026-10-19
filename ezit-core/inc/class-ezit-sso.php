@@ -133,7 +133,10 @@ class EzIT_Sso
             ];
         }
 
-        return new WP_REST_Response(['users' => $users], 200);
+        return new WP_REST_Response([
+            'users' => $users,
+            'roles' => wp_roles()->get_names(), // slug => label — feeds the provision role picker
+        ], 200);
     }
 
     /* ── POST sso/token ────────────────────────────────────────────── */
