@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.16
+Stable tag: 1.5.17
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,12 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.17 =
+* Card footers are real footers — the Installed / Update / pinned
+  action row pins to the bottom edge of every card in a row, so a
+  long excerpt no longer pushes the pill down relative to its
+  neighbors
 
 = 1.5.16 =
 * Marketplace Refresh is instant — the arrow spins while the catalog

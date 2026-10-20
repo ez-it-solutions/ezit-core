@@ -320,6 +320,10 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-card__head h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--pg-ink); }
 .ezit-pg .ezit-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 480px)); gap: 16px; margin: 0 0 8px; }
 .ezit-pg .ezit-cards .ezit-card { margin-bottom: 0; display: flex; flex-direction: column; gap: 10px; }
+/* The foot is a real footer — grid rows stretch cards to equal
+   height, so the badge/action line must park at the bottom edge
+   instead of floating wherever the excerpt ends. */
+.ezit-pg .ezit-cards .ezit-card .ezit-card__foot { margin-top: auto; }
 
 .ezit-pg .ezit-license__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ezit-pg .ezit-license__head h3 { margin: 0; font-size: 16px; }
