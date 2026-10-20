@@ -766,7 +766,11 @@ class EzIT_Admin
         }
         $from = sanitize_key(wp_unslash($_GET['from'] ?? ''));
         if ($from === 'settings') {
-            $this->redirect('settings', 'saved', '', ['section' => 'updates']);
+            $this->redirect('settings', 'saved', sprintf(
+                /* translators: %s: product name */
+                __('%s pinned — auto and forced updates paused.', 'ezit-core'),
+                $product['name'] ?? $slug
+            ), ['section' => 'updates']);
         }
         $this->redirect('marketplace', 'saved', sprintf(
             /* translators: 1: product name, 2: version */
@@ -786,7 +790,8 @@ class EzIT_Admin
         }
         $from = sanitize_key(wp_unslash($_GET['from'] ?? ''));
         if ($from === 'settings') {
-            $this->redirect('settings', 'saved', '', ['section' => 'updates']);
+            $this->redirect('settings', 'saved',
+                __('Auto-updates resumed.', 'ezit-core'), ['section' => 'updates']);
         }
         $this->redirect('marketplace', 'saved',
             __('Auto-updates resumed.', 'ezit-core'));

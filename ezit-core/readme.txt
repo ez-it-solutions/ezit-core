@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.24
+Stable tag: 1.5.25
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,13 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.25 =
+* Settings → Updates can pin too — every product row now carries a
+  Pin updates / Resume updates action and shows the Pinned badge
+  inline; the old pins-only field merged into the list. The hint
+  spells out the difference: ignore keeps updates visible, a pin
+  hides them entirely
 
 = 1.5.24 =
 * Updates purge host caches now — every successful install (auto,

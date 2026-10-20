@@ -32,45 +32,53 @@ $all     = in_array('all', $ignored, true);
     </div>
     <div class="ezit-field">
         <label><?php esc_html_e('Per product', 'ezit-core'); ?></label>
-        <?php foreach ($core->products() as $slug => $p) : ?>
-        <label class="ezit-check">
-            <input type="checkbox" name="ezit_ignore_forced[]"
-                   value="<?php echo esc_attr($slug); ?>"
-                   <?php checked($all || in_array($slug, $ignored, true)); ?>
-                   <?php disabled($all); ?>>
-            <?php echo esc_html($p['name'] ?? $slug); ?>
-            <span class="ezit-meta">(<?php echo esc_html($slug); ?>)</span>
-        </label>
-        <?php endforeach; ?>
-        <span class="hint"><?php
-            esc_html_e('Ticked products keep forced updates visible but never auto-apply them.', 'ezit-core'); ?></span>
-    </div>
-    <?php
-    // Version pins — set from the Marketplace card when an admin installs
-    // an older release (or via EZIT_PIN_PRODUCTS in wp-config.php). A pin
-    // is stronger than the ignore list: it also hides the update badge
-    // and removes the product from WP's update transient.
-    $pinned = EzIT_Updater::pin_list();
-    if ($pinned) :
-    ?>
-    <div class="ezit-field">
-        <label><?php esc_html_e('Pinned versions', 'ezit-core'); ?></label>
-        <?php foreach ($pinned as $slug) :
-            $p = $core->product($slug); ?>
+        <?php
+        // A pin is stronger than the ignore list: it also hides the
+        // update badge and removes the product from WP's update
+        // transient. Pinnable here, on the Marketplace cards/chips, or
+        // via EZIT_PIN_PRODUCTS in wp-config.php.
+        $pinned = EzIT_Updater::pin_list();
+        foreach ($core->products() as $slug => $p) :
+            $is_pinned = in_array($slug, $pinned, true);
+        ?>
         <div class="ezit-check" style="justify-content:space-between">
-            <span>
-                <?php echo esc_html(($p['name'] ?? $slug) . ' — v' . ($p['version'] ?? '?')); ?>
-                <span class="ezit-meta">(<?php echo esc_html($slug); ?>)</span>
-            </span>
-            <a href="<?php echo esc_url(wp_nonce_url(
-                admin_url('admin-post.php?action=ezit_unpin&slug=' . $slug . '&from=settings'),
-                'ezit_unpin', 'ezit_unpin_nonce')); ?>">
-                <?php esc_html_e('Resume updates', 'ezit-core'); ?>
-            </a>
+            <label class="ezit-check" style="margin:0">
+                <input type="checkbox" name="ezit_ignore_forced[]"
+                       value="<?php echo esc_attr($slug); ?>"
+                       <?php checked($all || in_array($slug, $ignored, true)); ?>
+                       <?php disabled($all); ?>>
+                <span>
+                    <?php echo esc_html($p['name'] ?? $slug); ?>
+                    <span class="ezit-meta">(<?php echo esc_html($slug); ?> · v<?php echo esc_html($p['version'] ?: '?'); ?>)</span>
+                    <?php if ($is_pinned) : ?>
+                        <span class="ezit-badge ezit-badge--pinned"
+                              title="<?php esc_attr_e('Updates paused at this version — automatic and forced installs skip this product until you resume them', 'ezit-core'); ?>">
+                            <?php esc_html_e('Pinned', 'ezit-core'); ?>
+                        </span>
+                    <?php endif; ?>
+                </span>
+            </label>
+            <?php if ($is_pinned) : ?>
+                <a href="<?php echo esc_url(wp_nonce_url(
+                    admin_url('admin-post.php?action=ezit_unpin&slug=' . $slug . '&from=settings'),
+                    'ezit_unpin', 'ezit_unpin_nonce')); ?>"
+                    title="<?php esc_attr_e('Resume automatic and forced updates', 'ezit-core'); ?>">
+                    <?php esc_html_e('Resume updates', 'ezit-core'); ?>
+                </a>
+            <?php else : ?>
+                <a href="<?php echo esc_url(wp_nonce_url(
+                    admin_url('admin-post.php?action=ezit_pin&slug=' . $slug . '&from=settings'),
+                    'ezit_pin', 'ezit_pin_nonce')); ?>"
+                    data-confirm-title="<?php esc_attr_e('Pin updates?', 'ezit-core'); ?>"
+                    data-confirm="<?php esc_attr_e('Automatic and forced updates pause at this version until you resume them.', 'ezit-core'); ?>"
+                    data-confirm-ok="<?php esc_attr_e('Pin', 'ezit-core'); ?>"
+                    title="<?php esc_attr_e('Hold this version — automatic and forced updates pause until you resume them', 'ezit-core'); ?>">
+                    <?php esc_html_e('Pin updates', 'ezit-core'); ?>
+                </a>
+            <?php endif; ?>
         </div>
         <?php endforeach; ?>
         <span class="hint"><?php
-            esc_html_e('Pinned products skip every automatic update — forced releases, badges, and the WP update transient — until resumed. To pin before files are even swapped (debug installs), define EZIT_PIN_PRODUCTS in wp-config.php.', 'ezit-core'); ?></span>
+            esc_html_e('Ticked products keep forced updates visible but never auto-apply them. Pinning goes further — a pinned product skips every automatic update, the update badge, and the WP update transient until you resume it. To pin before files are even swapped (debug installs), define EZIT_PIN_PRODUCTS in wp-config.php.', 'ezit-core'); ?></span>
     </div>
-    <?php endif; ?>
 </div>
