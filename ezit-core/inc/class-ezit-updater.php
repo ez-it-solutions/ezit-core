@@ -839,6 +839,52 @@ class EzIT_Updater
             'from' => $from, 'how' => $how, 'at' => time(),
         ]);
         update_option('ezit_applied', array_slice(array_values($list), 0, 12), false);
+
+        // Files on disk just changed — every install path funnels
+        // through record_applied, so this is the one spot that
+        // guarantees host caches don't keep serving stale admin
+        // pages/assets/bytecode. Best-effort everywhere: a missing
+        // cache layer must never break an update.
+        self::purge_host_caches();
+    }
+
+    /**
+     * Drop every cache layer that can serve stale PHP/assets after a
+     * zip drop — OPcache, WP object cache, and the common page-cache
+     * plugins (WP Rocket, W3TC, SiteGround, LiteSpeed, Dreamhost
+     * Varnish). Anything not installed is a no-op.
+     */
+    public static function purge_host_caches(): void
+    {
+        // PHP bytecode — a zip update swaps files mid-process; OPcache
+        // would keep serving the pre-update compile until its TTL.
+        if (function_exists('opcache_reset')) {
+            try { @opcache_reset(); } catch (\Throwable $t) { /* best-effort */ }
+        }
+        if (function_exists('wp_cache_flush')) {
+            wp_cache_flush();
+        }
+        // Page-cache plugins with function APIs.
+        foreach (['rocket_clean_domain', 'w3tc_flush_all', 'sg_cachepress_purge_cache'] as $fn) {
+            if (function_exists($fn)) {
+                try { $fn(); } catch (\Throwable $t) { /* best-effort */ }
+            }
+        }
+        // LiteSpeed listens on an action, not a function.
+        do_action('litespeed_purge_all');
+        // Dreamhost Proxy Cache Purge (Varnish) — class ships on
+        // DreamPress plans; API shape varies by version, hence guarded.
+        if (class_exists('VarnishHTTPPurge')) {
+            try {
+                $vhp = new VarnishHTTPPurge();
+                if (method_exists($vhp, 'executePurge')) {
+                    $vhp->executePurge();
+                }
+            } catch (\Throwable $t) { /* best-effort */ }
+        }
+        // Escape hatch — a must-use glue file can subscribe for any
+        // host layer we don't know about.
+        do_action('ezit_purge_caches');
     }
 
     /** The applied-updates log — shared by the banner + admin notices. */

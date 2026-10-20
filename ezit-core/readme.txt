@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.22
+Stable tag: 1.5.24
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,13 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.24 =
+* Updates purge host caches now — every successful install (auto,
+  forced, picker, marketplace) runs a best-effort flush: OPcache,
+  WP object cache, WP Rocket / W3TC / SiteGround / LiteSpeed /
+  Dreamhost Varnish, plus an ezit_purge_caches escape hatch.
+  Stale admin pages and assets after an update are gone
 
 = 1.5.23 =
 * Pin updates on demand — hover the Installed badge on a card (it
