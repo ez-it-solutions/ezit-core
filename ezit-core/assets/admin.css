@@ -925,6 +925,9 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     transition: background .2s ease;
 }
 .ezit-pg .ezt__refresh:hover { background: #2a2c3d; color: #fff; }
+/* AJAX refresh in flight — spin the arrow, swallow repeat clicks. */
+.ezit-pg .ezt__refresh.is-busy { pointer-events: none; opacity: .8; }
+.ezit-pg .ezt__refresh.is-busy svg { animation: ezit-spin .7s linear infinite; }
 
 /* ── Version-history modal (checkbox toggle — zero JS) ───────────────
  * Printed at admin_footer — sibling selectors and stacking behave the

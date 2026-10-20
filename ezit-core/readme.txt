@@ -136,6 +136,10 @@ flag.
 == Changelog ==
 
 = 1.5.16 =
+* Marketplace Refresh is instant — the arrow spins while the catalog
+  re-fetches, the card grid + fetched stamp + version modals swap in
+  place, and a toast confirms "Marketplace refreshed". No page
+  reload (URL still works with JS off)
 * Version modal shows a "Current" row even when the running build
   isn't a published release (a local build, or a release published
   after this site installed it) — it's inserted in version order,
