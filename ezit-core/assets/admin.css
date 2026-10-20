@@ -918,11 +918,20 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     display: inline-flex; flex-direction: row; flex-wrap: nowrap;
     align-items: center; justify-content: center; gap: 7px; flex-shrink: 0;
     height: 38px; box-sizing: border-box; padding: 0 18px; border-radius: 9px; text-decoration: none;
-    background: var(--pg-ink); color: #fff; font-size: 13.5px; font-weight: 700;
+    background: var(--pg-green); color: var(--pg-dark); font-size: 13.5px; font-weight: 700;
     line-height: 1; white-space: nowrap;
-    transition: background .2s ease;
+    transition: background .2s ease, color .2s ease;
 }
-.ezit-pg .ezt__refresh:hover { background: #2a2c3d; color: #fff; }
+.ezit-pg .ezt__refresh:hover { background: var(--pg-green2); color: #fff; }
+/* WP paints links blue on :active and outlines them on :focus — this
+   is a button, not a link; keyboard focus keeps a subtle ring. */
+.ezit-pg .ezt__refresh:active, .ezit-pg .ezt__refresh:focus,
+.ezit-pg .ezt__refresh:visited { color: var(--pg-dark); box-shadow: none; }
+.ezit-pg .ezt__refresh:hover:active, .ezit-pg .ezt__refresh:hover:focus { color: #fff; }
+.ezit-pg .ezt__refresh:focus:not(:focus-visible) { outline: 0; box-shadow: none; }
+.ezit-pg .ezt__refresh:focus-visible {
+    outline: 2px solid rgba(118,185,0,.55); outline-offset: 2px;
+}
 /* Inline SVGs sit on the text baseline — block it or the icon drifts
    low, and a transformed inline box grows the button while spinning.
    Explicit size pins it against whatever the component css thinks. */

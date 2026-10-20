@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.21
+Stable tag: 1.5.22
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,11 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.22 =
+* Refresh button is green again (brand green + dark ink), hover goes
+  darker green, and WP's blue :active/:focus paint is suppressed —
+  keyboard focus keeps a soft green ring
 
 = 1.5.21 =
 * Fix: the card sort keyed the core card on EZIT_CORE_PRODUCT_ID —
