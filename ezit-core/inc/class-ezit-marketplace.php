@@ -353,9 +353,30 @@ class EzIT_Marketplace
                                         ? esc_html__('Licensed', 'ezit-core')
                                         : esc_html__('Unlicensed', 'ezit-core')); ?>
                             </span>
+                            <?php if (EzIT_Updater::is_pinned($slug)) : ?>
+                                <span class="ezit-badge ezit-badge--pinned"
+                                      title="<?php esc_attr_e('Updates paused at this version — automatic and forced installs skip this product until you resume them', 'ezit-core'); ?>">
+                                    <?php esc_html_e('Pinned', 'ezit-core'); ?>
+                                </span>
+                                <a class="ezit-chip__pin is-resume" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_unpin&slug=' . $slug . '&from=marketplace'), 'ezit_unpin', 'ezit_unpin_nonce')); ?>"
+                                   title="<?php esc_attr_e('Resume automatic and forced updates', 'ezit-core'); ?>">
+                                    <?php esc_html_e('Resume', 'ezit-core'); ?>
+                                </a>
+                            <?php else : ?>
+                                <a class="ezit-chip__pin" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_pin&slug=' . $slug . '&from=marketplace'), 'ezit_pin', 'ezit_pin_nonce')); ?>"
+                                   data-confirm-title="<?php esc_attr_e('Pin updates?', 'ezit-core'); ?>"
+                                   data-confirm="<?php esc_attr_e('Automatic and forced updates pause at this version until you resume them.', 'ezit-core'); ?>"
+                                   data-confirm-ok="<?php esc_attr_e('Pin', 'ezit-core'); ?>"
+                                   title="<?php esc_attr_e('Hold this version — automatic and forced updates pause until you resume them', 'ezit-core'); ?>">
+                                    <?php esc_html_e('Pin updates', 'ezit-core'); ?>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
+                <p class="ezit-muted ezit-pin-hint">
+                    <?php esc_html_e('Hover a product or the Installed badge to Pin it — pinning holds the current version and pauses automatic and forced updates until you resume them.', 'ezit-core'); ?>
+                </p>
             <?php endif; ?>
 
             <h4 class="ezit-sec-label"><?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?></h4>
@@ -480,15 +501,30 @@ class EzIT_Marketplace
                                 <p class="ezit-card-excerpt"><?php echo esc_html($item['excerpt']); ?></p>
                             <?php endif; ?>
                             <div class="ezit-card__foot">
-                                <span class="ezit-badge <?php echo $installed ? 'is-active' : ($free ? 'is-free' : 'is-paid'); ?>">
-                                    <?php
-                                    echo $installed ? esc_html__('Installed', 'ezit-core')
-                                        : ($free ? esc_html__('Free', 'ezit-core')
-                                        : esc_html(isset($item['price']) ? '$' . number_format((float) $item['price'], 2) : __('Paid', 'ezit-core')));
-                                    ?>
-                                </span>
+                                <?php
+                                // Installed + unpinned: the badge itself is the
+                                // pin control — hover swaps INSTALLED for Pin.
+                                if ($installed && $local_slug !== null && ! $pinned) : ?>
+                                    <a class="ezit-badge-swap" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_pin&slug=' . $local_slug . '&from=marketplace'), 'ezit_pin', 'ezit_pin_nonce')); ?>"
+                                       data-confirm-title="<?php esc_attr_e('Pin updates?', 'ezit-core'); ?>"
+                                       data-confirm="<?php esc_attr_e('Automatic and forced updates pause at this version until you resume them.', 'ezit-core'); ?>"
+                                       data-confirm-ok="<?php esc_attr_e('Pin', 'ezit-core'); ?>"
+                                       title="<?php esc_attr_e('Hold this version — automatic and forced updates pause until you resume them', 'ezit-core'); ?>">
+                                        <span class="ezit-badge is-active ezit-swap__idle"><?php esc_html_e('Installed', 'ezit-core'); ?></span>
+                                        <span class="ezit-badge ezit-badge--pin ezit-swap__on"><?php esc_html_e('Pin updates', 'ezit-core'); ?></span>
+                                    </a>
+                                <?php else : ?>
+                                    <span class="ezit-badge <?php echo $installed ? 'is-active' : ($free ? 'is-free' : 'is-paid'); ?>">
+                                        <?php
+                                        echo $installed ? esc_html__('Installed', 'ezit-core')
+                                            : ($free ? esc_html__('Free', 'ezit-core')
+                                            : esc_html(isset($item['price']) ? '$' . number_format((float) $item['price'], 2) : __('Paid', 'ezit-core')));
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
                                 <?php if ($pinned) : ?>
-                                    <span class="ezit-badge ezit-badge--pinned">
+                                    <span class="ezit-badge ezit-badge--pinned"
+                                          title="<?php esc_attr_e('Updates paused at this version — automatic and forced installs skip this product until you resume them', 'ezit-core'); ?>">
                                         <?php esc_html_e('Pinned', 'ezit-core'); ?>
                                     </span>
                                     <?php if ($newer) : ?>

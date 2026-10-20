@@ -104,6 +104,23 @@
         });
     }, true);
 
+    // Links get the same treatment — confirm, then navigate.
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a[data-confirm]');
+        if (!a) {
+            return;
+        }
+        e.preventDefault();
+        ezitConfirm({
+            title:   a.getAttribute('data-confirm-title') || 'Are you sure?',
+            message: a.getAttribute('data-confirm'),
+            ok:      a.getAttribute('data-confirm-ok') || 'Continue',
+            cancel:  a.getAttribute('data-confirm-cancel') || 'Cancel',
+        }, function () {
+            window.location.href = a.href;
+        });
+    });
+
     // ── Toasts — bottom-right pills (shared .ezit-flash styling) ──
     function ezitToast(msg, isErr) {
         var host = document.querySelector('.ezit-pg') || document.body;

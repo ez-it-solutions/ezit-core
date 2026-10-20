@@ -35,6 +35,7 @@ class EzIT_Admin
         add_action('admin_post_ezit_market_install', [$this, 'handle_market_install']);
         add_action('admin_post_ezit_version',    [$this, 'handle_version']);
         add_action('admin_post_ezit_unpin',      [$this, 'handle_unpin']);
+        add_action('admin_post_ezit_pin',        [$this, 'handle_pin']);
         add_action('admin_post_ezit_clear_applied', [$this, 'handle_clear_applied']);
         add_action('wp_ajax_ezit_maillog',       [$this, 'handle_maillog']);
         add_action('wp_ajax_ezit_forced_apply',  [$this, 'handle_forced_apply']);
@@ -751,6 +752,27 @@ class EzIT_Admin
                 : __('%1$s installed at v%2$s.', 'ezit-core'),
             $product['name'] ?? $slug,
             $chosen['version']
+        ));
+    }
+
+    /** Pin a product at its installed version — pause auto/forced updates. */
+    public function handle_pin(): void
+    {
+        $this->guard('ezit_pin', 'ezit_pin_nonce');
+        $slug    = sanitize_key(wp_unslash($_GET['slug'] ?? ''));
+        $product = $slug !== '' ? $this->core->product($slug) : null;
+        if ($product) {
+            EzIT_Updater::set_pinned($slug, true);
+        }
+        $from = sanitize_key(wp_unslash($_GET['from'] ?? ''));
+        if ($from === 'settings') {
+            $this->redirect('settings', 'saved', '', ['section' => 'updates']);
+        }
+        $this->redirect('marketplace', 'saved', sprintf(
+            /* translators: 1: product name, 2: version */
+            __('%1$s pinned at v%2$s — auto and forced updates paused.', 'ezit-core'),
+            $product['name'] ?? $slug,
+            (string) ($product['version'] ?? '')
         ));
     }
 

@@ -135,6 +135,16 @@ flag.
 
 == Changelog ==
 
+= 1.5.23 =
+* Pin updates on demand — hover the Installed badge on a card (it
+  swaps to "Pin updates") or a chip in "Installed on this site" (a
+  pill reveals Pin / Resume). Same protection a downgrade gets:
+  auto + forced updates hold at the current version until resumed
+* Pinned state is discoverable — Pinned badges carry an explaining
+  tooltip and a hint line under the installed strip spells it out
+* data-confirm now works on links too — the Pin action confirms via
+  the branded modal before navigating
+
 = 1.5.22 =
 * Refresh button is green again (brand green + dark ink), hover goes
   darker green, and WP's blue :active/:focus paint is suppressed —

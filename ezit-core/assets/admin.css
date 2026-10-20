@@ -952,6 +952,28 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-applied__dismiss:focus:not(:focus-visible) { outline: 0; box-shadow: none; }
 .ezit-pg .ezit-applied__dismiss:focus-visible { outline: 2px solid rgba(118,185,0,.45); outline-offset: 2px; border-radius: 4px; }
 
+/* ── Pin controls — the pin affordance lives ON the surfaces ───────
+ * Installed badge morphs into Pin on hover; chips reveal a pill. */
+.ezit-pg .ezit-cards .ezit-card { position: relative; }
+.ezit-pg .ezit-badge-swap { display: inline-flex; text-decoration: none; }
+.ezit-pg .ezit-badge-swap .ezit-swap__on { display: none; }
+.ezit-pg .ezit-badge-swap:hover .ezit-swap__idle { display: none; }
+.ezit-pg .ezit-badge-swap:hover .ezit-swap__on { display: inline-flex; }
+.ezit-pg .ezit-badge--pin { background: #7c3aed; color: #fff; }
+.ezit-pg .ezit-chip__pin {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    opacity: 0; transition: opacity .15s ease, background .15s ease;
+    padding: 6px 13px; border-radius: 999px;
+    background: var(--pg-ink); color: #fff; font-size: 12px; font-weight: 700;
+    text-decoration: none; white-space: nowrap;
+}
+.ezit-pg .ezit-cards .ezit-card:hover .ezit-chip__pin,
+.ezit-pg .ezit-chip__pin:focus-visible { opacity: 1; }
+.ezit-pg .ezit-chip__pin:hover { background: var(--pg-green2); color: #fff; }
+.ezit-pg .ezit-chip__pin.is-resume { background: #7c3aed; }
+.ezit-pg .ezit-chip__pin.is-resume:hover { background: #6d28d9; }
+.ezit-pg .ezit-pin-hint { margin: 12px 2px 0; font-size: 12.5px; }
+
 /* ── Version-history modal (checkbox toggle — zero JS) ───────────────
  * Printed at admin_footer — sibling selectors and stacking behave the
  * same, but no transformed panel ancestor can clip or re-anchor it. */
