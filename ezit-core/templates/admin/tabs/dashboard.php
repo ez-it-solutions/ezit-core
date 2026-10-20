@@ -57,11 +57,14 @@ $products  = $core->products();
         </tr></thead>
         <tbody>
         <?php foreach ($products as $slug => $p) :
+            $self    = ! empty($p['self']);
             $lic     = $licensing->license($slug);
             $payload = $lic && ! empty($lic['license_file'])
                 ? EzIT_Licensing::cert_payload($lic['license_file'])
                 : null;
-            $active  = $licensing->is_active($slug);
+            // Self products hold no license code — entitlement is the
+            // free catalog listing, so they always read Active.
+            $active  = $self || $licensing->is_active($slug);
         ?>
         <tr>
             <td><strong><?php echo esc_html($p['name']); ?></strong></td>
@@ -75,7 +78,7 @@ $products  = $core->products();
                     <?php echo esc_html(EzIT_Licensing::blocked_label($lic)); ?>
                 </div>
             <?php endif; ?></td>
-            <td><?php echo esc_html($payload['client_name'] ?? '—'); ?></td>
+            <td><?php echo esc_html($self ? __('Ez IT Solutions', 'ezit-core') : ($payload['client_name'] ?? '—')); ?></td>
         </tr>
         <?php endforeach; ?>
         </tbody>

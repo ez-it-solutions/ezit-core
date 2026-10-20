@@ -1,14 +1,47 @@
 /**
  * Ez IT Core — shared admin helpers.
  *
- * Live "Fetched N ago" counters: .ezit-catalog-at__age carries the
- * last-fetch epoch (data-ts) and its translated label (data-label).
- * We retick every second so the number is real instead of a frozen
- * page-load snapshot.
+ * 1. Flash toasts: .ezit-flash renders server-side from ?ezit_msg; we
+ *    fade it out after a few seconds, wire the circled-X close button,
+ *    and strip the flash params from the URL so a refresh doesn't
+ *    re-fire the toast.
+ *
+ * 2. Live "Fetched N ago" counters: .ezit-catalog-at__age carries the
+ *    last-fetch epoch (data-ts) and its translated label (data-label).
+ *    We retick every second so the number is real instead of a frozen
+ *    page-load snapshot.
  */
 (function () {
     'use strict';
 
+    // ── Flash toasts ────────────────────────────────────────────────
+    var flash = document.querySelector('.ezit-flash');
+    if (flash) {
+        var gone = false;
+        var dismiss = function () {
+            if (gone) {
+                return;
+            }
+            gone = true;
+            flash.classList.add('is-out');
+            window.setTimeout(function () { flash.remove(); }, 350);
+        };
+        var x = flash.querySelector('.ezit-flash__close');
+        if (x) {
+            x.addEventListener('click', dismiss);
+        }
+        window.setTimeout(dismiss, flash.classList.contains('is-err') ? 7000 : 5000);
+    }
+    try {
+        var u = new URL(window.location.href);
+        if (u.searchParams.has('ezit_msg') || u.searchParams.has('ezit_detail')) {
+            u.searchParams.delete('ezit_msg');
+            u.searchParams.delete('ezit_detail');
+            window.history.replaceState({}, '', u);
+        }
+    } catch (e) { /* older browsers keep the params — harmless */ }
+
+    // ── Catalog age ticker ──────────────────────────────────────────
     var els = document.querySelectorAll('.ezit-catalog-at__age[data-ts]');
     if (!els.length) {
         return;

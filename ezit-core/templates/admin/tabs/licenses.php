@@ -37,10 +37,16 @@ $products  = $core->products();
 
 <div class="ezit-cards">
 <?php foreach ($products as $slug => $p) :
-    if ($p['product_id'] === '') {
+    // Self products always get a card — blank constants resolve lazily
+    // via self_credentials() so their product_id may not be set yet.
+    $self = ! empty($p['self']);
+    if (! $self && $p['product_id'] === '') {
         continue;
     }
-    $is_active = $licensing->is_active($slug);
+    if ($self) {
+        $p = array_merge($p, array_filter($core->self_credentials()));
+    }
+    $is_active = $self || $licensing->is_active($slug);
     $lic       = $licensing->license($slug) ?: [];
 ?>
     <div class="ezit-card ezit-license" data-ezt-anim>
@@ -68,7 +74,13 @@ $products  = $core->products();
             ?>
         </p>
 
-        <?php if ($is_active) :
+        <?php if ($self) : ?>
+        <dl class="ezit-meta" style="display:grid;grid-template-columns:auto 1fr;gap:2px 14px;margin:4px 0 10px">
+            <dt style="font-weight:600;color:#787c82"><?php esc_html_e('Licensed to', 'ezit-core'); ?></dt>
+            <dd style="margin:0"><?php esc_html_e('Ez IT Solutions', 'ezit-core'); ?></dd>
+        </dl>
+        <p class="ezit-meta"><?php esc_html_e('License-free core product — updates arrive automatically via the catalog.', 'ezit-core'); ?></p>
+        <?php elseif ($is_active) :
             // Cert payload → seats, domain binding, expiry, licensee.
             // Informational decode only — the HMAC is verified server-side.
             $cert = EzIT_Licensing::cert_payload((string) ($lic['license_file'] ?? '')) ?: [];
@@ -93,7 +105,9 @@ $products  = $core->products();
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($is_active) : ?>
+        <?php if ($self) : ?>
+            <?php // No form — nothing to activate or deactivate. ?>
+        <?php elseif ($is_active) : ?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <?php wp_nonce_field('ezit_license', 'ezit_license_nonce'); ?>
             <input type="hidden" name="action" value="ezit_deactivate">
@@ -136,7 +150,7 @@ $products  = $core->products();
 </div>
 
 <?php foreach ($products as $slug => $p) :
-    if ($p['product_id'] !== '') {
+    if ($p['product_id'] !== '' || ! empty($p['self'])) {
         continue;
     }
 ?>

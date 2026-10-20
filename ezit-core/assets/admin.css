@@ -263,18 +263,37 @@
 /* Breathing room when panel content follows the component footer row. */
 .ezit-pg .ezt__footer:not(:last-child) { margin-bottom: 22px; }
 
-/* ── Flash / notices — card, not WP chrome ─────────────────────────── */
+/* ── Flash / toast — floats top-right, self-dismisses ──────────────── */
 .ezit-pg .ezit-flash {
+    position: fixed; top: 46px; right: 24px; z-index: 100001;
     display: flex; align-items: center; gap: 10px;
-    margin: 0 0 20px; padding: 14px 18px 14px 20px;
+    max-width: min(420px, calc(100vw - 40px));
+    margin: 0; padding: 14px 16px 14px 20px;
     background: #fff; border: 1px solid var(--pg-line); border-left: 4px solid var(--pg-green);
-    border-radius: 10px; box-shadow: 0 2px 10px rgba(20,21,31,.05);
+    border-radius: 10px; box-shadow: 0 10px 34px rgba(20,21,31,.22);
     font-size: 14px;
+    animation: ezit-toast-in .25s ease-out;
+    transition: opacity .3s ease, transform .3s ease;
 }
-.ezit-pg .ezit-flash svg { flex-shrink: 0; color: var(--pg-green2); }
-.ezit-pg .ezit-flash.is-err svg { color: #d63638; }
-.ezit-pg .ezit-flash.is-err { border-left-color: #d63638; }
+.ezit-pg .ezit-flash.is-out { opacity: 0; transform: translateX(14px); }
+.ezit-pg .ezit-flash > svg { flex-shrink: 0; color: var(--pg-green2); }
+.ezit-pg .ezit-flash.is-err > svg { color: #d63638; }
 .ezit-pg .ezit-flash p { margin: 0; }
+.ezit-pg .ezit-flash__close {
+    flex-shrink: 0; display: grid; place-content: center;
+    width: 26px; height: 26px; margin: -2px -4px -2px 4px; padding: 0;
+    background: none; border: 1px solid var(--pg-line); border-radius: 50%;
+    color: var(--pg-muted); cursor: pointer; transition: all .15s ease;
+}
+.ezit-pg .ezit-flash__close:hover {
+    border-color: var(--pg-line); color: var(--pg-ink);
+    background: rgba(20,21,31,.05);
+}
+@keyframes ezit-toast-in { from { opacity: 0; transform: translateY(-8px); } }
+@media (max-width: 782px) { .ezit-pg .ezit-flash { top: 60px; } }
+@media (prefers-reduced-motion: reduce) {
+    .ezit-pg .ezit-flash { animation: none; transition: none; }
+}
 
 /* Our dark footer replaces WP's own footer on this screen. */
 body.toplevel_page_ezit-core #wpfooter { display: none; }

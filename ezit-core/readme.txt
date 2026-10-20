@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.4.2
+Stable tag: 1.4.8
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -129,6 +129,15 @@ in `check_update`: each site applies it silently via WP-Cron +
 stops pending runs). Works for themes too — same flag.
 
 == Changelog ==
+
+= 1.4.8 =
+* Dashboard: EzIT Core shows Active with "Licensed to: Ez IT Solutions" —
+  self products are license-free by design, no more INACTIVE/blank row.
+  Licenses tab shows a matching read-only card; the "not licensed" admin
+  nag no longer fires for self products
+* Action notices (?ezit_msg) are now toasts: fixed top-right card with a
+  circled-X dismiss button, auto-fades after 5s (7s for errors), and the
+  query params are stripped so a refresh doesn't replay the toast
 
 = 1.4.7 =
 * Self-update out of the box: EzIT Core registers unconditionally and

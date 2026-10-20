@@ -220,7 +220,7 @@ class EzIT_Admin
         $unlicensed = 0;
         $unlicensed_themes = 0;
         foreach ($products as $slug => $p) {
-            if ($licensing->is_active($slug)) {
+            if (! empty($p['self']) || $licensing->is_active($slug)) {
                 $licensed++;
             } elseif ($p['product_id'] !== '') {
                 $unlicensed++;
@@ -643,7 +643,8 @@ class EzIT_Admin
             return; // our own pages show status inline
         }
         foreach ($this->core->products() as $slug => $p) {
-            if ($p['product_id'] !== '' && ! $this->core->licensing()->is_active($slug)) {
+            if ($p['product_id'] !== '' && empty($p['self'])
+                && ! $this->core->licensing()->is_active($slug)) {
                 printf(
                     '<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>',
                     sprintf(
@@ -722,10 +723,14 @@ class EzIT_Admin
             ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg>'
             : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v5m0 3h.01"/></svg>';
         return sprintf(
-            '<div class="ezit-flash %s" role="status">%s<p>%s</p></div>',
+            '<div class="ezit-flash %s" role="status">%s<p>%s</p>'
+            . '<button type="button" class="ezit-flash__close" aria-label="%s">'
+            . '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>'
+            . '</button></div>',
             $ok ? 'is-ok' : 'is-err',
             $icon,
-            esc_html($text)
+            esc_html($text),
+            esc_attr__('Dismiss', 'ezit-core')
         );
     }
 }
