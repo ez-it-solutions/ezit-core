@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.15
+Stable tag: 1.5.16
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,15 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.16 =
+* Version modal shows a "Current" row even when the running build
+  isn't a published release (a local build, or a release published
+  after this site installed it) — it's inserted in version order,
+  labeled "this site", instead of leaving the list with no highlight
+* "Updates applied" Dismiss now fades the strip out and clears the
+  log in the background — no more full page reload (the link still
+  works when JS is off)
 
 = 1.5.15 =
 * Fix: opening Version History on one card could stack every modal

@@ -104,6 +104,27 @@
         });
     }, true);
 
+    // ── Applied-updates dismiss — clear in place, no reload ────────
+    // The link still works without JS; with JS we fire the clear
+    // endpoint in the background and fade the strip out.
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('.ezit-applied__dismiss');
+        if (!a) {
+            return;
+        }
+        e.preventDefault();
+        var card = a.closest('.ezit-applied');
+        if (card) {
+            card.style.transition = 'opacity .25s ease, transform .25s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-6px)';
+            window.setTimeout(function () { card.remove(); }, 260);
+        }
+        if (window.fetch) {
+            window.fetch(a.href, { credentials: 'same-origin' }).catch(function () {});
+        }
+    });
+
     // ── Catalog age ticker ──────────────────────────────────────────
     var els = document.querySelectorAll('.ezit-catalog-at__age[data-ts]');
     if (!els.length) {

@@ -526,9 +526,39 @@ class EzIT_Marketplace
                                                     : esc_html__('No published releases yet.', 'ezit-core'); ?>
                                             </p>
                                         <?php else : ?>
+                                        <?php
+                                        // A running build that isn't a published release (a local
+                                        // build, or a release published after this site installed)
+                                        // would otherwise leave the list with no "Current" row.
+                                        $rel_has_local = false;
+                                        foreach ($releases as $r) {
+                                            if (version_compare((string) ($r['version'] ?? ''), $local_ver ?: '0', '==')) {
+                                                $rel_has_local = true;
+                                                break;
+                                            }
+                                        }
+                                        $ezit_vm_local_row = function () use ($local_ver): void {
+                                            ?>
+                                            <li class="ezit-vm__row is-current">
+                                                <div class="ezit-vm__ver">
+                                                    <strong><?php echo esc_html('v' . $local_ver); ?></strong>
+                                                    <span class="ezit-meta"><?php esc_html_e('this site', 'ezit-core'); ?></span>
+                                                </div>
+                                                <div class="ezit-vm__sum"><?php esc_html_e('Currently installed — a local build or a release that was never published to the server.', 'ezit-core'); ?></div>
+                                                <div class="ezit-vm__act"><span class="ezit-badge is-active"><?php esc_html_e('Current', 'ezit-core'); ?></span></div>
+                                            </li>
+                                            <?php
+                                        };
+                                        $ezit_vm_local_shown = false;
+                                        ?>
                                         <ul class="ezit-vm__list">
                                             <?php foreach ($releases as $i => $rel) :
-                                                $rel_ver  = (string) ($rel['version'] ?? '');
+                                                $rel_ver = (string) ($rel['version'] ?? '');
+                                                if (! $rel_has_local && ! $ezit_vm_local_shown && $local_ver !== null
+                                                    && version_compare($local_ver, $rel_ver, '>')) {
+                                                    $ezit_vm_local_row();
+                                                    $ezit_vm_local_shown = true;
+                                                }
                                                 $rel_cur  = $rel_ver === $local_ver;
                                                 $rel_tags = [];
                                                 if ($i === 0) { $rel_tags[] = __('latest', 'ezit-core'); }
@@ -567,6 +597,12 @@ class EzIT_Marketplace
                                                     </div>
                                                 </li>
                                             <?php endforeach; ?>
+                                            <?php
+                                            // Older than everything published — sits at the bottom.
+                                            if (! $rel_has_local && ! $ezit_vm_local_shown && $local_ver !== null) {
+                                                $ezit_vm_local_row();
+                                            }
+                                            ?>
                                         </ul>
                                         <?php endif; ?>
                                         <p class="ezit-vm__note"><?php esc_html_e('Choosing a release older than the newest published one pins this product — forced and automatic updates pause until you resume them.', 'ezit-core'); ?></p>
