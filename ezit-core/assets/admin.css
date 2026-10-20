@@ -914,13 +914,12 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezt__head-side {
     display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
 }
-.ezit-pg .ezt__head-side .ezit-catalog-at {
-    font-size: 12px; color: var(--pg-muted); text-align: right; line-height: 1.35;
-}
 .ezit-pg .ezt__refresh {
-    display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex-shrink: 0;
+    display: inline-flex; flex-direction: row; flex-wrap: nowrap;
+    align-items: center; justify-content: center; gap: 7px; flex-shrink: 0;
     height: 38px; box-sizing: border-box; padding: 0 18px; border-radius: 9px; text-decoration: none;
-    background: var(--pg-ink); color: #fff; font-size: 13.5px; font-weight: 700; line-height: 1;
+    background: var(--pg-ink); color: #fff; font-size: 13.5px; font-weight: 700;
+    line-height: 1; white-space: nowrap;
     transition: background .2s ease;
 }
 .ezit-pg .ezt__refresh:hover { background: #2a2c3d; color: #fff; }

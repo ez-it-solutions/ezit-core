@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.20
+Stable tag: 1.5.21
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,14 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.21 =
+* Fix: the card sort keyed the core card on EZIT_CORE_PRODUCT_ID —
+  blank on sites using lazy self-credentials, so core sorted dead
+  last. self_pid now falls back to self_credentials()
+* Fix: the Refresh anchor carried both ezit-btn and ezt__refresh —
+  the button class won on display/background, stacking the svg above
+  the label and painting it green. One class, one rule set
 
 = 1.5.20 =
 * Fix: fatal "Call to undefined function section_label()" on the

@@ -376,7 +376,13 @@ class EzIT_Marketplace
                 <div class="ezit-cards">
                     <?php
                     $registered = $this->core->products();
-                    $self_pid   = defined('EZIT_CORE_PRODUCT_ID') ? EZIT_CORE_PRODUCT_ID : '';
+                    // EZIT_CORE_PRODUCT_ID can be blank — credentials then
+                    // resolve lazily from the free catalog (self_credentials).
+                    // Without this fallback the core card matches no product,
+                    // sorts last, and loses its is_self flag.
+                    $self_pid   = EZIT_CORE_PRODUCT_ID !== ''
+                        ? EZIT_CORE_PRODUCT_ID
+                        : (string) ($this->core->self_credentials()['product_id'] ?? '');
                     $items      = $catalog;
                     // Core has no slug in $registered but IS in the catalog —
                     // keep the ezit-core card and flag its slug for later.
