@@ -294,6 +294,9 @@ class EzIT_Marketplace
         $updated = $local !== null
             || ($type === 'plugin' && $slug !== '' && is_dir(WP_PLUGIN_DIR . '/' . $slug));
 
+        EzIT_Updater::record_applied($local_slug ?? $slug, $name,
+            (string) ($upd['version'] ?? ''), (string) ($local['version'] ?? ''), 'manual');
+
         if ($type === 'plugin' && method_exists($upgrader, 'plugin_info')) {
             $file = $upgrader->plugin_info();
             if ($file && ! is_plugin_active($file)) {
@@ -397,6 +400,7 @@ class EzIT_Marketplace
                             && version_compare((string) ($item['version'] ?? '0'), $local_ver, '>');
                         ?>
                         <div class="ezit-card">
+                            <div class="ezit-card__shot">
                             <?php if (! empty($item['thumb'])) : ?>
                                 <img class="ezit-card-thumb" src="<?php echo esc_url($item['thumb']); ?>" alt="">
                             <?php else :
@@ -409,6 +413,15 @@ class EzIT_Marketplace
                                     <?php if (trim((string) ($item['name'] ?? '')) !== '') : ?><span><?php echo esc_html((string) $item['name']); ?></span><?php endif; ?>
                                 </div>
                             <?php endif; ?>
+                            <?php if ($local_slug !== null) : ?>
+                                <label class="ezit-card__veropen" for="<?php echo esc_attr('ezit-vm-' . $local_slug); ?>"
+                                       title="<?php esc_attr_e('Install any published release — picks older versions pin against forced updates', 'ezit-core'); ?>">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                                    <?php esc_html_e('Version history', 'ezit-core'); ?>
+                                    <?php if ($pinned) : ?><em><?php esc_html_e('· pinned', 'ezit-core'); ?></em><?php endif; ?>
+                                </label>
+                            <?php endif; ?>
+                            </div>
                             <strong><?php echo esc_html($item['name'] ?? '—'); ?></strong>
                             <span class="ezit-meta">
                                 <?php echo esc_html(($item['type'] ?? 'product') . ' · v' . (($item['version'] ?? '') ?: '—') . ' · ' . ($item['category'] ?? 'generic')); ?>
@@ -468,11 +481,6 @@ class EzIT_Marketplace
                                 $ver_err   = $this->core->updater()->versions_error();
                                 $vm_id     = 'ezit-vm-' . $local_slug;
                             ?>
-                                <label class="ezit-btn ezit-btn--ghost ezit-versions-open" for="<?php echo esc_attr($vm_id); ?>">
-                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                                    <?php printf(esc_html__('Versions · v%s', 'ezit-core'), esc_html($local_ver ?? '?')); ?>
-                                    <?php if ($pinned) : ?><em class="ezit-versions-open__pin"><?php esc_html_e('pinned', 'ezit-core'); ?></em><?php endif; ?>
-                                </label>
                                 <?php ob_start(); ?>
                                 <input type="checkbox" class="ezit-vm__toggle" id="<?php echo esc_attr($vm_id); ?>">
                                 <div class="ezit-vm">
@@ -548,7 +556,16 @@ class EzIT_Marketplace
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <?php echo $ezit_vm_modals; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — fully escaped at build time ?>
+                <?php
+                // Print modals at admin_footer — top-level in the DOM, so
+                // no animated-panel stacking context can tuck them behind
+                // the sticky top bar.
+                if ($ezit_vm_modals !== '') {
+                    add_action('admin_footer', static function () use ($ezit_vm_modals): void {
+                        echo $ezit_vm_modals; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — fully escaped at build time
+                    }, 5);
+                }
+                ?>
             <?php endif; ?>
         </div>
         <?php

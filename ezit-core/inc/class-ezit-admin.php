@@ -35,6 +35,7 @@ class EzIT_Admin
         add_action('admin_post_ezit_market_install', [$this, 'handle_market_install']);
         add_action('admin_post_ezit_version',    [$this, 'handle_version']);
         add_action('admin_post_ezit_unpin',      [$this, 'handle_unpin']);
+        add_action('admin_post_ezit_clear_applied', [$this, 'handle_clear_applied']);
         add_action('wp_ajax_ezit_maillog',       [$this, 'handle_maillog']);
         add_action('wp_ajax_ezit_forced_apply',  [$this, 'handle_forced_apply']);
         add_action('admin_post_ezit_maillog_view', [$this, 'handle_maillog_view']);
@@ -833,7 +834,38 @@ class EzIT_Admin
                 )
             );
         }
+        // Applied-update report — our own pages render the log as a
+        // card inside the layout; everywhere else gets a WP notice so
+        // an overnight auto-update is never invisible.
+        $applied = EzIT_Updater::applied_log();
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if ($applied && ! ($screen && str_contains($screen->id ?? '', 'ezit'))) {
+            $items = [];
+            foreach (array_slice($applied, 0, 3) as $row) {
+                $items[] = sprintf(
+                    /* translators: 1: product name, 2: version, 3: human time */
+                    __('%1$s updated to v%2$s — %3$s ago', 'ezit-core'),
+                    esc_html((string) ($row['name'] ?? $row['slug'] ?? '?')),
+                    esc_html((string) ($row['to'] ?? '?')),
+                    esc_html(human_time_diff((int) ($row['at'] ?? time()), time()))
+                );
+            }
+            $extra = count($applied) > 3
+                ? sprintf(
+                    /* translators: %d: number of additional applied updates */
+                    __(' (+ %d more)', 'ezit-core'), count($applied) - 3) : '';
+            printf(
+                '<div class="notice notice-info"><p><strong>%s</strong> %s%s &nbsp;'
+                . '<a href="%s">%s</a> &middot; <a href="%s">%s</a></p></div>',
+                esc_html__('Ez IT:', 'ezit-core'),
+                esc_html(implode(' · ', $items)),
+                esc_html($extra),
+                esc_url(admin_url('admin.php?page=ezit-core')),
+                esc_html__('Open dashboard', 'ezit-core'),
+                esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_clear_applied'), 'ezit_applied', 'ezit_applied_nonce')),
+                esc_html__('Dismiss', 'ezit-core')
+            );
+        }
         if ($screen && str_contains($screen->id ?? '', 'ezit')) {
             return; // our own pages show status inline
         }
@@ -871,6 +903,16 @@ class EzIT_Admin
              <style>.ezit-outage-stripe a{color:#fff;text-decoration:underline}</style>',
             wp_kses_post($html)
         );
+    }
+
+    /** Dismiss the applied-updates log — same banner everywhere. */
+    public function handle_clear_applied(): void
+    {
+        $this->guard('ezit_applied', 'ezit_applied_nonce');
+        delete_option('ezit_applied');
+        $back = wp_get_referer();
+        wp_safe_redirect($back ?: admin_url('admin.php?page=ezit-core'));
+        exit;
     }
 
     private function guard(string $action, string $nonce_field): void

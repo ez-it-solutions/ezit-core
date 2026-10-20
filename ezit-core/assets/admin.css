@@ -586,17 +586,36 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 /* Marketplace (EzIT_Marketplace::render markup) */
 .ezit-pg .ezit-grid h2 { margin: 4px 0 14px; font-size: 17px; font-weight: 700; color: var(--pg-ink); }
 .ezit-pg .ezit-grid h2 ~ h2 { margin-top: 26px; }
-/* Card hover — lift + green ring, matching the installed-theme cards. */
+/* Card hover — border ring + a gentle zoom on the shot only. No lift:
+ * moving the whole card under the cursor felt unstable and broke
+ * visual symmetry in the grid. */
 .ezit-pg .ezit-card {
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    transition: box-shadow .18s ease, border-color .18s ease;
 }
 .ezit-pg .ezit-card:hover {
-    transform: translateY(-4px);
     border-color: rgba(118,185,0,.45);
     box-shadow: 0 14px 30px rgba(20,21,31,.13);
 }
-.ezit-pg .ezit-card .ezit-card-thumb { transition: filter .25s ease; }
-.ezit-pg .ezit-card:hover .ezit-card-thumb { filter: brightness(1.06); }
+.ezit-pg .ezit-card__shot {
+    position: relative; overflow: hidden; border-radius: 10px;
+}
+.ezit-pg .ezit-card .ezit-card-thumb { transition: transform .3s ease, filter .3s ease; }
+.ezit-pg .ezit-card:hover .ezit-card-thumb { transform: scale(1.045); filter: brightness(1.06); }
+/* Versions pill — hidden until the shot is hovered; opens the modal. */
+.ezit-pg .ezit-card__veropen {
+    position: absolute; left: 50%; bottom: 12px; transform: translate(-50%, 8px);
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 999px; cursor: pointer;
+    background: rgba(15,16,24,.78); backdrop-filter: blur(6px);
+    color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+}
+.ezit-pg .ezit-card__veropen em { font-style: normal; color: #b9d67f; }
+.ezit-pg .ezit-card:hover .ezit-card__veropen {
+    opacity: 1; transform: translate(-50%, 0); pointer-events: auto;
+}
+.ezit-pg .ezit-card__veropen:hover { background: rgba(15,16,24,.92); }
 .ezit-pg .ezit-card-thumb {
     width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block;
     border-radius: 10px; background: #14161a;
@@ -905,71 +924,113 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 }
 .ezit-pg .ezt__refresh:hover { background: #2a2c3d; color: #fff; }
 
-/* ── Version-history modal (checkbox toggle — zero JS) ─────────────── */
+/* ── Version-history modal (checkbox toggle — zero JS) ───────────────
+ * Printed at admin_footer — sibling selectors and stacking behave the
+ * same, but no transformed panel ancestor can clip or re-anchor it. */
 .ezit-pg .ezit-badge--pinned {
     background: #f3e8ff; color: #7c3aed; border-color: #d9c7f5;
 }
-.ezit-pg .ezit-versions-open {
-    margin-top: 10px; width: 100%; justify-content: center;
-    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
-}
-.ezit-pg .ezit-versions-open__pin { font-style: normal; color: #7c3aed; font-weight: 700; }
-.ezit-pg .ezit-vm__toggle { display: none; }
-.ezit-pg .ezit-vm { display: none; }
-.ezit-pg .ezit-vm__toggle:checked ~ .ezit-vm { display: block; }
-.ezit-pg .ezit-vm__backdrop {
+.ezit-vm__toggle { display: none; }
+.ezit-vm { display: none; }
+.ezit-vm__toggle:checked ~ .ezit-vm { display: block; }
+.ezit-vm__backdrop {
     position: fixed; inset: 0; z-index: 100100;
     background: rgba(15, 16, 24, .55); backdrop-filter: blur(2px);
     cursor: default;
 }
-.ezit-pg .ezit-vm__card {
+.ezit-vm__card {
     position: fixed; z-index: 100101; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: min(560px, calc(100vw - 48px)); max-height: 82vh; overflow-y: auto;
-    background: #fff; border-radius: 14px; padding: 22px 24px;
+    width: min(470px, calc(100vw - 48px)); max-height: 68vh; overflow-y: auto;
+    background: #fff; border-radius: 14px; padding: 18px 20px;
     box-shadow: 0 24px 64px rgba(10, 12, 24, .35);
 }
-.ezit-pg .ezit-vm__head {
+.ezit-vm__head {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.ezit-pg .ezit-vm__head h3 { margin: 0; font-size: 16px; font-weight: 800; }
-.ezit-pg .ezit-vm__x {
+.ezit-vm__head h3 { margin: 0; font-size: 15px; font-weight: 800; color: #14151f; }
+.ezit-vm__x {
     cursor: pointer; width: 28px; height: 28px; border-radius: 8px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 18px; color: var(--pg-muted);
+    font-size: 18px; color: #8b8e99;
 }
-.ezit-pg .ezit-vm__x:hover { background: #f0f2f7; color: var(--pg-ink); }
-.ezit-pg .ezit-vm__sub {
+.ezit-vm__x:hover { background: #f0f2f7; color: #14151f; }
+.ezit-vm__sub {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    margin: 6px 0 4px; font-size: 12.5px; color: var(--pg-muted);
+    margin: 6px 0 4px; font-size: 12.5px; color: #5c5f6b;
 }
-.ezit-pg .ezit-vm__empty { font-size: 13px; color: var(--pg-muted); margin: 14px 0 6px; }
-.ezit-pg .ezit-vm__list {
-    list-style: none; margin: 12px 0 0; padding: 0;
+.ezit-vm__empty { font-size: 13px; color: #5c5f6b; margin: 14px 0 6px; }
+.ezit-vm__list {
+    list-style: none; margin: 10px 0 0; padding: 0;
     display: flex; flex-direction: column;
 }
-.ezit-pg .ezit-vm__row {
-    display: grid; grid-template-columns: 130px 1fr auto; gap: 12px;
-    align-items: center; padding: 10px 4px; border-top: 1px solid #eef0f5;
+.ezit-vm__row {
+    display: grid; grid-template-columns: 108px 1fr auto; gap: 10px;
+    align-items: center; padding: 9px 2px; border-top: 1px solid #eef0f5;
 }
-.ezit-pg .ezit-vm__row.is-current { background: #f6f8ec; margin: 0 -8px; padding-left: 12px; padding-right: 12px; border-radius: 8px; }
-.ezit-pg .ezit-vm__ver { display: flex; flex-direction: column; gap: 2px; }
-.ezit-pg .ezit-vm__ver .ezit-meta { font-size: 11.5px; color: var(--pg-muted); }
-.ezit-pg .ezit-vm__ver .ezit-badge { margin-right: 4px; }
-.ezit-pg .ezit-badge.is-tag {
+.ezit-vm__row.is-current { background: #f6f8ec; margin: 0 -8px; padding-left: 10px; padding-right: 10px; border-radius: 8px; }
+.ezit-vm__ver { display: flex; flex-direction: column; gap: 2px; }
+.ezit-vm__ver .ezit-meta { font-size: 11px; color: #8b8e99; }
+.ezit-vm__ver .ezit-badge { margin-right: 4px; }
+.ezit-badge.is-tag {
     background: #eef1f6; color: #4c5160; border-color: #dde1ea;
-    font-size: 10.5px; padding: 1px 7px;
+    font-size: 10px; padding: 1px 7px;
 }
-.ezit-pg .ezit-vm__sum {
-    font-size: 12.5px; color: #3a3d4a; line-height: 1.45;
+.ezit-vm__sum {
+    font-size: 12px; color: #3a3d4a; line-height: 1.45;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden;
 }
-.ezit-pg .ezit-vm__act .ezit-btn { padding: 7px 14px; font-size: 12.5px; }
-.ezit-pg .ezit-vm__note {
-    margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed var(--pg-line);
-    font-size: 12px; color: var(--pg-muted); line-height: 1.5;
+.ezit-vm__act .ezit-btn { padding: 7px 14px; font-size: 12.5px; }
+/* Modal lives outside .ezit-pg — buttons/badges need their own rules. */
+.ezit-vm .ezit-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 9px 16px; border-radius: 9px; border: 0; cursor: pointer;
+    background: #14151f; color: #fff; font-size: 12.5px; font-weight: 700;
+    font-family: inherit; text-decoration: none; transition: background .15s ease;
 }
+.ezit-vm .ezit-btn:hover { background: #2a2c3d; }
+.ezit-vm .ezit-badge {
+    display: inline-block; font-size: 10px; font-weight: 800;
+    letter-spacing: .05em; text-transform: uppercase;
+    padding: 2px 9px; border-radius: 999px;
+    border: 1px solid #dcdde6; background: #fff; color: #5c5f6b;
+}
+.ezit-vm .ezit-badge.is-active { background: #e9f4d4; color: #3f6212; border-color: #cbe3a4; }
+.ezit-vm .ezit-badge--pinned { background: #f3e8ff; color: #7c3aed; border-color: #d9c7f5; text-transform: none; letter-spacing: 0; }
+.ezit-vm__sub a { color: #3f62c9; }
+.ezit-vm__note {
+    margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed #dcdde6;
+    font-size: 12px; color: #8b8e99; line-height: 1.5;
+}
+
+/* ── Applied-updates strip (ezit_applied log) ──────────────────────── */
+.ezit-applied {
+    margin: 0 0 18px; padding: 14px 18px;
+    background: #fff; border: 1px solid #dcdde6; border-left: 4px solid var(--pg-green);
+    border-radius: 12px;
+}
+.ezit-applied__head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #14151f;
+}
+.ezit-applied__head svg { color: var(--pg-green); }
+.ezit-applied__dismiss {
+    margin-left: auto; font-size: 12px; font-weight: 600;
+    color: #5c5f6b; text-decoration: none;
+}
+.ezit-applied__dismiss:hover { color: #14151f; text-decoration: underline; }
+.ezit-applied ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.ezit-applied li {
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+    padding: 5px 0; border-top: 1px solid #f0f2f7; font-size: 12.5px;
+}
+.ezit-applied li:first-child { border-top: 0; }
+.ezit-applied__name { font-weight: 700; color: #14151f; }
+.ezit-applied__ver { color: #41620f; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ezit-applied li em { font-style: normal; color: #8b8e99; font-size: 11.5px; }
+.ezit-applied li time { margin-left: auto; color: #8b8e99; font-size: 11.5px; }
+.ezit-applied__more { color: #8b8e99; }
 
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {

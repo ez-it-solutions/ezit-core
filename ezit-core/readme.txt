@@ -136,11 +136,18 @@ flag.
 == Changelog ==
 
 = 1.5.13 =
-* Version history is now a proper modal per card — releases list with
-  version/date/badges/summary and per-row Install or Downgrade; the
-  current release is marked, pinned products show the pin state and a
-  Resume link inline. Modals render outside the card tree so the card
-  hover transform can't corrupt fixed positioning
+* Updates are no longer invisible — every applied install (auto/forced,
+  marketplace button, version picker) is logged to an "Updates applied"
+  strip shown on every Ez IT tab and as a WP notice everywhere else
+  until dismissed (name, from → to, how, when)
+* Version history is a modal opened from a hover pill on the card
+  thumbnail — release rows with version/date/badges/summary and
+  per-row Install or Downgrade, Current marked, pin state + Resume
+  inline. Cards stay symmetrical (nothing new in the card body) and
+  the modal prints at admin_footer so the sticky top bar can never
+  cover it
+* Card hover no longer lifts the card — the green border stays and
+  the thumbnail gets a gentle zoom instead
 * Empty release history now reports WHY — the real API error (auth,
   transport, unknown endpoint) instead of a blanket "no releases" note,
   and the reason is cached alongside the list for 15 min

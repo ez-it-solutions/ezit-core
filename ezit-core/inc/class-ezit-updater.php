@@ -603,6 +603,8 @@ class EzIT_Updater
 
         if ($result === true || is_array($result)) {
             $this->clear_pending($slug);
+            self::record_applied($slug, (string) ($product['name'] ?? $slug),
+                (string) $info['version'], (string) ($product['version'] ?? ''), 'auto');
             return true;
         }
         return $result instanceof WP_Error ? $result
@@ -801,6 +803,41 @@ class EzIT_Updater
         $this->clear_pending($slug);
         $this->updates[$slug] = null;
 
+        self::record_applied($slug, (string) ($product['name'] ?? $slug),
+            $version, (string) ($product['version'] ?? ''), 'picker');
+
         return true;
+    }
+
+    /**
+     * Append to the applied-updates log (option ezit_applied, newest
+     * first, capped at 12). The Ez IT pages render this as a
+     * dismissible "we updated something" strip, and admin_notices
+     * echoes it everywhere else — silent auto-updates were invisible
+     * before; the version number changing was the only evidence.
+     */
+    public static function record_applied(string $slug, string $name, string $to, string $from = '', string $how = 'auto'): void
+    {
+        $list = get_option('ezit_applied', []);
+        $list = is_array($list) ? $list : [];
+        // Re-applying the same release (retry after a hiccup) shouldn't
+        // stack duplicate rows.
+        foreach ($list as $i => $row) {
+            if (($row['slug'] ?? '') === $slug && ($row['to'] ?? '') === $to) {
+                unset($list[$i]);
+            }
+        }
+        array_unshift($list, [
+            'slug' => $slug, 'name' => $name, 'to' => $to,
+            'from' => $from, 'how' => $how, 'at' => time(),
+        ]);
+        update_option('ezit_applied', array_slice(array_values($list), 0, 12), false);
+    }
+
+    /** The applied-updates log — shared by the banner + admin notices. */
+    public static function applied_log(): array
+    {
+        $list = get_option('ezit_applied', []);
+        return is_array($list) ? $list : [];
     }
 }

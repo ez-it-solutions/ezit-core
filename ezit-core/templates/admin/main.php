@@ -67,6 +67,49 @@ if (preg_match('/--panel-muted:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
     <main class="pg-main">
         <?php echo $flash; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — built/escaped in flash() ?>
 
+        <?php
+        // Applied-update report — a forced rollout used to be invisible:
+        // the files swapped and only the version number changed. Anything
+        // in the log shows here on every tab until dismissed.
+        $ezit_applied = EzIT_Updater::applied_log();
+        if ($ezit_applied) :
+            $how_label = [
+                'auto'   => __('auto-update', 'ezit-core'),
+                'manual' => __('marketplace', 'ezit-core'),
+                'picker' => __('version picker', 'ezit-core'),
+            ];
+        ?>
+        <div class="ezit-applied" role="status">
+            <div class="ezit-applied__head">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                <strong><?php esc_html_e('Updates applied', 'ezit-core'); ?></strong>
+                <a class="ezit-applied__dismiss"
+                   href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_clear_applied'), 'ezit_applied', 'ezit_applied_nonce')); ?>">
+                    <?php esc_html_e('Dismiss', 'ezit-core'); ?>
+                </a>
+            </div>
+            <ul>
+                <?php foreach (array_slice($ezit_applied, 0, 6) as $row) : ?>
+                <li>
+                    <span class="ezit-applied__name"><?php echo esc_html((string) ($row['name'] ?? $row['slug'] ?? '?')); ?></span>
+                    <span class="ezit-applied__ver">
+                        <?php
+                        echo ($row['from'] ?? '') !== ''
+                            ? esc_html(sprintf('v%s → v%s', $row['from'], $row['to'] ?? '?'))
+                            : esc_html('v' . (string) ($row['to'] ?? '?'));
+                        ?>
+                    </span>
+                    <em><?php echo esc_html($how_label[$row['how'] ?? ''] ?? __('installed', 'ezit-core')); ?></em>
+                    <time><?php echo esc_html(human_time_diff((int) ($row['at'] ?? time()), time())) . ' ' . esc_html__('ago', 'ezit-core'); ?></time>
+                </li>
+                <?php endforeach; ?>
+                <?php if (count($ezit_applied) > 6) : ?>
+                <li class="ezit-applied__more"><?php printf(esc_html__('…and %d more', 'ezit-core'), count($ezit_applied) - 6); ?></li>
+                <?php endif; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
+
         <div class="pg-grid">
 
             <!-- ── Tab component — same defaults as plugin.html ──── -->
