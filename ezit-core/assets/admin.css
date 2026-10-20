@@ -885,6 +885,44 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-check input[type="checkbox"] { margin: 0; }
 .ezit-pg .ezit-check .ezit-meta { font-weight: 400; color: #8b8e99; }
 
+/* Marketplace title row — Refresh lives beside the page heading */
+.ezit-pg .ezt__head-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 0 0 18px;
+}
+.ezit-pg .ezt__head-row .ezt__heading { margin: 0; }
+.ezit-pg .ezt__refresh {
+    display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+    padding: 10px 18px; border-radius: 9px; text-decoration: none;
+    background: var(--pg-ink); color: #fff; font-size: 13.5px; font-weight: 700;
+    transition: background .2s ease;
+}
+.ezit-pg .ezt__refresh:hover { background: #2a2c3d; color: #fff; }
+
+/* ── Version picker + pinned badge ────────────────────────────────── */
+.ezit-pg .ezit-badge--pinned {
+    background: #f3e8ff; color: #7c3aed; border-color: #d9c7f5;
+}
+.ezit-pg .ezit-versions {
+    margin-top: 10px; border-top: 1px dashed var(--pg-line); padding-top: 8px;
+}
+.ezit-pg .ezit-versions summary {
+    cursor: pointer; font-size: 12px; font-weight: 600; color: #787c82;
+    list-style: none; user-select: none;
+}
+.ezit-pg .ezit-versions summary::before {
+    content: '\25B8'; margin-right: 6px; font-size: 10px;
+}
+.ezit-pg .ezit-versions[open] summary::before { content: '\25BE'; }
+.ezit-pg .ezit-versions summary em { font-style: normal; color: #7c3aed; }
+.ezit-pg .ezit-versions form {
+    display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;
+}
+.ezit-pg .ezit-versions select {
+    flex: 1; min-width: 0; padding: 5px 8px; font-size: 12.5px;
+    border: 1px solid var(--pg-line); border-radius: 6px; background: #fff;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .ezit-pg .pg-grid { grid-template-columns: 1fr; }

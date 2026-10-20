@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.1
+Stable tag: 1.5.12
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -135,7 +135,17 @@ flag.
 
 == Changelog ==
 
-= 1.5.1 =
+= 1.5.12 =
+* Marketplace: Refresh button moved up beside the page title — the
+  catalog "Fetched N ago" stamp stays inline with the card grid
+* Version picker now stays visible on every installed product — when
+  the server can't serve release history it says so inside the
+  dropdown instead of hiding the control entirely
+* License server: releases can be disabled (invisible to check_update,
+  /api/versions and downloads, record kept) and forced rollouts can be
+  scoped to specific site domains (updates.force_targets)
+
+= 1.5.11 =
 * Forced updates could report "up_to_date" and fail: apply_update()
   relied on wp_update_plugins()/wp_update_themes() to rebuild the
   transient, which can skip firing the inject filter on a fresh
@@ -145,6 +155,20 @@ flag.
   event scheduled at plugins_loaded ran wp_get_schedules(), firing the
   cron_schedules filter's __() before init. Scheduling is deferred
   to init
+* Version history on marketplace cards: a Versions dropdown on any
+  installed product lists every published release (date, forced flag)
+  and can install it — upgrades and downgrades alike — via the same
+  licensed download path as normal updates
+* Choosing anything but the newest release pins the product: forced
+  updates, update badges, and the WP update transient all skip it until
+  "Resume updates" is clicked (card or Settings → Updates). Picking the
+  newest release unpins automatically
+* EZIT_PIN_PRODUCTS in wp-config.php pins products before files are
+  even swapped — the escape hatch for debugging on a manually installed
+  older version
+* License server: new /api/versions endpoint returns the release
+  history powering the picker; any listed release remains downloadable
+  through the existing download_update route
 
 = 1.5.0 =
 * Toasts moved to top-center below the admin bar — the top-right slot

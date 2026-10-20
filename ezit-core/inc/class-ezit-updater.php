@@ -17,6 +17,8 @@ class EzIT_Updater
     private const CACHE_TTL = 12 * HOUR_IN_SECONDS;
     /** Option: slug => {type, update_id, version} awaiting a forced apply. */
     private const PENDING_OPT = 'ezit_forced_pending';
+    /** Option: slug => true — products pinned to a chosen version. */
+    private const PIN_OPT = 'ezit_pinned';
 
     private EzIT_Core $core;
     private EzIT_Licensing $licensing;
@@ -158,7 +160,7 @@ class EzIT_Updater
         }
 
         foreach ($this->core->products() as $slug => $product) {
-            if (($product['type'] ?? 'theme') !== 'theme') {
+            if (($product['type'] ?? 'theme') !== 'theme' || self::is_pinned($slug)) {
                 continue;
             }
             $info = $this->check($slug, $product);
@@ -194,7 +196,7 @@ class EzIT_Updater
         }
 
         foreach ($this->core->products() as $slug => $product) {
-            if (($product['type'] ?? 'theme') !== 'plugin') {
+            if (($product['type'] ?? 'theme') !== 'plugin' || self::is_pinned($slug)) {
                 continue;
             }
             $file = $this->plugin_file($slug, $product);
@@ -270,6 +272,9 @@ class EzIT_Updater
         $product = $this->core->product($slug);
         if (! $product) {
             return null;
+        }
+        if (self::is_pinned($slug)) {
+            return null; // pinned — badges stay quiet, only the picker acts
         }
         $info = $this->check(sanitize_key($slug), $product, $fresh);
         if ($info && version_compare($info['version'], $product['version'] ?: '0', '>')) {
@@ -383,7 +388,8 @@ class EzIT_Updater
     private function maybe_force(string $slug, string $type, array $info, bool $now = false): void
     {
         if (empty($info['forced']) || empty($info['update_id'])
-            || $this->applying || self::forced_ignored($slug)) {
+            || $this->applying || self::forced_ignored($slug)
+            || self::is_pinned($slug)) {
             return;
         }
         $key = 'ezit_force_' . sanitize_key($info['update_id']);
@@ -425,6 +431,47 @@ class EzIT_Updater
         return in_array('all', $ig, true) || in_array($slug, $ig, true);
     }
 
+    // ── version pins ────────────────────────────────────────────────
+
+    /**
+     * Products pinned to a manually-chosen version — auto paths (forced
+     * releases, update badges, the WP transient) all skip them; only an
+     * explicit pick in the Marketplace moves the files. The option
+     * survives plugin-file swaps; EZIT_PIN_PRODUCTS ('slug,slug' or
+     * array) in wp-config.php pins products before the new build even
+     * runs — the debug-install escape hatch.
+     */
+    public static function pin_list(): array
+    {
+        $pinned = array_keys(array_filter(
+            (array) get_option(self::PIN_OPT, [])));
+        if (defined('EZIT_PIN_PRODUCTS')) {
+            $extra = is_array(EZIT_PIN_PRODUCTS)
+                ? EZIT_PIN_PRODUCTS
+                : explode(',', (string) EZIT_PIN_PRODUCTS);
+            $pinned = array_merge($pinned, array_map('trim', $extra));
+        }
+        return array_values(array_unique(array_filter(array_map('strval', $pinned))));
+    }
+
+    /** Is this product held at its current version? */
+    public static function is_pinned(string $slug): bool
+    {
+        return in_array($slug, self::pin_list(), true);
+    }
+
+    /** Pin/unpin a product (UI path — the constant always wins). */
+    public static function set_pinned(string $slug, bool $pin): void
+    {
+        $pinned = (array) get_option(self::PIN_OPT, []);
+        if ($pin) {
+            $pinned[$slug] = true;
+        } else {
+            unset($pinned[$slug]);
+        }
+        update_option(self::PIN_OPT, $pinned, false);
+    }
+
     /**
      * A forced release waiting to be applied, or null. Called when an
      * admin opens any Ez IT page — the reliable trigger, since WP-Cron
@@ -447,8 +494,8 @@ class EzIT_Updater
         foreach ($pending as $slug => $p) {
             $slug    = (string) $slug;
             $product = $this->core->product($slug);
-            // Gone, ignored, or burned its three attempts — drop it.
-            if (! $product || self::forced_ignored($slug)
+            // Gone, ignored, pinned, or burned its three attempts — drop it.
+            if (! $product || self::forced_ignored($slug) || self::is_pinned($slug)
                 || (int) get_option('ezit_force_' . sanitize_key((string) ($p['update_id'] ?? '')), 0) >= 3) {
                 unset($pending[$slug]);
                 $changed = true;
@@ -512,14 +559,14 @@ class EzIT_Updater
         if (! $product) {
             return new WP_Error('ezit_no_product', 'Unknown product.');
         }
-        if (self::forced_ignored($slug)) {
+        if (self::forced_ignored($slug) || self::is_pinned($slug)) {
             $this->clear_pending($slug);
-            return new WP_Error('ezit_ignored',
-                'Forced updates are disabled for this product on this site.');
+            return new WP_Error('ezit_optout',
+                'This product is exempt from forced updates on this site.');
         }
         $info = $this->check($slug, $product, true);
-        if (! $info || empty($info['forced'])
-            || ! version_compare($info['version'], $product['version'] ?: '0', '>')) {
+        if (! $info || empty($info['forced']) || empty($info['update_id'])
+            || ! version_compare((string) $info['version'], $product['version'] ?: '0', '>')) {
             $this->clear_pending($slug); // retracted or already applied
             return new WP_Error('ezit_not_forced', 'No forced update is pending.');
         }
@@ -607,5 +654,132 @@ class EzIT_Updater
         ];
         set_site_transient('update_themes', $tr);
         return $stylesheet;
+    }
+
+    // ── version history + pin-to-version installs ───────────────────
+
+    /**
+     * Published release history for the Marketplace version picker —
+     * newest first. Cached 15 min per product (same cadence as the
+     * forced sweep); Marketplace Refresh busts it.
+     *
+     * @return array<int,array{update_id:string,version:string,release_date:string,summary:?string,forced:bool}>
+     */
+    public function versions_for(string $slug, bool $fresh = false): array
+    {
+        $slug    = sanitize_key($slug);
+        $product = $this->core->product($slug);
+        if (! $product) {
+            return [];
+        }
+
+        $self = ! empty($product['self']);
+        if ($self && ($product['product_id'] === '' || ($product['api_key'] ?? '') === '')) {
+            $product = array_merge($product, array_filter($this->core->self_credentials()));
+        }
+        if ($product['product_id'] === '') {
+            return [];
+        }
+
+        $cache = 'ezit_versions_' . $slug;
+        if (! $fresh) {
+            $cached = get_transient($cache);
+            if (is_array($cached)) {
+                return $cached;
+            }
+        }
+
+        $res = EzIT_API::post('versions', $product, [
+            'product_id' => $product['product_id'],
+        ]);
+        $versions = (! is_wp_error($res) && ! empty($res['status']))
+            ? array_values((array) ($res['versions'] ?? []))
+            : [];
+
+        set_transient($cache, $versions, 15 * MINUTE_IN_SECONDS);
+        return $versions;
+    }
+
+    /**
+     * Install a specific published release — upgrade or downgrade.
+     * Downloads the package by update_id under the same license rules
+     * as a normal update, then runs WP's overwrite-install (the exact
+     * flow the Marketplace "Install" button uses). Callers decide on
+     * pinning — this just puts the chosen files in place.
+     *
+     * @return true|WP_Error
+     */
+    public function install_version(string $slug, string $update_id)
+    {
+        $slug    = sanitize_key($slug);
+        $product = $this->core->product($slug);
+        if (! $product) {
+            return new WP_Error('ezit_no_product', 'Unknown product.');
+        }
+
+        // The picker only offers IDs the server listed — refuse anything
+        // else so a tampered form can't fetch an arbitrary package.
+        $version = '';
+        foreach ($this->versions_for($slug, true) as $row) {
+            if ((string) ($row['update_id'] ?? '') === $update_id) {
+                $version = (string) ($row['version'] ?? '');
+                break;
+            }
+        }
+        if ($version === '') {
+            return new WP_Error('ezit_bad_release', 'That release is not published for this product.');
+        }
+
+        $lic  = $this->licensing->license($slug);
+        $self = ! empty($product['self']);
+        if ($self && (($product['api_key'] ?? '') === '' || ($product['product_id'] ?? '') === '')) {
+            $product = array_merge($product, array_filter($this->core->self_credentials()));
+        }
+        if (! $self && (! $lic || empty($lic['license_file']))) {
+            return new WP_Error('ezit_unlicensed', 'This product is not licensed.');
+        }
+
+        $tmp = EzIT_API::download('download_update/main/' . rawurlencode($update_id), $product, [
+            'product_id'   => $product['product_id'],
+            'license_file' => $lic['license_file'] ?? '',
+        ]);
+        if (is_wp_error($tmp)) {
+            return $tmp;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/misc.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+        $type     = (string) ($product['type'] ?? 'theme');
+        $upgrader = $type === 'plugin' ? new Plugin_Upgrader() : new Theme_Upgrader();
+        ob_start();
+        $ok = $upgrader->install($tmp, [
+            'overwrite_package' => true,
+            'clear_destination' => true,
+        ]);
+        ob_end_clean();
+        @unlink($tmp);
+
+        if ($ok !== true) {
+            return is_wp_error($ok) ? $ok
+                : new WP_Error('ezit_install_failed', 'The package could not be installed.');
+        }
+
+        // A plugin install can deactivate the target — put it back.
+        if ($type === 'plugin' && method_exists($upgrader, 'plugin_info')) {
+            $file = $upgrader->plugin_info();
+            if ($file && ! is_plugin_active($file)) {
+                activate_plugin($file);
+            }
+        }
+
+        // Whatever this site thought it knew about "latest" is stale.
+        delete_transient('ezit_update_' . $slug);
+        delete_transient('ezit_versions_' . $slug);
+        $this->clear_pending($slug);
+        $this->updates[$slug] = null;
+
+        return true;
     }
 }

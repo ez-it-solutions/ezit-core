@@ -298,6 +298,7 @@ class EzIT_Marketplace
             // published release invisible after the catalog reloads.
             foreach ($products as $slug => $p) {
                 delete_transient('ezit_update_' . $slug);
+                delete_transient('ezit_versions_' . $slug);
             }
             delete_transient('ezit_forced_sweep');
         }
@@ -352,10 +353,6 @@ class EzIT_Marketplace
                             <?php esc_html_e('— showing the cached copy (server unreachable)', 'ezit-core'); ?>
                         <?php endif; ?>
                     </span>
-                    <a class="ezit-btn ezit-btn--ghost" href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=ezit-core&tab=marketplace&ezit_refresh=1'), 'ezit_refresh')); ?>">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-                        <?php esc_html_e('Refresh', 'ezit-core'); ?>
-                    </a>
                 </span>
             </h2>
             <?php if (! $catalog) : ?>
@@ -371,9 +368,11 @@ class EzIT_Marketplace
                         // Match the locally registered product (same product_id)
                         // so we can flag when the catalog is ahead.
                         $local = null;
-                        foreach ($products as $lp) {
+                        $local_slug = null;
+                        foreach ($products as $lslug => $lp) {
                             if (($lp['product_id'] ?? '') !== '' && ($lp['product_id'] ?? '') === ($item['product_id'] ?? '')) {
                                 $local = $lp;
+                                $local_slug = $lslug;
                                 break;
                             }
                         }
@@ -386,6 +385,10 @@ class EzIT_Marketplace
                         $installed = ! empty($item['installed']) || $local !== null || $is_self;
                         $local_ver = $local !== null ? (string) ($local['version'] ?? '0')
                                    : ($is_self ? EZIT_CORE_VERSION : null);
+                        if ($local_slug === null && $is_self) {
+                            $local_slug = 'ezit-core'; // self always registers
+                        }
+                        $pinned    = $local_slug !== null && EzIT_Updater::is_pinned($local_slug);
                         $newer = $local_ver !== null
                             && version_compare((string) ($item['version'] ?? '0'), $local_ver, '>');
                         ?>
@@ -417,7 +420,14 @@ class EzIT_Marketplace
                                         : esc_html(isset($item['price']) ? '$' . number_format((float) $item['price'], 2) : __('Paid', 'ezit-core')));
                                     ?>
                                 </span>
-                                <?php if ($newer) : ?>
+                                <?php if ($pinned) : ?>
+                                    <span class="ezit-badge ezit-badge--pinned">
+                                        <?php esc_html_e('Pinned', 'ezit-core'); ?>
+                                    </span>
+                                    <a class="ezit-btn ezit-btn--ghost" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_unpin&slug=' . $local_slug . '&from=marketplace'), 'ezit_unpin', 'ezit_unpin_nonce')); ?>">
+                                        <?php esc_html_e('Resume updates', 'ezit-core'); ?>
+                                    </a>
+                                <?php elseif ($newer) : ?>
                                     <span class="ezit-badge is-update">
                                         <?php printf(esc_html__('Update &rarr; v%s', 'ezit-core'), esc_html((string) $item['version'])); ?>
                                     </span>
@@ -444,6 +454,51 @@ class EzIT_Marketplace
                                     </button>
                                 <?php endif; ?>
                             </div>
+                            <?php
+                            // Version picker — any registered product (incl. the
+                            // self plugin) can be moved to a specific published
+                            // release. Picking an older one pins the product so
+                            // a forced update can't roll it straight back.
+                            if ($local_slug !== null) :
+                                $releases = $this->core->updater()->versions_for($local_slug);
+                            ?>
+                                <details class="ezit-versions">
+                                    <summary>
+                                        <?php printf(esc_html__('Versions — running v%s', 'ezit-core'), esc_html($local_ver ?? '?')); ?>
+                                        <?php if ($pinned) : ?><em><?php esc_html_e('(pinned)', 'ezit-core'); ?></em><?php endif; ?>
+                                    </summary>
+                                    <?php if (! $releases) : ?>
+                                        <p class="ezit-meta" style="margin:8px 0 0"><?php
+                                            esc_html_e('No published releases found — the server may not have the versions endpoint yet.', 'ezit-core'); ?></p>
+                                    <?php else : ?>
+                                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                                          onsubmit="return confirm('<?php echo esc_js(__('Install the selected version over the current files? Anything older than the newest release pins the product and suspends auto-updates.', 'ezit-core')); ?>');">
+                                        <input type="hidden" name="action" value="ezit_version">
+                                        <input type="hidden" name="slug" value="<?php echo esc_attr($local_slug); ?>">
+                                        <?php wp_nonce_field('ezit_version', 'ezit_version_nonce'); ?>
+                                        <select name="update_id">
+                                            <?php foreach ($releases as $i => $rel) :
+                                                $rel_ver = (string) ($rel['version'] ?? '');
+                                                $tags = [];
+                                                if ($i === 0) { $tags[] = __('latest', 'ezit-core'); }
+                                                if ($rel_ver === $local_ver) { $tags[] = __('current', 'ezit-core'); }
+                                                if (! empty($rel['forced'])) { $tags[] = __('forced', 'ezit-core'); }
+                                            ?>
+                                                <option value="<?php echo esc_attr((string) ($rel['update_id'] ?? '')); ?>"
+                                                    <?php disabled($rel_ver === $local_ver); ?>>
+                                                    <?php echo esc_html('v' . $rel_ver
+                                                        . (($rel['release_date'] ?? '') !== '' ? ' · ' . $rel['release_date'] : '')
+                                                        . ($tags ? ' — ' . implode(', ', $tags) : '')); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="submit" class="ezit-btn ezit-btn--ghost">
+                                            <?php esc_html_e('Install this version', 'ezit-core'); ?>
+                                        </button>
+                                    </form>
+                                    <?php endif; ?>
+                                </details>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

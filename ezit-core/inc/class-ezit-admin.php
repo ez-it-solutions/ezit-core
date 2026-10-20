@@ -33,6 +33,8 @@ class EzIT_Admin
         add_action('admin_post_ezit_switch_theme', [$this, 'handle_switch_theme']);
         add_action('admin_post_ezit_credit',     [$this, 'handle_credit']);
         add_action('admin_post_ezit_market_install', [$this, 'handle_market_install']);
+        add_action('admin_post_ezit_version',    [$this, 'handle_version']);
+        add_action('admin_post_ezit_unpin',      [$this, 'handle_unpin']);
         add_action('wp_ajax_ezit_maillog',       [$this, 'handle_maillog']);
         add_action('wp_ajax_ezit_forced_apply',  [$this, 'handle_forced_apply']);
         add_action('admin_post_ezit_maillog_view', [$this, 'handle_maillog_view']);
@@ -697,6 +699,74 @@ class EzIT_Admin
         $tab = in_array($_POST['from'] ?? '', ['marketplace', 'themes'], true)
             ? sanitize_key($_POST['from']) : 'marketplace';
         $this->redirect($tab, $res['status'] ? 'installed' : 'error', $res['message']);
+    }
+
+    /**
+     * Marketplace version picker — install a specific published release
+     * (upgrade or downgrade). Picking anything but the newest release
+     * pins the product so a forced update can't immediately undo the
+     * move; picking the newest unpins it.
+     */
+    public function handle_version(): void
+    {
+        $this->guard('ezit_version', 'ezit_version_nonce');
+        $slug      = sanitize_key(wp_unslash($_POST['slug'] ?? ''));
+        $update_id = sanitize_text_field(wp_unslash($_POST['update_id'] ?? ''));
+        $product   = $this->core->product($slug);
+
+        if ($slug === '' || $update_id === '' || ! $product) {
+            $this->redirect('marketplace', 'error', __('Unknown product or release.', 'ezit-core'));
+        }
+
+        $updater  = $this->core->updater();
+        $versions = $updater->versions_for($slug);
+        $chosen   = null;
+        foreach ($versions as $row) {
+            if ((string) ($row['update_id'] ?? '') === $update_id) {
+                $chosen = $row;
+                break;
+            }
+        }
+        if (! $chosen) {
+            $this->redirect('marketplace', 'error',
+                __('That release is not published for this product.', 'ezit-core'));
+        }
+
+        $result = $updater->install_version($slug, $update_id);
+        if (is_wp_error($result)) {
+            $this->redirect('marketplace', 'error', $result->get_error_message());
+        }
+
+        // Newest published release keeps auto-updates on; anything else
+        // pins the install so a forced flag can't roll it straight back.
+        $newest = (string) ($versions[0]['version'] ?? '');
+        $pinned = $newest !== '' && version_compare((string) $chosen['version'], $newest, '<');
+        EzIT_Updater::set_pinned($slug, $pinned);
+
+        $this->redirect('marketplace', 'installed', sprintf(
+            /* translators: 1: product name, 2: version */
+            $pinned
+                ? __('%1$s installed at v%2$s — pinned (auto-updates suspended).', 'ezit-core')
+                : __('%1$s installed at v%2$s.', 'ezit-core'),
+            $product['name'] ?? $slug,
+            $chosen['version']
+        ));
+    }
+
+    /** Resume auto-updates for a pinned product. */
+    public function handle_unpin(): void
+    {
+        $this->guard('ezit_unpin', 'ezit_unpin_nonce');
+        $slug = sanitize_key(wp_unslash($_GET['slug'] ?? ''));
+        if ($slug !== '' && $this->core->product($slug)) {
+            EzIT_Updater::set_pinned($slug, false);
+        }
+        $from = sanitize_key(wp_unslash($_GET['from'] ?? ''));
+        if ($from === 'settings') {
+            $this->redirect('settings', 'saved', '', ['section' => 'updates']);
+        }
+        $this->redirect('marketplace', 'saved',
+            __('Auto-updates resumed.', 'ezit-core'));
     }
 
     // ── helpers ─────────────────────────────────────────────────────

@@ -5,7 +5,7 @@
  * Description: Shared foundation for every Ez IT Solutions theme — licensing,
  *              marketplace, updates and support, backed by the Ez IT license
  *              server (license.ez-it-solutions.com, LicenseBox-compatible).
- * Version:     1.5.1
+ * Version:     1.5.12
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Ez IT Solutions
@@ -19,7 +19,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('EZIT_CORE_VERSION', '1.5.1');
+define('EZIT_CORE_VERSION', '1.5.12');
 define('EZIT_CORE_FILE', __FILE__);
 define('EZIT_CORE_PATH', plugin_dir_path(__FILE__));
 define('EZIT_CORE_INC',  EZIT_CORE_PATH . 'inc/');
@@ -42,6 +42,16 @@ if (! defined('EZIT_CORE_PRODUCT_ID')) {
 }
 if (! defined('EZIT_CORE_PRODUCT_KEY')) {
     define('EZIT_CORE_PRODUCT_KEY', '');
+}
+
+// Debug-install escape hatch: pin products to their on-disk version so
+// nothing — not even a forced release — updates them. Comma-separated
+// slugs or an array: define('EZIT_PIN_PRODUCTS', 'ezit-core'); The same
+// pin can be set/cleared later from Marketplace cards or Settings →
+// Updates; this constant exists because it takes effect before the
+// plugin files are even swapped.
+if (! defined('EZIT_PIN_PRODUCTS')) {
+    define('EZIT_PIN_PRODUCTS', '');
 }
 
 // Load every module in inc/ — sorted for determinism. Modules only

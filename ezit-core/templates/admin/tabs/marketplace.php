@@ -13,7 +13,13 @@ if (! defined('ABSPATH')) {
     </span>
     <span class="ezt__brand-name"><?php esc_html_e('Marketplace', 'ezit-core'); ?></span>
 </div>
-<h2 class="ezt__heading" data-ezt-anim><?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?></h2>
+<div class="ezt__head-row" data-ezt-anim>
+    <h2 class="ezt__heading"><?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?></h2>
+    <a class="ezit-btn ezt__refresh" href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=ezit-core&tab=marketplace&ezit_refresh=1'), 'ezit_refresh')); ?>">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        <?php esc_html_e('Refresh', 'ezit-core'); ?>
+    </a>
+</div>
 <p class="ezt__text" data-ezt-anim>
     <?php esc_html_e('Every Ez IT theme, plugin and product — installed on this site and available in the catalog.', 'ezit-core'); ?>
 </p>
