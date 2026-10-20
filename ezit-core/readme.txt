@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.17
+Stable tag: 1.5.18
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,13 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.18 =
+* Toast is now a dark pill — ink background, white text, green check
+  icon (soft red on errors) — readable on any page instead of
+  dark-on-green
+* Refresh icon sits on the text baseline no longer — display:block
+  centers it and stops the busy spin from stretching the button
 
 = 1.5.17 =
 * Card footers are real footers — the Installed / Update / pinned

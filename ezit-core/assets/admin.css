@@ -263,35 +263,30 @@
 /* Breathing room when panel content follows the component footer row. */
 .ezit-pg .ezt__footer:not(:last-child) { margin-bottom: 22px; }
 
-/* ── Flash / toast — bottom-right, unmistakable, self-dismisses ───── */
+/* ── Flash / toast — bottom-right dark pill, self-dismisses ─────── */
 .ezit-pg .ezit-flash {
     position: fixed; right: 26px; bottom: 26px; z-index: 100001;
-    display: flex; align-items: center; gap: 11px;
+    display: flex; align-items: center; gap: 10px;
     max-width: min(420px, calc(100vw - 40px));
-    margin: 0; padding: 14px 16px 14px 18px;
-    background: var(--pg-green); color: var(--pg-dark); border: 0;
-    border-radius: 12px; box-shadow: 0 12px 36px rgba(46,73,0,.4), 0 2px 0 rgba(0,0,0,.05);
+    margin: 0; padding: 13px 16px;
+    background: var(--pg-ink); color: #fff; border: 0;
+    border-radius: 12px; box-shadow: 0 12px 36px rgba(10,12,24,.4), 0 0 0 1px rgba(255,255,255,.06);
     font-size: 14px; font-weight: 600;
     animation: ezit-toast-in .28s cubic-bezier(.21,1.02,.73,1);
     transition: opacity .3s ease, transform .3s ease;
 }
 .ezit-pg .ezit-flash.is-out { opacity: 0; transform: translateY(16px); }
-.ezit-pg .ezit-flash > svg { flex-shrink: 0; color: var(--pg-dark); }
-.ezit-pg .ezit-flash.is-err {
-    background: #b3483a; color: #fff;
-    box-shadow: 0 12px 36px rgba(122,28,20,.42), 0 2px 0 rgba(0,0,0,.05);
-}
-.ezit-pg .ezit-flash.is-err > svg { color: #fff; }
+.ezit-pg .ezit-flash > svg { flex-shrink: 0; color: var(--pg-green); }
+.ezit-pg .ezit-flash.is-err { box-shadow: 0 12px 36px rgba(10,12,24,.4), 0 0 0 1px rgba(255,255,255,.06); }
+.ezit-pg .ezit-flash.is-err > svg { color: #ff9c8f; }
 .ezit-pg .ezit-flash p { margin: 0; }
 .ezit-pg .ezit-flash__close {
     flex-shrink: 0; display: grid; place-content: center;
     width: 24px; height: 24px; margin: -2px -4px -2px 4px; padding: 0;
-    background: rgba(25,25,25,.08); border: 0; border-radius: 50%;
+    background: rgba(255,255,255,.1); border: 0; border-radius: 50%;
     color: currentColor; cursor: pointer; transition: background .15s ease;
 }
-.ezit-pg .ezit-flash__close:hover { background: rgba(25,25,25,.18); }
-.ezit-pg .ezit-flash.is-err .ezit-flash__close { background: rgba(255,255,255,.14); }
-.ezit-pg .ezit-flash.is-err .ezit-flash__close:hover { background: rgba(255,255,255,.26); }
+.ezit-pg .ezit-flash__close:hover { background: rgba(255,255,255,.22); }
 @keyframes ezit-toast-in { from { opacity: 0; transform: translateY(16px) scale(.96); } }
 @media (max-width: 782px) { .ezit-pg .ezit-flash { right: 16px; bottom: 16px; left: 16px; max-width: none; } }
 @media (prefers-reduced-motion: reduce) {
@@ -929,6 +924,9 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     transition: background .2s ease;
 }
 .ezit-pg .ezt__refresh:hover { background: #2a2c3d; color: #fff; }
+/* Inline SVGs sit on the text baseline — block it or the icon drifts
+   low, and a transformed inline box grows the button while spinning. */
+.ezit-pg .ezt__refresh svg { display: block; flex: 0 0 auto; }
 /* AJAX refresh in flight — spin the arrow, swallow repeat clicks. */
 .ezit-pg .ezt__refresh.is-busy { pointer-events: none; opacity: .8; }
 .ezit-pg .ezt__refresh.is-busy svg { animation: ezit-spin .7s linear infinite; }

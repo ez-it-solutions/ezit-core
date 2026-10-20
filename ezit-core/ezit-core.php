@@ -5,7 +5,7 @@
  * Description: Shared foundation for every Ez IT Solutions theme — licensing,
  *              marketplace, updates and support, backed by the Ez IT license
  *              server (license.ez-it-solutions.com, LicenseBox-compatible).
- * Version:     1.5.17
+ * Version:     1.5.18
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      Ez IT Solutions
@@ -19,7 +19,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('EZIT_CORE_VERSION', '1.5.17');
+define('EZIT_CORE_VERSION', '1.5.18');
 define('EZIT_CORE_FILE', __FILE__);
 define('EZIT_CORE_PATH', plugin_dir_path(__FILE__));
 define('EZIT_CORE_INC',  EZIT_CORE_PATH . 'inc/');
