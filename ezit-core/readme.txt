@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.19
+Stable tag: 1.5.20
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,11 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.20 =
+* Fix: fatal "Call to undefined function section_label()" on the
+  Marketplace tab — the restored heading prints the h4 markup
+  directly like the strip above it
 
 = 1.5.19 =
 * Catalog cards now order like the "Installed on this site" strip —

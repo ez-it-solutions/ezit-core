@@ -358,7 +358,7 @@ class EzIT_Marketplace
                 </div>
             <?php endif; ?>
 
-            <?php section_label(__('Ez IT Marketplace', 'ezit-core')); ?>
+            <h4 class="ezit-sec-label"><?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?></h4>
 
             <?php if (! $catalog) : ?>
                 <p class="ezit-muted">
