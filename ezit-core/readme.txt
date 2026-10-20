@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.18
+Stable tag: 1.5.19
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,17 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.19 =
+* Catalog cards now order like the "Installed on this site" strip —
+  registered-product order first, then uninstalled items in catalog
+  order (the strip and grid could disagree before)
+* "Ez IT Marketplace" section label is back above the card grid
+* Refresh button metrics pinned (38px tall, fixed 15px icon) —
+  consistent at rest and while spinning
+* Updates-applied banner gets a hover state; Dismiss underlines on
+  hover and WP's blue :active/:focus paint is gone (keyboard focus
+  keeps a green ring)
 
 = 1.5.18 =
 * Toast is now a dark pill — ink background, white text, green check

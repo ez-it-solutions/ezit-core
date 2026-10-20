@@ -358,6 +358,8 @@ class EzIT_Marketplace
                 </div>
             <?php endif; ?>
 
+            <?php section_label(__('Ez IT Marketplace', 'ezit-core')); ?>
+
             <?php if (! $catalog) : ?>
                 <p class="ezit-muted">
                     <?php esc_html_e('Nothing published yet — listings appear here once the license server catalog goes live.', 'ezit-core'); ?>
@@ -372,7 +374,46 @@ class EzIT_Marketplace
                 $ezit_vm_modals = '';
             ?>
                 <div class="ezit-cards">
-                    <?php foreach ($catalog as $item) :
+                    <?php
+                    $registered = $this->core->products();
+                    $self_pid   = defined('EZIT_CORE_PRODUCT_ID') ? EZIT_CORE_PRODUCT_ID : '';
+                    $items      = $catalog;
+                    // Core has no slug in $registered but IS in the catalog —
+                    // keep the ezit-core card and flag its slug for later.
+                    $items = array_values($items);
+                    ?>
+
+                    <?php
+                    // Order cards like the "Installed on this site" strip:
+                    // registered-product order first, then everything else in
+                    // catalog order (PHP 8 sorts are stable). Resolves the same
+                    // product_id -> local slug the card loop resolves below.
+                    $local_slug_of = static function (array $it) use ($registered, $self_pid): ?string {
+                        if (($it['type'] ?? '') === 'plugin' && ($it['product_id'] ?? '') === $self_pid) {
+                            return 'ezit-core';
+                        }
+                        $pid = (string) ($it['product_id'] ?? '');
+                        if ($pid === '') {
+                            return null;
+                        }
+                        foreach ($registered as $s => $p) {
+                            if (($p['product_id'] ?? '') === $pid) {
+                                return $s;
+                            }
+                        }
+                        return null;
+                    };
+                    $reg_order = array_flip(array_keys($this->core->products()));
+                    usort($items, static function (array $a, array $b) use ($local_slug_of, $reg_order): int {
+                        $sa = $local_slug_of($a);
+                        $sb = $local_slug_of($b);
+                        $ra = $sa !== null && isset($reg_order[$sa]) ? $reg_order[$sa] : PHP_INT_MAX;
+                        $rb = $sb !== null && isset($reg_order[$sb]) ? $reg_order[$sb] : PHP_INT_MAX;
+                        return $ra <=> $rb;
+                    });
+                    ?>
+
+                    <?php foreach ($items as $item) :
                         $slug      = (string) ($item['slug'] ?? '');
                         $free      = ! empty($item['free']);
                         // Match the locally registered product (same product_id)
