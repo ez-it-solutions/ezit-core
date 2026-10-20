@@ -19,6 +19,9 @@ class EzIT_Admin
         $this->core = $core;
 
         add_action('admin_menu', [$this, 'menu']);
+        // Priority 5 — ahead of legacy_redirect so a pending forced
+        // release wins over the tab bounce and we hop once, not twice.
+        add_action('admin_init', [$this, 'intercept_forced'], 5);
         add_action('admin_init', [$this, 'legacy_redirect']);
         add_filter('submenu_file', [$this, 'submenu_highlight']);
         add_action('admin_enqueue_scripts', [$this, 'assets']);
@@ -31,6 +34,7 @@ class EzIT_Admin
         add_action('admin_post_ezit_credit',     [$this, 'handle_credit']);
         add_action('admin_post_ezit_market_install', [$this, 'handle_market_install']);
         add_action('wp_ajax_ezit_maillog',       [$this, 'handle_maillog']);
+        add_action('wp_ajax_ezit_forced_apply',  [$this, 'handle_forced_apply']);
         add_action('admin_post_ezit_maillog_view', [$this, 'handle_maillog_view']);
     }
 
@@ -103,6 +107,35 @@ class EzIT_Admin
         if ($page === 'ezit-core'
             && sanitize_key($_GET['tab'] ?? '') === 'overview') { // phpcs:ignore
             wp_safe_redirect(add_query_arg('tab', 'dashboard'), 301);
+            exit;
+        }
+    }
+
+    /**
+     * The reliable trigger for forced releases. WP-Cron only runs on a
+     * hit, so a quiet site could sit on a forced release forever — the
+     * update showed in the list but never installed. The moment an
+     * admin opens ANY Ez IT page we swap straight to the full-screen
+     * updater instead; no tabs, just progress. Runs at admin_init
+     * because page callbacks can't redirect (headers already sent).
+     */
+    public function intercept_forced(): void
+    {
+        if (wp_doing_ajax() || wp_doing_cron()
+            || ! current_user_can('manage_options')) {
+            return;
+        }
+        $page = sanitize_key($_GET['page'] ?? ''); // phpcs:ignore
+        if (strpos($page, 'ezit') !== 0) {
+            return;
+        }
+        // Already on the updater screen — let it render and run.
+        if ($page === 'ezit-core'
+            && sanitize_key($_GET['tab'] ?? '') === 'updating') { // phpcs:ignore
+            return;
+        }
+        if ($this->core->updater()->pending_forced()) {
+            wp_safe_redirect(admin_url('admin.php?page=ezit-core&tab=updating'));
             exit;
         }
     }
@@ -283,6 +316,16 @@ class EzIT_Admin
         if ($active === 'overview') {
             $active = 'dashboard'; // legacy URL alias
         }
+        // Full-screen updater — intercept_forced() routes here when a
+        // forced release is armed. No tabs; a direct visit with nothing
+        // pending just renders its all-clear state.
+        if ($active === 'updating') {
+            $core   = $this->core;
+            $flash  = $this->flash();
+            $forced = $this->core->updater()->pending_forced();
+            include EZIT_CORE_PATH . 'templates/admin/updating.php';
+            return;
+        }
         if (! isset($tabs[$active])) {
             $active = 'dashboard';
         }
@@ -442,6 +485,15 @@ class EzIT_Admin
                 false);
         }
 
+        // Forced-update preferences — section-gated like alerts, so a
+        // save from another panel can't silently re-enable them.
+        if ($section === 'updates') {
+            $posted = array_map('sanitize_key',
+                (array) ($_POST['ezit_ignore_forced'] ?? [])); // phpcs:ignore
+            update_option('ezit_ignore_forced',
+                array_values(array_filter($posted)), false);
+        }
+
         // Site Studio — theme-mod writes for declared fields.
         if ($section === 'studio') {
             $posted = (array) ($_POST['ezit_studio'] ?? []); // phpcs:ignore
@@ -458,6 +510,79 @@ class EzIT_Admin
         // Return the user to the section they were editing.
         $sec = sanitize_key(wp_unslash($_POST['section'] ?? ''));
         $this->redirect('settings', 'saved', '', $sec !== '' ? ['section' => $sec] : []);
+    }
+
+    /**
+     * The "Updating…" screen's apply call — runs the armed release
+     * through WP's own upgrader and hands back the step log so the
+     * page can render real checkmarks.
+     */
+    public function handle_forced_apply(): void
+    {
+        if (! check_ajax_referer('ezit_forced_apply', 'nonce', false)
+            || ! current_user_can('manage_options')) {
+            wp_send_json_error(
+                ['message' => __('Permission denied.', 'ezit-core')], 403);
+        }
+        $updater = $this->core->updater();
+        $pending = $updater->pending_forced();
+        if (! $pending) {
+            wp_send_json_success([
+                'steps'   => [],
+                'back'    => admin_url('admin.php?page=ezit-core'),
+                'message' => __('Nothing to update — everything is current.', 'ezit-core'),
+            ]);
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        // Collecting skin — the upgrader's own feedback becomes the
+        // checklist on the progress screen.
+        $skin = new class extends WP_Upgrader_Skin {
+            /** @var string[] */
+            public array $msgs = [];
+            public function header() {}
+            public function footer() {}
+            public function error($errors) {
+                $this->msgs[] = is_wp_error($errors)
+                    ? $errors->get_error_message() : (string) $errors;
+            }
+            public function feedback($string, ...$args) {
+                $map = [
+                    'downloading_package' => 'Downloading the update package',
+                    'unpack_package'      => 'Unpacking the update',
+                    'installing_package'  => 'Installing the new version',
+                    'remove_old'          => 'Removing the previous version',
+                    'clear_destination'   => 'Preparing the install location',
+                    'up_to_date'          => 'The update could not be located',
+                    'download_failed'     => 'Downloading the package failed',
+                    'copy_failed'         => 'Could not copy the new files into place',
+                    'process_failed'      => 'Update failed',
+                    'process_success'     => 'Update installed successfully',
+                ];
+                $this->msgs[] = $map[$string]
+                    ?? ucfirst(str_replace('_', ' ', (string) $string));
+            }
+        };
+
+        $result = $updater->apply_update(
+            (string) $pending['slug'], (string) $pending['type'], $skin);
+
+        if ($result === true) {
+            wp_send_json_success([
+                'steps'   => $skin->msgs,
+                'back'    => admin_url('admin.php?page=ezit-core'),
+                'message' => sprintf(
+                    /* translators: %s: product name */
+                    __('%s updated successfully.', 'ezit-core'),
+                    $pending['name']),
+            ]);
+        }
+        wp_send_json_error([
+            'steps'   => $skin->msgs,
+            'message' => $result instanceof WP_Error
+                ? $result->get_error_message()
+                : __('The update could not be completed.', 'ezit-core'),
+        ]);
     }
 
     /** Fresh rows for the Email log section — the tabs swap client-side,

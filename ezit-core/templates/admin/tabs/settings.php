@@ -32,6 +32,7 @@ if (! defined('ABSPATH')) {
     // disables auto-rotate; ?section= deep-links each panel.
     $sections = [
         'server' => __('License server', 'ezit-core'),
+        'updates' => __('Updates', 'ezit-core'),
         'gate'   => __('Site gate', 'ezit-core'),
         'page'   => __('Holding page', 'ezit-core'),
         'login'  => __('Login page', 'ezit-core'),

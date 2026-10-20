@@ -263,9 +263,10 @@
 /* Breathing room when panel content follows the component footer row. */
 .ezit-pg .ezt__footer:not(:last-child) { margin-bottom: 22px; }
 
-/* ── Flash / toast — floats top-right, self-dismisses ──────────────── */
+/* ── Flash / toast — floats top-center, self-dismisses ────────────── */
 .ezit-pg .ezit-flash {
-    position: fixed; top: 46px; right: 24px; z-index: 100001;
+    position: fixed; top: 46px; left: 50%; z-index: 100001;
+    transform: translateX(-50%);
     display: flex; align-items: center; gap: 10px;
     max-width: min(420px, calc(100vw - 40px));
     margin: 0; padding: 14px 16px 14px 20px;
@@ -275,7 +276,7 @@
     animation: ezit-toast-in .25s ease-out;
     transition: opacity .3s ease, transform .3s ease;
 }
-.ezit-pg .ezit-flash.is-out { opacity: 0; transform: translateX(14px); }
+.ezit-pg .ezit-flash.is-out { opacity: 0; transform: translate(-50%, -10px); }
 .ezit-pg .ezit-flash > svg { flex-shrink: 0; color: var(--pg-green2); }
 .ezit-pg .ezit-flash.is-err > svg { color: #d63638; }
 .ezit-pg .ezit-flash p { margin: 0; }
@@ -289,7 +290,7 @@
     border-color: var(--pg-line); color: var(--pg-ink);
     background: rgba(20,21,31,.05);
 }
-@keyframes ezit-toast-in { from { opacity: 0; transform: translateY(-8px); } }
+@keyframes ezit-toast-in { from { opacity: 0; transform: translate(-50%, -12px); } }
 @media (max-width: 782px) { .ezit-pg .ezit-flash { top: 60px; } }
 @media (prefers-reduced-motion: reduce) {
     .ezit-pg .ezit-flash { animation: none; transition: none; }
@@ -778,6 +779,111 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     .ezit-pg .ezit-themepeek { flex-wrap: wrap; }
     .ezit-pg .ezit-themepeek .ezit-btn { margin-left: 0; }
 }
+
+/* ── Forced-update screen — tab-less, single purpose ──────────────── */
+.ezit-upd__stage {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 120px); padding: 24px;
+}
+.ezit-upd__card {
+    width: min(460px, 100%); padding: 38px 34px 30px;
+    border-radius: 18px; background: #191919; color: #fff;
+    text-align: center; box-shadow: 0 24px 60px rgba(20,21,31,.28);
+}
+.ezit-upd__card h1 { margin: 6px 0 8px; font-size: 22px; color: #fff; }
+.ezit-upd__eyebrow {
+    margin: 14px 0 0; font-size: 11px; font-weight: 800;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--pg-green, #76b900);
+}
+.ezit-upd__sub {
+    margin: 0 0 24px; font-size: 13.5px; line-height: 1.55;
+    color: rgba(255,255,255,.65);
+}
+.ezit-upd__orb {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 58px; height: 58px; border-radius: 50%;
+    color: var(--pg-green, #76b900);
+    background: rgba(118,185,0,.12);
+    border: 1px solid rgba(118,185,0,.35);
+}
+.ezit-upd__orb svg { animation: ezit-upd-spin 2.4s linear infinite; }
+@keyframes ezit-upd-spin { to { transform: rotate(360deg); } }
+.ezit-upd__card.is-ok .ezit-upd__orb svg,
+.ezit-upd__card.is-err .ezit-upd__orb svg { animation: none; }
+.ezit-upd__card.is-err .ezit-upd__orb {
+    color: #e07b70; background: rgba(224,123,112,.12);
+    border-color: rgba(224,123,112,.4);
+}
+.ezit-upd__steps {
+    margin: 0 0 20px; padding: 0; list-style: none;
+    text-align: left; font-size: 13.5px;
+}
+.ezit-upd__steps li {
+    position: relative; padding: 7px 0 7px 30px;
+    color: rgba(255,255,255,.45);
+    transition: color .2s ease;
+}
+.ezit-upd__steps li::before {
+    content: ""; position: absolute; left: 4px; top: 50%;
+    width: 16px; height: 16px; margin-top: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.25);
+    box-sizing: border-box;
+}
+.ezit-upd__steps li.is-run { color: #fff; }
+.ezit-upd__steps li.is-run::before {
+    border-color: rgba(118,185,0,.35); border-top-color: #76b900;
+    animation: ezit-upd-spin .8s linear infinite;
+}
+.ezit-upd__steps li.is-done { color: rgba(255,255,255,.9); }
+.ezit-upd__steps li.is-done::before {
+    border-color: #76b900; background: #76b900;
+    /* checkmark */
+    clip-path: none;
+}
+.ezit-upd__steps li.is-done::after {
+    content: ""; position: absolute; left: 9px; top: 50%;
+    width: 4px; height: 7px; margin-top: -5px;
+    border: solid #191919; border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.ezit-upd__steps li.is-bad { color: #e07b70; }
+.ezit-upd__steps li.is-bad::before { border-color: #e07b70; }
+.ezit-upd__bar {
+    height: 6px; border-radius: 99px; overflow: hidden;
+    background: rgba(255,255,255,.12);
+}
+.ezit-upd__bar span {
+    display: block; height: 100%; width: 0;
+    background: var(--pg-green, #76b900); border-radius: inherit;
+    transition: width .5s ease;
+}
+.ezit-upd__hint {
+    margin: 14px 0 0; font-size: 12.5px; color: rgba(255,255,255,.55);
+}
+.ezit-upd__card.is-err .ezit-upd__hint { color: #e07b70; }
+.ezit-upd__actions {
+    margin-top: 20px; display: flex; gap: 14px;
+    align-items: center; justify-content: center;
+}
+.ezit-upd__actions .pg-sethead__btn { cursor: pointer; }
+.ezit-upd__link {
+    font-size: 13px; font-weight: 700; color: rgba(255,255,255,.7);
+    text-decoration: none;
+}
+.ezit-upd__link:hover { color: #fff; }
+@media (prefers-reduced-motion: reduce) {
+    .ezit-upd__orb svg,
+    .ezit-upd__steps li.is-run::before { animation: none; }
+}
+
+/* Settings — checkbox rows inside .ezit-field */
+.ezit-pg .ezit-check {
+    display: flex; align-items: center; gap: 9px;
+    margin: 6px 0; font-size: 13.5px; font-weight: 500; cursor: pointer;
+}
+.ezit-pg .ezit-check input[type="checkbox"] { margin: 0; }
+.ezit-pg .ezit-check .ezit-meta { font-weight: 400; color: #8b8e99; }
 
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {

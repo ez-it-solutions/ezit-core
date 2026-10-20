@@ -292,6 +292,15 @@ class EzIT_Marketplace
         $fresh    = isset($_GET['ezit_refresh']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended.NonceVerification — verified below
             && wp_verify_nonce(sanitize_key($_GET['_wpnonce'] ?? ''), 'ezit_refresh'); // phpcs:ignore
         $catalog  = $this->catalog($fresh);
+        if ($fresh) {
+            // Refresh means "look again" — bust the update-check cache
+            // and the forced sweep too, or a stale 'none' keeps a just
+            // published release invisible after the catalog reloads.
+            foreach ($products as $slug => $p) {
+                delete_transient('ezit_update_' . $slug);
+            }
+            delete_transient('ezit_forced_sweep');
+        }
         $licensing = $this->core->licensing();
         $fetched  = $this->catalog_fetched_at();
         ?>

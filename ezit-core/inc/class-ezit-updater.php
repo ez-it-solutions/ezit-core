@@ -15,12 +15,19 @@ if (! defined('ABSPATH')) {
 class EzIT_Updater
 {
     private const CACHE_TTL = 12 * HOUR_IN_SECONDS;
+    /** Option: slug => {type, update_id, version} awaiting a forced apply. */
+    private const PENDING_OPT = 'ezit_forced_pending';
 
     private EzIT_Core $core;
     private EzIT_Licensing $licensing;
 
     /** @var array<string,array> slug => last check_update payload */
     private array $updates = [];
+
+    /** True while apply_update() is rebuilding WP's update transient —
+     *  the inject filters would otherwise re-arm the very release being
+     *  installed and burn an attempt on the 3-per-update counter. */
+    private bool $applying = false;
 
     public function __construct(EzIT_Core $core)
     {
@@ -47,11 +54,23 @@ class EzIT_Updater
             ]);
         });
 
-        // check() caches for 12h — a forced flag set server-side after the
-        // last check would sit unseen until expiry. A dedicated scan
-        // fresh-checks everything so forced releases propagate quickly on
-        // any site that gets traffic (WP-Cron still needs hits — it's
-        // pull, not push).
+        // Scheduling itself waits for init — wp_schedule_event runs
+        // wp_get_schedules() which applies cron_schedules, and that
+        // filter translates its display string. At plugins_loaded
+        // (when this constructor fires) translations aren't loaded,
+        // so scheduling here trips WP 6.7's _load_textdomain notice.
+        add_action('init', [$this, 'schedule_scan'], 5);
+    }
+
+    /**
+     * check() caches for 12h — a forced flag set server-side after the
+     * last check would sit unseen until expiry. A dedicated scan
+     * fresh-checks everything so forced releases propagate quickly on
+     * any site that gets traffic (WP-Cron still needs hits — it's
+     * pull, not push).
+     */
+    public function schedule_scan(): void
+    {
         $ev = function_exists('wp_get_scheduled_event') ? wp_get_scheduled_event('ezit_updates_scan') : null;
         if ($ev && $ev->schedule === 'hourly') {
             wp_clear_scheduled_hook('ezit_updates_scan');
@@ -308,7 +327,12 @@ class EzIT_Updater
             ? $res
             : null;
 
-        set_transient($cache_key, $info ?: 'none', self::CACHE_TTL);
+        // A positive result can ride the 12h cache, but "no update"
+        // mustn't blind the site half a day — publish timing is
+        // unpredictable, so a miss only suppresses calls for 15 min
+        // (same cadence as the forced sweep / cron scan).
+        set_transient($cache_key, $info ?: 'none',
+            $info ? self::CACHE_TTL : 15 * MINUTE_IN_SECONDS);
         return $this->updates[$slug] = $info;
     }
 
@@ -358,13 +382,26 @@ class EzIT_Updater
      */
     private function maybe_force(string $slug, string $type, array $info, bool $now = false): void
     {
-        if (empty($info['forced']) || empty($info['update_id'])) {
+        if (empty($info['forced']) || empty($info['update_id'])
+            || $this->applying || self::forced_ignored($slug)) {
             return;
         }
         $key = 'ezit_force_' . sanitize_key($info['update_id']);
         if ((int) get_option($key, 0) >= 3) {
             return;
         }
+        // Record outside cron too — WP-Cron only runs on hits, so a
+        // quiet site could sit on a forced release forever. The pending
+        // registry is what the admin-page intercept (pending_forced)
+        // acts on: the first Ez IT page an admin opens applies it.
+        $pending = (array) get_option(self::PENDING_OPT, []);
+        $pending[$slug] = [
+            'type'      => $type,
+            'update_id' => (string) $info['update_id'],
+            'version'   => (string) ($info['version'] ?? ''),
+        ];
+        update_option(self::PENDING_OPT, $pending, false);
+
         if (wp_next_scheduled('ezit_force_update', [$slug, $type])) {
             return;
         }
@@ -374,45 +411,201 @@ class EzIT_Updater
         wp_schedule_single_event(time() + ($now ? 0 : 2 * MINUTE_IN_SECONDS), 'ezit_force_update', [$slug, $type]);
     }
 
+    /** Slugs this site refuses to force-update — Settings → Updates. */
+    public static function ignore_list(): array
+    {
+        return array_values(array_filter(array_map('strval',
+            (array) get_option('ezit_ignore_forced', []))));
+    }
+
+    /** 'all' in the ignore list opts the whole site out. */
+    public static function forced_ignored(string $slug): bool
+    {
+        $ig = self::ignore_list();
+        return in_array('all', $ig, true) || in_array($slug, $ig, true);
+    }
+
     /**
-     * WP-Cron worker: re-check fresh (retracting the flag stops the
-     * train), rebuild the transient so the upgrader resolves our
-     * ezit:// package, then upgrade through WP's own machinery.
+     * A forced release waiting to be applied, or null. Called when an
+     * admin opens any Ez IT page — the reliable trigger, since WP-Cron
+     * needs front-end traffic. A 15-minute sweep fresh-checks the whole
+     * registry so a just-published forced release is caught even before
+     * it lands in the pending option; armed entries re-verify fresh so
+     * a retracted flag clears instead of trapping the admin.
+     */
+    public function pending_forced(): ?array
+    {
+        $pending = (array) get_option(self::PENDING_OPT, []);
+
+        if (! get_transient('ezit_forced_sweep')) {
+            set_transient('ezit_forced_sweep', 1, 15 * MINUTE_IN_SECONDS);
+            $this->scan(); // arms + records anything newly forced
+            $pending = (array) get_option(self::PENDING_OPT, []);
+        }
+
+        $changed = false;
+        foreach ($pending as $slug => $p) {
+            $slug    = (string) $slug;
+            $product = $this->core->product($slug);
+            // Gone, ignored, or burned its three attempts — drop it.
+            if (! $product || self::forced_ignored($slug)
+                || (int) get_option('ezit_force_' . sanitize_key((string) ($p['update_id'] ?? '')), 0) >= 3) {
+                unset($pending[$slug]);
+                $changed = true;
+                continue;
+            }
+            $info = $this->check($slug, $product, true);
+            if ($info && ! empty($info['forced']) && ! empty($info['update_id'])
+                && version_compare((string) $info['version'], $product['version'] ?: '0', '>')) {
+                if ($changed) {
+                    update_option(self::PENDING_OPT, $pending, false);
+                }
+                return [
+                    'slug'      => $slug,
+                    'type'      => (string) ($product['type'] ?? 'theme'),
+                    'name'      => (string) ($product['name'] ?? $slug),
+                    'version'   => (string) $info['version'],
+                    'update_id' => (string) $info['update_id'],
+                ];
+            }
+            // Retracted or already applied — clear rather than trap.
+            unset($pending[$slug]);
+            $changed = true;
+        }
+        if ($changed) {
+            update_option(self::PENDING_OPT, $pending, false);
+        }
+        return null;
+    }
+
+    /** Drop a pending entry — success, retraction or opt-out. */
+    private function clear_pending(string $slug): void
+    {
+        $pending = (array) get_option(self::PENDING_OPT, []);
+        if (isset($pending[$slug])) {
+            unset($pending[$slug]);
+            update_option(self::PENDING_OPT, $pending, false);
+        }
+    }
+
+    /**
+     * WP-Cron worker — quiet skin, result unused. The admin "Updating…"
+     * screen drives the same machinery through apply_update() directly.
      */
     public function apply_forced(string $slug, string $type): void
     {
+        $this->apply_update($slug, $type);
+    }
+
+    /**
+     * Run one forced release through WP's own upgrader. Re-checks fresh
+     * (retracting the flag stops the train), rebuilds the update
+     * transient so the ezit:// package resolves, and returns true or
+     * WP_Error. $skin decides where progress goes — headless for cron,
+     * a collecting skin for the admin progress screen.
+     *
+     * @return true|WP_Error
+     */
+    public function apply_update(string $slug, string $type, ?WP_Upgrader_Skin $skin = null)
+    {
         $product = $this->core->product($slug);
         if (! $product) {
-            return;
+            return new WP_Error('ezit_no_product', 'Unknown product.');
+        }
+        if (self::forced_ignored($slug)) {
+            $this->clear_pending($slug);
+            return new WP_Error('ezit_ignored',
+                'Forced updates are disabled for this product on this site.');
         }
         $info = $this->check($slug, $product, true);
         if (! $info || empty($info['forced'])
             || ! version_compare($info['version'], $product['version'] ?: '0', '>')) {
-            return;
+            $this->clear_pending($slug); // retracted or already applied
+            return new WP_Error('ezit_not_forced', 'No forced update is pending.');
         }
 
         require_once ABSPATH . 'wp-admin/includes/file.php';
         require_once ABSPATH . 'wp-admin/includes/misc.php';
         require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
-        // Quiet skin — forced runs are headless (WP-Cron).
-        $skin = new class extends WP_Upgrader_Skin {
+        // Quiet skin when none supplied — cron runs are headless.
+        $skin = $skin ?: new class extends WP_Upgrader_Skin {
             public function header() {}
             public function footer() {}
             public function feedback($string, ...$args) {}
         };
 
+        $this->applying = true;
+        // Prime the update transient ourselves — wp_update_plugins()/
+        // wp_update_themes() can bail early on a fresh last_checked
+        // without firing our inject filter, and then the upgrader sees
+        // no response entry and reports 'up_to_date'. Writing the entry
+        // directly works on every WP version and skips a wp.org call.
+        $key = $this->prime_update($slug, $type, $product, $info);
+        if ($key === null) {
+            $this->applying = false;
+            return new WP_Error('ezit_no_file', 'Could not locate the install target.');
+        }
+        $result = $type === 'plugin'
+            ? (new Plugin_Upgrader($skin))->upgrade($key)
+            : (new Theme_Upgrader($skin))->upgrade($key);
+        $this->applying = false;
+
+        if ($result === true || is_array($result)) {
+            $this->clear_pending($slug);
+            return true;
+        }
+        return $result instanceof WP_Error ? $result
+            : new WP_Error('ezit_upgrade_failed', 'The update did not complete.');
+    }
+
+    /**
+     * Write our ezit:// response entry into WP's update transient and
+     * return the key the upgrader expects ($file for plugins,
+     * $stylesheet for themes), or null when there's no install target.
+     */
+    private function prime_update(string $slug, string $type, array $product, array $info): ?string
+    {
         if ($type === 'plugin') {
             $file = $this->plugin_file($slug, $product);
             if ($file === '') {
-                return;
+                return null;
             }
-            wp_update_plugins(); // rebuild transient → our ezit:// entry
-            (new Plugin_Upgrader($skin))->upgrade($file);
-        } else {
-            wp_update_themes();
-            $stylesheet = (string) ($product['slug'] ?: $slug);
-            (new Theme_Upgrader($skin))->upgrade($stylesheet);
+            $tr = get_site_transient('update_plugins');
+            if (! is_object($tr)) {
+                $tr = new stdClass();
+            }
+            if (! isset($tr->response) || ! is_array($tr->response)) {
+                $tr->response = [];
+            }
+            $tr->response[$file] = (object) [
+                'slug'        => $slug,
+                'plugin'      => $file,
+                'new_version' => $info['version'],
+                'url'         => admin_url('admin.php?page=ezit-core'),
+                'package'     => 'ezit://' . $slug . '/' . $info['update_id'],
+            ];
+            set_site_transient('update_plugins', $tr);
+            return $file;
         }
+
+        $stylesheet = (string) ($product['slug'] ?: $slug);
+        $tr = get_site_transient('update_themes');
+        if (! is_object($tr)) {
+            $tr = new stdClass();
+        }
+        if (! isset($tr->response) || ! is_array($tr->response)) {
+            $tr->response = [];
+        }
+        $tr->response[$stylesheet] = [
+            'theme'        => $stylesheet,
+            'new_version'  => $info['version'],
+            'url'          => admin_url('admin.php?page=ezit-core'),
+            'package'      => 'ezit://' . $slug . '/' . $info['update_id'],
+            'requires'     => '',
+            'requires_php' => '',
+        ];
+        set_site_transient('update_themes', $tr);
+        return $stylesheet;
     }
 }

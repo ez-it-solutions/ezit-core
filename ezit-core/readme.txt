@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.4.8
+Stable tag: 1.5.1
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -124,11 +124,46 @@ self-products by `api_key` and requires a **free + published** catalog
 listing for package downloads.
 
 Publishing an update with **Force update** ticked marks `forced:true`
-in `check_update`: each site applies it silently via WP-Cron +
-`Plugin_Upgrader`/`Theme_Upgrader` (max 3 attempts, retracting the flag
-stops pending runs). Works for themes too — same flag.
+in `check_update`: the site arms the release the moment it sees the
+flag and applies it through `Plugin_Upgrader`/`Theme_Upgrader` (max 3
+attempts, retracting the flag stops pending runs). WP-Cron still gets
+an event, but the reliable trigger is the admin session itself — the
+next time an admin opens any Ez IT page, a full-screen updater runs
+the install live with a step checklist. Settings → Updates can exempt
+individual products or the whole site. Works for themes too — same
+flag.
 
 == Changelog ==
+
+= 1.5.1 =
+* Forced updates could report "up_to_date" and fail: apply_update()
+  relied on wp_update_plugins()/wp_update_themes() to rebuild the
+  transient, which can skip firing the inject filter on a fresh
+  last_checked — the upgrader then saw no response entry. The update
+  transient is now primed directly before the upgrader runs
+* Fixed WP 6.7 _load_textdomain_just_in_time notice: the update-scan
+  event scheduled at plugins_loaded ran wp_get_schedules(), firing the
+  cron_schedules filter's __() before init. Scheduling is deferred
+  to init
+
+= 1.5.0 =
+* Toasts moved to top-center below the admin bar — the top-right slot
+  was easy to miss before auto-dismiss
+
+= 1.4.9 =
+* Forced releases actually apply: WP-Cron only runs on a hit, so a quiet
+  site could sit on a forced update forever. Pending forced releases are
+  now recorded in an option and the next admin page load on any Ez IT
+  screen swaps straight to a full-screen updater — no tabs, real
+  progress steps from WP's upgrader, retry and back links on failure
+* Settings → Updates: new section with "Ignore all forced updates" and
+  per-product checkboxes — the site's own opt-out, evaluated before the
+  marketplace/license server flag is honored
+* Update visibility: a "no update" response now caches for 15 minutes,
+  not 12 hours — a release published between checks no longer stays
+  invisible half a day. Marketplace Refresh also clears per-product
+  update caches and the forced sweep, so it doubles as a manual
+  "check now"
 
 = 1.4.8 =
 * Dashboard: EzIT Core shows Active with "Licensed to: Ez IT Solutions" —
