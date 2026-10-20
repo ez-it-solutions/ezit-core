@@ -773,9 +773,16 @@ class EzIT_Updater
         require_once ABSPATH . 'wp-admin/includes/file.php';
         require_once ABSPATH . 'wp-admin/includes/misc.php';
         require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
 
+        // Automatic_Upgrader_Skin swallows feedback — the stock skin
+        // echoes it to the browser, which sends headers and kills the
+        // admin-post redirect (that stray "Unpacking the package…"
+        // white page).
+        $skin     = class_exists('Automatic_Upgrader_Skin')
+            ? new Automatic_Upgrader_Skin() : new WP_Upgrader_Skin();
         $type     = (string) ($product['type'] ?? 'theme');
-        $upgrader = $type === 'plugin' ? new Plugin_Upgrader() : new Theme_Upgrader();
+        $upgrader = $type === 'plugin' ? new Plugin_Upgrader($skin) : new Theme_Upgrader($skin);
         ob_start();
         $ok = $upgrader->install($tmp, [
             'overwrite_package' => true,

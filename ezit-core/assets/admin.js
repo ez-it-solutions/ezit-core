@@ -41,6 +41,69 @@
         }
     } catch (e) { /* older browsers keep the params — harmless */ }
 
+    // ── Branded confirm — data-confirm forms, zero native dialogs ────
+    // <form data-confirm="…" data-confirm-title="…" data-confirm-ok="…">
+    // Intercept submit, ask in our own overlay, re-submit on OK.
+    function ezitConfirm(opts, onOk) {
+        var ov = document.createElement('div');
+        ov.className = 'ezit-confirm';
+        var box = document.createElement('div');
+        box.className = 'ezit-confirm__box';
+        var h = document.createElement('h3');
+        h.textContent = opts.title;
+        var p = document.createElement('p');
+        p.textContent = opts.message;
+        var row = document.createElement('div');
+        row.className = 'ezit-confirm__row';
+        var cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'ezit-confirm__cancel';
+        cancel.textContent = opts.cancel;
+        var ok = document.createElement('button');
+        ok.type = 'button';
+        ok.className = 'ezit-confirm__ok';
+        ok.textContent = opts.ok;
+        row.appendChild(cancel);
+        row.appendChild(ok);
+        box.appendChild(h);
+        box.appendChild(p);
+        box.appendChild(row);
+        ov.appendChild(box);
+        document.body.appendChild(ov);
+        var done = function () { ov.remove(); document.removeEventListener('keydown', esc); };
+        var esc = function (e) { if (e.key === 'Escape') done(); };
+        ov.addEventListener('click', function (e) { if (e.target === ov) done(); });
+        cancel.addEventListener('click', done);
+        ok.addEventListener('click', function () { done(); onOk(); });
+        document.addEventListener('keydown', esc);
+        ok.focus();
+    }
+
+    document.addEventListener('submit', function (e) {
+        var f = e.target;
+        if (!(f instanceof HTMLFormElement) || !f.getAttribute('data-confirm')) {
+            return;
+        }
+        if (f.dataset.ezitConfirmed === '1') {
+            return; // second pass after OK — let it through
+        }
+        e.preventDefault();
+        var submitter = e.submitter || null;
+        ezitConfirm({
+            title:   f.getAttribute('data-confirm-title') || 'Are you sure?',
+            message: f.getAttribute('data-confirm'),
+            ok:      f.getAttribute('data-confirm-ok') || 'Continue',
+            cancel:  f.getAttribute('data-confirm-cancel') || 'Cancel',
+        }, function () {
+            f.dataset.ezitConfirmed = '1';
+            if (f.requestSubmit) {
+                f.requestSubmit(submitter || undefined);
+            } else {
+                f.submit();
+            }
+        });
+    }, true);
+
     // ── Catalog age ticker ──────────────────────────────────────────
     var els = document.querySelectorAll('.ezit-catalog-at__age[data-ts]');
     if (!els.length) {

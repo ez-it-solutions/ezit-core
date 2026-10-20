@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.13
+Stable tag: 1.5.14
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,16 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.14 =
+* No more native confirm() dialogs — forms carry data-confirm and a
+  branded modal asks instead (reusable for any future confirm)
+* install_version() now uses Automatic_Upgrader_Skin — the stock skin
+  echoed "Unpacking the package…" to the browser, sent headers, and
+  the admin-post redirect never fired
+* Pinned cards still show the Update button when a newer release
+  exists — installing it un-pins automatically; "Resume updates"
+  remains as a quiet link
 
 = 1.5.13 =
 * Updates are no longer invisible — every applied install (auto/forced,

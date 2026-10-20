@@ -221,6 +221,9 @@ class EzIT_Marketplace
         }
 
         $lic = [];
+        // Installing the newest release counts as resuming — the pin
+        // only protects deliberate downgrades.
+        $was_pinned = $local_slug !== null && EzIT_Updater::is_pinned($local_slug);
         if ($local !== null) {
             $creds      = $local;
             $lic        = $this->core->licensing()->license($local_slug) ?: [];
@@ -441,7 +444,23 @@ class EzIT_Marketplace
                                     <span class="ezit-badge ezit-badge--pinned">
                                         <?php esc_html_e('Pinned', 'ezit-core'); ?>
                                     </span>
-                                    <a class="ezit-btn ezit-btn--ghost" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_unpin&slug=' . $local_slug . '&from=marketplace'), 'ezit_unpin', 'ezit_unpin_nonce')); ?>">
+                                    <?php if ($newer) : ?>
+                                        <span class="ezit-badge is-update">
+                                            <?php printf(esc_html__('Update &rarr; v%s', 'ezit-core'), esc_html((string) $item['version'])); ?>
+                                        </span>
+                                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                                              data-confirm-title="<?php echo esc_attr(sprintf(__('Update to v%s?', 'ezit-core'), (string) $item['version'])); ?>"
+                                              data-confirm="<?php echo esc_attr__('Installing the newest release un-pins this product and resumes auto-updates.', 'ezit-core'); ?>"
+                                              data-confirm-ok="<?php esc_attr_e('Update', 'ezit-core'); ?>">
+                                            <input type="hidden" name="action" value="ezit_market_install">
+                                            <input type="hidden" name="slug" value="<?php echo esc_attr($slug); ?>">
+                                            <input type="hidden" name="product_id" value="<?php echo esc_attr((string) ($item['product_id'] ?? '')); ?>">
+                                            <input type="hidden" name="from" value="marketplace">
+                                            <?php wp_nonce_field('ezit_market_install', 'ezit_market_nonce'); ?>
+                                            <button type="submit" class="ezit-btn" data-busy-label="<?php esc_attr_e('Updating…', 'ezit-core'); ?>"><?php esc_html_e('Update', 'ezit-core'); ?></button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <a class="ezit-resume" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_unpin&slug=' . $local_slug . '&from=marketplace'), 'ezit_unpin', 'ezit_unpin_nonce')); ?>">
                                         <?php esc_html_e('Resume updates', 'ezit-core'); ?>
                                     </a>
                                 <?php elseif ($newer) : ?>
@@ -531,7 +550,9 @@ class EzIT_Marketplace
                                                             <span class="ezit-badge is-active"><?php esc_html_e('Current', 'ezit-core'); ?></span>
                                                         <?php else : ?>
                                                             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
-                                                                  onsubmit="return confirm('<?php echo esc_js(sprintf(__('Install v%s over the current files? Anything older than the newest release pins the product and suspends auto-updates.', 'ezit-core'), $rel_ver)); ?>');">
+                                                                  data-confirm-title="<?php echo esc_attr(sprintf(__('Install v%s?', 'ezit-core'), $rel_ver)); ?>"
+                                                                  data-confirm="<?php echo esc_attr(__('This version replaces the current files. Anything older than the newest release pins the product and suspends auto-updates.', 'ezit-core')); ?>"
+                                                                  data-confirm-ok="<?php echo version_compare($rel_ver, $local_ver ?: '0', '<') ? esc_attr__('Downgrade', 'ezit-core') : esc_attr__('Install', 'ezit-core'); ?>">
                                                                 <input type="hidden" name="action" value="ezit_version">
                                                                 <input type="hidden" name="slug" value="<?php echo esc_attr($local_slug); ?>">
                                                                 <input type="hidden" name="update_id" value="<?php echo esc_attr((string) ($rel['update_id'] ?? '')); ?>">

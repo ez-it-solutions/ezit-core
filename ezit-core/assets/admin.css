@@ -1032,6 +1032,39 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-applied li time { margin-left: auto; color: #8b8e99; font-size: 11.5px; }
 .ezit-applied__more { color: #8b8e99; }
 
+/* Pinned card — Resume updates is a quiet link, not a button. */
+.ezit-pg .ezit-resume {
+    font-size: 12px; font-weight: 600; color: #8b8e99; text-decoration: none;
+}
+.ezit-pg .ezit-resume:hover { color: #14151f; text-decoration: underline; }
+
+/* ── Branded confirm (data-confirm forms — assets/admin.js) ────────── */
+.ezit-confirm {
+    position: fixed; inset: 0; z-index: 100110;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15, 16, 24, .55); backdrop-filter: blur(2px);
+    animation: ezitConfirmIn .16s ease;
+}
+@keyframes ezitConfirmIn { from { opacity: 0; } to { opacity: 1; } }
+.ezit-confirm__box {
+    width: min(380px, calc(100vw - 48px));
+    background: #fff; border-radius: 14px; padding: 20px 22px;
+    box-shadow: 0 24px 64px rgba(10, 12, 24, .35);
+    animation: ezitConfirmPop .18s ease;
+}
+@keyframes ezitConfirmPop { from { transform: scale(.94); } to { transform: scale(1); } }
+.ezit-confirm__box h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: #14151f; }
+.ezit-confirm__box p { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #3a3d4a; }
+.ezit-confirm__row { display: flex; justify-content: flex-end; gap: 8px; }
+.ezit-confirm__cancel, .ezit-confirm__ok {
+    padding: 8px 16px; border-radius: 9px; font-size: 12.5px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+}
+.ezit-confirm__cancel { border: 1px solid #dcdde6; background: #fff; color: #5c5f6b; }
+.ezit-confirm__cancel:hover { border-color: #14151f; color: #14151f; }
+.ezit-confirm__ok { border: 0; background: #14151f; color: #fff; }
+.ezit-confirm__ok:hover { background: #2a2c3d; }
+
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .ezit-pg .pg-grid { grid-template-columns: 1fr; }
