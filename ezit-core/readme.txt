@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.25
+Stable tag: 1.5.26
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,12 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.26 =
+* Pin actions are pills now, not raw links — Settings → Updates rows
+  get dark "Pin updates" / purple "Resume updates" pills, and the
+  marketplace card's Resume updates stopped floating at the far
+  right of the footer (it sits with the badges as a pill too)
 
 = 1.5.25 =
 * Settings → Updates can pin too — every product row now carries a

@@ -973,6 +973,19 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 .ezit-pg .ezit-chip__pin.is-resume { background: #7c3aed; }
 .ezit-pg .ezit-chip__pin.is-resume:hover { background: #6d28d9; }
 .ezit-pg .ezit-pin-hint { margin: 12px 2px 0; font-size: 12.5px; }
+/* Settings → Updates rows — same pill the chips reveal on hover. */
+.ezit-pg .ezit-pin-pill {
+    display: inline-flex; align-items: center; flex-shrink: 0;
+    padding: 5px 13px; border-radius: 999px;
+    background: var(--pg-ink); color: #fff;
+    font-size: 11.5px; font-weight: 700; letter-spacing: .5px;
+    text-transform: uppercase; text-decoration: none;
+    transition: background .15s ease;
+}
+.ezit-pg .ezit-pin-pill:hover { background: var(--pg-green2); color: #fff; }
+.ezit-pg .ezit-pin-pill.is-resume { background: #7c3aed; }
+.ezit-pg .ezit-pin-pill.is-resume:hover { background: #6d28d9; }
+.ezit-pg .ezit-pin-pill:focus-visible { outline: 2px solid rgba(118,185,0,.55); outline-offset: 2px; }
 
 /* ── Version-history modal (checkbox toggle — zero JS) ───────────────
  * Printed at admin_footer — sibling selectors and stacking behave the

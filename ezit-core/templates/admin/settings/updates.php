@@ -59,14 +59,14 @@ $all     = in_array('all', $ignored, true);
                 </span>
             </label>
             <?php if ($is_pinned) : ?>
-                <a href="<?php echo esc_url(wp_nonce_url(
+                <a class="ezit-pin-pill is-resume" href="<?php echo esc_url(wp_nonce_url(
                     admin_url('admin-post.php?action=ezit_unpin&slug=' . $slug . '&from=settings'),
                     'ezit_unpin', 'ezit_unpin_nonce')); ?>"
                     title="<?php esc_attr_e('Resume automatic and forced updates', 'ezit-core'); ?>">
                     <?php esc_html_e('Resume updates', 'ezit-core'); ?>
                 </a>
             <?php else : ?>
-                <a href="<?php echo esc_url(wp_nonce_url(
+                <a class="ezit-pin-pill" href="<?php echo esc_url(wp_nonce_url(
                     admin_url('admin-post.php?action=ezit_pin&slug=' . $slug . '&from=settings'),
                     'ezit_pin', 'ezit_pin_nonce')); ?>"
                     data-confirm-title="<?php esc_attr_e('Pin updates?', 'ezit-core'); ?>"

@@ -543,7 +543,8 @@ class EzIT_Marketplace
                                             <button type="submit" class="ezit-btn" data-busy-label="<?php esc_attr_e('Updating…', 'ezit-core'); ?>"><?php esc_html_e('Update', 'ezit-core'); ?></button>
                                         </form>
                                     <?php endif; ?>
-                                    <a class="ezit-resume" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_unpin&slug=' . $local_slug . '&from=marketplace'), 'ezit_unpin', 'ezit_unpin_nonce')); ?>">
+                                    <a class="ezit-pin-pill is-resume" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_unpin&slug=' . $local_slug . '&from=marketplace'), 'ezit_unpin', 'ezit_unpin_nonce')); ?>"
+                                       title="<?php esc_attr_e('Resume automatic and forced updates', 'ezit-core'); ?>">
                                         <?php esc_html_e('Resume updates', 'ezit-core'); ?>
                                     </a>
                                 <?php elseif ($newer) : ?>
