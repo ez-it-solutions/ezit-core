@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.14
+Stable tag: 1.5.15
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,14 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.15 =
+* Fix: opening Version History on one card could stack every modal
+  after it — the checkbox toggle used a general-sibling selector
+  (~), so with modals printed back-to-back at admin_footer the last
+  modal always rendered on top (wrong product's history) and its
+  close labels toggled the wrong input, leaving it stuck open.
+  Adjacent sibling (+) — one input, one modal
 
 = 1.5.14 =
 * Toast redesigned — solid green pill bottom-right (errors solid red),

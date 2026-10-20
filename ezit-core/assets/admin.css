@@ -934,7 +934,10 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
 }
 .ezit-vm__toggle { display: none; }
 .ezit-vm { display: none; }
-.ezit-vm__toggle:checked ~ .ezit-vm { display: block; }
+/* + not ~ — modals print back-to-back at admin_footer; a general
+   sibling selector opens EVERY later modal and the topmost one can
+   never close (its labels check its own input, leaving it on). */
+.ezit-vm__toggle:checked + .ezit-vm { display: block; }
 .ezit-vm__backdrop {
     position: fixed; inset: 0; z-index: 100100;
     background: rgba(15, 16, 24, .55); backdrop-filter: blur(2px);
