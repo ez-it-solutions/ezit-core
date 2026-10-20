@@ -136,6 +136,11 @@ flag.
 == Changelog ==
 
 = 1.5.14 =
+* Toast redesigned — solid green pill bottom-right (errors solid red),
+  springs in, slides down on dismiss, full-width on mobile; the
+  top-center white banner is gone
+* Version modal scrollbar no longer flattens the card's rounded
+  corner — thin overlay thumb on a transparent track
 * No more native confirm() dialogs — forms carry data-confirm and a
   branded modal asks instead (reusable for any future confirm)
 * install_version() now uses Automatic_Upgrader_Skin — the stock skin

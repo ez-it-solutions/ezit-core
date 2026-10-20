@@ -263,35 +263,37 @@
 /* Breathing room when panel content follows the component footer row. */
 .ezit-pg .ezt__footer:not(:last-child) { margin-bottom: 22px; }
 
-/* ── Flash / toast — floats top-center, self-dismisses ────────────── */
+/* ── Flash / toast — bottom-right, unmistakable, self-dismisses ───── */
 .ezit-pg .ezit-flash {
-    position: fixed; top: 46px; left: 50%; z-index: 100001;
-    transform: translateX(-50%);
-    display: flex; align-items: center; gap: 10px;
+    position: fixed; right: 26px; bottom: 26px; z-index: 100001;
+    display: flex; align-items: center; gap: 11px;
     max-width: min(420px, calc(100vw - 40px));
-    margin: 0; padding: 14px 16px 14px 20px;
-    background: #fff; border: 1px solid var(--pg-line); border-left: 4px solid var(--pg-green);
-    border-radius: 10px; box-shadow: 0 10px 34px rgba(20,21,31,.22);
-    font-size: 14px;
-    animation: ezit-toast-in .25s ease-out;
+    margin: 0; padding: 14px 16px 14px 18px;
+    background: var(--pg-green); color: var(--pg-dark); border: 0;
+    border-radius: 12px; box-shadow: 0 12px 36px rgba(46,73,0,.4), 0 2px 0 rgba(0,0,0,.05);
+    font-size: 14px; font-weight: 600;
+    animation: ezit-toast-in .28s cubic-bezier(.21,1.02,.73,1);
     transition: opacity .3s ease, transform .3s ease;
 }
-.ezit-pg .ezit-flash.is-out { opacity: 0; transform: translate(-50%, -10px); }
-.ezit-pg .ezit-flash > svg { flex-shrink: 0; color: var(--pg-green2); }
-.ezit-pg .ezit-flash.is-err > svg { color: #d63638; }
+.ezit-pg .ezit-flash.is-out { opacity: 0; transform: translateY(16px); }
+.ezit-pg .ezit-flash > svg { flex-shrink: 0; color: var(--pg-dark); }
+.ezit-pg .ezit-flash.is-err {
+    background: #b3483a; color: #fff;
+    box-shadow: 0 12px 36px rgba(122,28,20,.42), 0 2px 0 rgba(0,0,0,.05);
+}
+.ezit-pg .ezit-flash.is-err > svg { color: #fff; }
 .ezit-pg .ezit-flash p { margin: 0; }
 .ezit-pg .ezit-flash__close {
     flex-shrink: 0; display: grid; place-content: center;
-    width: 26px; height: 26px; margin: -2px -4px -2px 4px; padding: 0;
-    background: none; border: 1px solid var(--pg-line); border-radius: 50%;
-    color: var(--pg-muted); cursor: pointer; transition: all .15s ease;
+    width: 24px; height: 24px; margin: -2px -4px -2px 4px; padding: 0;
+    background: rgba(25,25,25,.08); border: 0; border-radius: 50%;
+    color: currentColor; cursor: pointer; transition: background .15s ease;
 }
-.ezit-pg .ezit-flash__close:hover {
-    border-color: var(--pg-line); color: var(--pg-ink);
-    background: rgba(20,21,31,.05);
-}
-@keyframes ezit-toast-in { from { opacity: 0; transform: translate(-50%, -12px); } }
-@media (max-width: 782px) { .ezit-pg .ezit-flash { top: 60px; } }
+.ezit-pg .ezit-flash__close:hover { background: rgba(25,25,25,.18); }
+.ezit-pg .ezit-flash.is-err .ezit-flash__close { background: rgba(255,255,255,.14); }
+.ezit-pg .ezit-flash.is-err .ezit-flash__close:hover { background: rgba(255,255,255,.26); }
+@keyframes ezit-toast-in { from { opacity: 0; transform: translateY(16px) scale(.96); } }
+@media (max-width: 782px) { .ezit-pg .ezit-flash { right: 16px; bottom: 16px; left: 16px; max-width: none; } }
 @media (prefers-reduced-motion: reduce) {
     .ezit-pg .ezit-flash { animation: none; transition: none; }
 }
@@ -944,7 +946,16 @@ body.toplevel_page_ezit-core #wpbody-content { padding-bottom: 0; }
     width: min(470px, calc(100vw - 48px)); max-height: 68vh; overflow-y: auto;
     background: #fff; border-radius: 14px; padding: 18px 20px;
     box-shadow: 0 24px 64px rgba(10, 12, 24, .35);
+    scrollbar-width: thin; scrollbar-color: #c9cdd8 transparent;
 }
+/* Thin overlay scrollbar on a transparent track — a default gutter
+   track would eat the card's rounded corners on the scrollbar side. */
+.ezit-vm__card::-webkit-scrollbar { width: 10px; }
+.ezit-vm__card::-webkit-scrollbar-track { background: transparent; }
+.ezit-vm__card::-webkit-scrollbar-thumb {
+    background: #c9cdd8; border-radius: 8px; border: 2px solid #fff;
+}
+.ezit-vm__card::-webkit-scrollbar-thumb:hover { background: #a9aec3; }
 .ezit-vm__head {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
