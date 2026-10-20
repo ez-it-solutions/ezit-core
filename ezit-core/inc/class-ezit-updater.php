@@ -20,6 +20,9 @@ class EzIT_Updater
     /** Option: slug => true — products pinned to a chosen version. */
     private const PIN_OPT = 'ezit_pinned';
 
+    /** Set by versions_for() — the human reason the list came back empty. */
+    private string $versions_error = '';
+
     private EzIT_Core $core;
     private EzIT_Licensing $licensing;
 
@@ -669,7 +672,9 @@ class EzIT_Updater
     {
         $slug    = sanitize_key($slug);
         $product = $this->core->product($slug);
+        $this->versions_error = '';
         if (! $product) {
+            $this->versions_error = 'Product not registered on this site.';
             return [];
         }
 
@@ -678,26 +683,42 @@ class EzIT_Updater
             $product = array_merge($product, array_filter($this->core->self_credentials()));
         }
         if ($product['product_id'] === '') {
+            $this->versions_error = 'No product_id — check_update can\'t identify this product to the server.';
             return [];
         }
 
+        // The cached shape is [list, err] — an empty list with a stored
+        // reason reads very differently than "zero releases published".
         $cache = 'ezit_versions_' . $slug;
         if (! $fresh) {
             $cached = get_transient($cache);
-            if (is_array($cached)) {
-                return $cached;
+            if (is_array($cached) && isset($cached['list'])) {
+                $this->versions_error = (string) ($cached['err'] ?? '');
+                return (array) $cached['list'];
             }
         }
 
         $res = EzIT_API::post('versions', $product, [
             'product_id' => $product['product_id'],
         ]);
-        $versions = (! is_wp_error($res) && ! empty($res['status']))
-            ? array_values((array) ($res['versions'] ?? []))
-            : [];
+        if (is_wp_error($res)) {
+            $this->versions_error = $res->get_error_message();
+            $versions = [];
+        } elseif (empty($res['status'])) {
+            $this->versions_error = (string) ($res['message'] ?? 'The server refused the request.');
+            $versions = [];
+        } else {
+            $versions = array_values((array) ($res['versions'] ?? []));
+        }
 
-        set_transient($cache, $versions, 15 * MINUTE_IN_SECONDS);
+        set_transient($cache, ['list' => $versions, 'err' => $this->versions_error], 15 * MINUTE_IN_SECONDS);
         return $versions;
+    }
+
+    /** Why the last versions_for() came back empty ('' = genuinely none). */
+    public function versions_error(): string
+    {
+        return $this->versions_error;
     }
 
     /**

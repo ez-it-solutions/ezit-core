@@ -38,6 +38,41 @@ class EzIT_Marketplace
         return (int) get_option('ezit_catalog_at', 0);
     }
 
+    /** True when the last catalog() call failed and we're serving cache. */
+    public function is_stale(): bool
+    {
+        return $this->stale;
+    }
+
+    /**
+     * Honor ?ezit_refresh=1 — busts every marketplace-flavored cache and
+     * returns whether a fresh catalog pull is required. Idempotent: the
+     * tab shell calls it for the header stamp, render() calls it again.
+     */
+    public function handle_refresh(): bool
+    {
+        $fresh = isset($_GET['ezit_refresh']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended.NonceVerification — verified below
+            && wp_verify_nonce(sanitize_key($_GET['_wpnonce'] ?? ''), 'ezit_refresh'); // phpcs:ignore
+        if (! $fresh) {
+            return false;
+        }
+        // Refresh means "look again" — bust the update-check cache
+        // and the forced sweep too, or a stale 'none' keeps a just
+        // published release invisible after the catalog reloads.
+        foreach ($this->core->products() as $slug => $p) {
+            delete_transient('ezit_update_' . $slug);
+            delete_transient('ezit_versions_' . $slug);
+        }
+        delete_transient('ezit_forced_sweep');
+        return true;
+    }
+
+    /** Nonce'd URL the header Refresh button points at. */
+    public function refresh_url(): string
+    {
+        return wp_nonce_url(admin_url('admin.php?page=ezit-core&tab=marketplace&ezit_refresh=1'), 'ezit_refresh');
+    }
+
     /**
      * Remote catalog — array of items or [] (never WP_Error so the UI can
      * render uniformly). $fresh bypasses the cache; the transient doubles
@@ -287,23 +322,11 @@ class EzIT_Marketplace
     {
         $products = $this->core->products();
         // Only the Refresh button forces a live pull — otherwise the
-        // 5-minute freshness window applies, so "Fetched N ago" is a
-        // real age instead of always "1 second ago".
-        $fresh    = isset($_GET['ezit_refresh']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended.NonceVerification — verified below
-            && wp_verify_nonce(sanitize_key($_GET['_wpnonce'] ?? ''), 'ezit_refresh'); // phpcs:ignore
-        $catalog  = $this->catalog($fresh);
-        if ($fresh) {
-            // Refresh means "look again" — bust the update-check cache
-            // and the forced sweep too, or a stale 'none' keeps a just
-            // published release invisible after the catalog reloads.
-            foreach ($products as $slug => $p) {
-                delete_transient('ezit_update_' . $slug);
-                delete_transient('ezit_versions_' . $slug);
-            }
-            delete_transient('ezit_forced_sweep');
-        }
+        // 5-minute freshness window applies. The tab shell may have
+        // already handled the refresh for its header stamp; running it
+        // again is harmless (deleting the same transients twice).
+        $catalog  = $this->catalog($this->handle_refresh());
         $licensing = $this->core->licensing();
-        $fetched  = $this->catalog_fetched_at();
         ?>
         <div class="ezit-grid">
             <h2><?php esc_html_e('Installed on this site', 'ezit-core'); ?></h2>
@@ -329,38 +352,19 @@ class EzIT_Marketplace
                 </div>
             <?php endif; ?>
 
-            <h2 class="ezit-market-head">
-                <?php esc_html_e('Ez IT Marketplace', 'ezit-core'); ?>
-                <span class="ezit-market-actions">
-                    <span class="ezit-catalog-at">
-                        <?php if ($fetched > 0) : ?>
-                            <span class="ezit-catalog-at__age"
-                                  data-ts="<?php echo (int) $fetched; ?>"
-                                  data-label="<?php esc_attr_e('Fetched', 'ezit-core'); ?>"
-                                  title="<?php echo esc_attr(wp_date(get_option('date_format') . ' ' . get_option('time_format'), $fetched)); ?>">
-                                <?php
-                                printf(
-                                    /* translators: %s: human-readable time difference */
-                                    esc_html__('Fetched %s ago', 'ezit-core'),
-                                    esc_html(human_time_diff($fetched, time()))
-                                );
-                                ?>
-                            </span>
-                        <?php else : ?>
-                            <?php esc_html_e('Never fetched', 'ezit-core'); ?>
-                        <?php endif; ?>
-                        <?php if ($this->stale) : ?>
-                            <?php esc_html_e('— showing the cached copy (server unreachable)', 'ezit-core'); ?>
-                        <?php endif; ?>
-                    </span>
-                </span>
-            </h2>
             <?php if (! $catalog) : ?>
                 <p class="ezit-muted">
                     <?php esc_html_e('Nothing published yet — listings appear here once the license server catalog goes live.', 'ezit-core'); ?>
                     <?php esc_html_e('(Listings restricted to specific licenses only appear on sites holding one.)', 'ezit-core'); ?>
                 </p>
-            <?php else : ?>
+            <?php else :
+                // Version modals render OUTSIDE the card tree — an
+                // ancestor transform (card hover lift) would make
+                // position:fixed resolve against the card, not the
+                // viewport. The open label stays inside the card and
+                // toggles the checkbox by id.
+                $ezit_vm_modals = '';
+            ?>
                 <div class="ezit-cards">
                     <?php foreach ($catalog as $item) :
                         $slug      = (string) ($item['slug'] ?? '');
@@ -455,53 +459,96 @@ class EzIT_Marketplace
                                 <?php endif; ?>
                             </div>
                             <?php
-                            // Version picker — any registered product (incl. the
-                            // self plugin) can be moved to a specific published
-                            // release. Picking an older one pins the product so
-                            // a forced update can't roll it straight back.
+                            // Version picker — a modal per card (checkbox
+                            // toggle, zero JS). Picking anything but the
+                            // newest release pins the product so a forced
+                            // update can't roll it straight back.
                             if ($local_slug !== null) :
-                                $releases = $this->core->updater()->versions_for($local_slug);
+                                $releases  = $this->core->updater()->versions_for($local_slug);
+                                $ver_err   = $this->core->updater()->versions_error();
+                                $vm_id     = 'ezit-vm-' . $local_slug;
                             ?>
-                                <details class="ezit-versions">
-                                    <summary>
-                                        <?php printf(esc_html__('Versions — running v%s', 'ezit-core'), esc_html($local_ver ?? '?')); ?>
-                                        <?php if ($pinned) : ?><em><?php esc_html_e('(pinned)', 'ezit-core'); ?></em><?php endif; ?>
-                                    </summary>
-                                    <?php if (! $releases) : ?>
-                                        <p class="ezit-meta" style="margin:8px 0 0"><?php
-                                            esc_html_e('No published releases found — the server may not have the versions endpoint yet.', 'ezit-core'); ?></p>
-                                    <?php else : ?>
-                                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
-                                          onsubmit="return confirm('<?php echo esc_js(__('Install the selected version over the current files? Anything older than the newest release pins the product and suspends auto-updates.', 'ezit-core')); ?>');">
-                                        <input type="hidden" name="action" value="ezit_version">
-                                        <input type="hidden" name="slug" value="<?php echo esc_attr($local_slug); ?>">
-                                        <?php wp_nonce_field('ezit_version', 'ezit_version_nonce'); ?>
-                                        <select name="update_id">
+                                <label class="ezit-btn ezit-btn--ghost ezit-versions-open" for="<?php echo esc_attr($vm_id); ?>">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                                    <?php printf(esc_html__('Versions · v%s', 'ezit-core'), esc_html($local_ver ?? '?')); ?>
+                                    <?php if ($pinned) : ?><em class="ezit-versions-open__pin"><?php esc_html_e('pinned', 'ezit-core'); ?></em><?php endif; ?>
+                                </label>
+                                <?php ob_start(); ?>
+                                <input type="checkbox" class="ezit-vm__toggle" id="<?php echo esc_attr($vm_id); ?>">
+                                <div class="ezit-vm">
+                                    <label class="ezit-vm__backdrop" for="<?php echo esc_attr($vm_id); ?>"></label>
+                                    <div class="ezit-vm__card">
+                                        <div class="ezit-vm__head">
+                                            <h3><?php
+                                                /* translators: %s: product name */
+                                                printf(esc_html__('Version history — %s', 'ezit-core'), esc_html($item['name'] ?? $slug)); ?></h3>
+                                            <label class="ezit-vm__x" for="<?php echo esc_attr($vm_id); ?>" aria-label="<?php esc_attr_e('Close', 'ezit-core'); ?>">&times;</label>
+                                        </div>
+                                        <p class="ezit-vm__sub">
+                                            <?php printf(esc_html__('Running v%s', 'ezit-core'), esc_html($local_ver ?? '?')); ?>
+                                            <?php if ($pinned) : ?>
+                                                <span class="ezit-badge ezit-badge--pinned"><?php esc_html_e('Pinned — auto-updates suspended', 'ezit-core'); ?></span>
+                                                <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=ezit_unpin&slug=' . $local_slug . '&from=marketplace'), 'ezit_unpin', 'ezit_unpin_nonce')); ?>"><?php esc_html_e('Resume updates', 'ezit-core'); ?></a>
+                                            <?php endif; ?>
+                                        </p>
+                                        <?php if (! $releases) : ?>
+                                            <p class="ezit-vm__empty">
+                                                <?php echo $ver_err !== ''
+                                                    /* translators: %s: the API error message */
+                                                    ? sprintf(esc_html__('Release history unavailable: %s', 'ezit-core'), esc_html($ver_err))
+                                                    : esc_html__('No published releases yet.', 'ezit-core'); ?>
+                                            </p>
+                                        <?php else : ?>
+                                        <ul class="ezit-vm__list">
                                             <?php foreach ($releases as $i => $rel) :
-                                                $rel_ver = (string) ($rel['version'] ?? '');
-                                                $tags = [];
-                                                if ($i === 0) { $tags[] = __('latest', 'ezit-core'); }
-                                                if ($rel_ver === $local_ver) { $tags[] = __('current', 'ezit-core'); }
-                                                if (! empty($rel['forced'])) { $tags[] = __('forced', 'ezit-core'); }
+                                                $rel_ver  = (string) ($rel['version'] ?? '');
+                                                $rel_cur  = $rel_ver === $local_ver;
+                                                $rel_tags = [];
+                                                if ($i === 0) { $rel_tags[] = __('latest', 'ezit-core'); }
+                                                if (! empty($rel['forced'])) { $rel_tags[] = __('forced', 'ezit-core'); }
                                             ?>
-                                                <option value="<?php echo esc_attr((string) ($rel['update_id'] ?? '')); ?>"
-                                                    <?php disabled($rel_ver === $local_ver); ?>>
-                                                    <?php echo esc_html('v' . $rel_ver
-                                                        . (($rel['release_date'] ?? '') !== '' ? ' · ' . $rel['release_date'] : '')
-                                                        . ($tags ? ' — ' . implode(', ', $tags) : '')); ?>
-                                                </option>
+                                                <li class="ezit-vm__row<?php echo $rel_cur ? ' is-current' : ''; ?>">
+                                                    <div class="ezit-vm__ver">
+                                                        <strong>v<?php echo esc_html($rel_ver); ?></strong>
+                                                        <?php if (($rel['release_date'] ?? '') !== '') : ?>
+                                                            <span class="ezit-meta"><?php echo esc_html($rel['release_date']); ?></span>
+                                                        <?php endif; ?>
+                                                        <?php foreach ($rel_tags as $t) : ?>
+                                                            <span class="ezit-badge is-tag"><?php echo esc_html($t); ?></span>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                    <div class="ezit-vm__sum"><?php echo esc_html((string) ($rel['summary'] ?? '')); ?></div>
+                                                    <div class="ezit-vm__act">
+                                                        <?php if ($rel_cur) : ?>
+                                                            <span class="ezit-badge is-active"><?php esc_html_e('Current', 'ezit-core'); ?></span>
+                                                        <?php else : ?>
+                                                            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                                                                  onsubmit="return confirm('<?php echo esc_js(sprintf(__('Install v%s over the current files? Anything older than the newest release pins the product and suspends auto-updates.', 'ezit-core'), $rel_ver)); ?>');">
+                                                                <input type="hidden" name="action" value="ezit_version">
+                                                                <input type="hidden" name="slug" value="<?php echo esc_attr($local_slug); ?>">
+                                                                <input type="hidden" name="update_id" value="<?php echo esc_attr((string) ($rel['update_id'] ?? '')); ?>">
+                                                                <?php wp_nonce_field('ezit_version', 'ezit_version_nonce'); ?>
+                                                                <button type="submit" class="ezit-btn">
+                                                                    <?php echo version_compare($rel_ver, $local_ver ?: '0', '<')
+                                                                        ? esc_html__('Downgrade', 'ezit-core')
+                                                                        : esc_html__('Install', 'ezit-core'); ?>
+                                                                </button>
+                                                            </form>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </li>
                                             <?php endforeach; ?>
-                                        </select>
-                                        <button type="submit" class="ezit-btn ezit-btn--ghost">
-                                            <?php esc_html_e('Install this version', 'ezit-core'); ?>
-                                        </button>
-                                    </form>
-                                    <?php endif; ?>
-                                </details>
+                                        </ul>
+                                        <?php endif; ?>
+                                        <p class="ezit-vm__note"><?php esc_html_e('Choosing a release older than the newest published one pins this product — forced and automatic updates pause until you resume them.', 'ezit-core'); ?></p>
+                                    </div>
+                                </div>
+                                <?php $ezit_vm_modals .= ob_get_clean(); ?>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
+                <?php echo $ezit_vm_modals; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — fully escaped at build time ?>
             <?php endif; ?>
         </div>
         <?php

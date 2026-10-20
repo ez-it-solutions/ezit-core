@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.12
+Stable tag: 1.5.13
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,18 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.13 =
+* Version history is now a proper modal per card — releases list with
+  version/date/badges/summary and per-row Install or Downgrade; the
+  current release is marked, pinned products show the pin state and a
+  Resume link inline. Modals render outside the card tree so the card
+  hover transform can't corrupt fixed positioning
+* Empty release history now reports WHY — the real API error (auth,
+  transport, unknown endpoint) instead of a blanket "no releases" note,
+  and the reason is cached alongside the list for 15 min
+* "Fetched N ago" moved under the Refresh button in the page title row;
+  the duplicate section heading above the cards is gone
 
 = 1.5.12 =
 * Marketplace: Refresh button moved up beside the page title — the
