@@ -79,6 +79,7 @@ class EzIT_Login
     public function __construct()
     {
         add_action('login_enqueue_scripts', [$this, 'styles']);
+        add_action('login_footer', [$this, 'busy_script']);
         add_filter('login_headerurl', [$this, 'header_url']);
         add_filter('login_headertext', [$this, 'header_text']);
         add_filter('login_message', [$this, 'message']);
@@ -165,6 +166,18 @@ class EzIT_Login
             .login .button-primary:hover, .login .button-primary:focus {
                 filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 10px 24px {$accent}66;
             }
+            /* Busy state — spinner swaps in while the form POSTs (login_footer JS).
+               <input> can't hold a pseudo-element, so the spinner is a real span. */
+            .login p.submit { position:relative; }
+            .login .button-primary.ezit-busy { color:transparent !important; pointer-events:none; filter:none; transform:none; }
+            .ezit-login-spin {
+                position:absolute; left:50%; top:50%; width:20px; height:20px;
+                margin:-10px 0 0 -10px; border-radius:50%;
+                border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff;
+                animation:ezitLoginSpin .7s linear infinite; pointer-events:none;
+            }
+            @keyframes ezitLoginSpin { to { transform:rotate(360deg); } }
+            @media (prefers-reduced-motion:reduce) { .ezit-login-spin { animation-duration:1.4s; } }
             .login .message, .login .notice, .login .success, .login .error {
                 border-radius:9px; border-left-color:{$accent};
                 box-shadow:0 8px 24px rgba(74,57,35,.12);
@@ -183,5 +196,33 @@ class EzIT_Login
             $css .= ".login h1 a { background-image:url(\"data:image/svg+xml,{$bolt}\"); width:120px; }";
         }
         wp_add_inline_style('login', $css);
+    }
+
+    /**
+     * Submit → busy state. Button text goes transparent and a spinner
+     * docks where the label was while the request is in flight. Covers
+     * the login, lost-password and register forms; idempotent if a
+     * validation error leaves the page up and the user re-submits.
+     */
+    public function busy_script(): void
+    {
+        ?>
+<script>
+(function () {
+    document.querySelectorAll('#loginform, #lostpasswordform, #registerform').forEach(function (f) {
+        f.addEventListener('submit', function () {
+            var btn = f.querySelector('.button-primary');
+            if (! btn || btn.classList.contains('ezit-busy')) { return; }
+            btn.classList.add('ezit-busy');
+            btn.setAttribute('aria-busy', 'true');
+            var s = document.createElement('span');
+            s.className = 'ezit-login-spin';
+            s.setAttribute('aria-hidden', 'true');
+            (btn.closest('.submit') || btn.parentNode).appendChild(s);
+        });
+    });
+})();
+</script>
+        <?php
     }
 }

@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.27
+Stable tag: 1.5.28
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,12 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.28 =
+* Branded login page: the primary button gets a busy state — on submit
+  the label fades to a centered spinner while the request is in flight
+  (pointer-events locked against double-submit, aria-busy set,
+  reduced-motion aware). Covers login, lost-password and register forms
 
 = 1.5.27 =
 * Fix: gate recovery lag — a license re-enabled on the server could
