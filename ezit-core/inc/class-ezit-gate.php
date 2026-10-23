@@ -466,11 +466,12 @@ class EzIT_Gate
                 return;
             }
             // Rescue check — the UC page is about to render. Force a
-            // synchronous re-verify (15s floor protects the license server
-            // from request storms while staying effectively instant) so a
-            // license re-enabled server-side opens the site on THIS hit.
+            // synchronous re-verify (5s floor bounds outbound calls to
+            // the license server during a request storm while staying
+            // effectively instant) so a license re-enabled server-side
+            // opens the site on THIS hit.
             $this->core->licensing()->freshen(
-                (int) apply_filters('ezit_gate_rescue_ttl', 15)
+                (int) apply_filters('ezit_gate_rescue_ttl', 5)
             );
             if ($this->gate_licensed()) {
                 return;

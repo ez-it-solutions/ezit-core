@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.26
+Stable tag: 1.5.27
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,16 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.27 =
+* Fix: gate recovery lag — a license re-enabled on the server could
+  leave the Under Construction page up for ~15s. The license-push
+  anti-burst window dropped the re-enable push entirely, and the UC
+  rescue re-verify had its own 15s floor. Pushes inside the window now
+  schedule a deferred verify instead of being discarded (window 15s →
+  3s), and the rescue floor is 5s — the site reopens on the next hit
+* admin.css: missing standard line-clamp added beside the prefixed
+  -webkit-line-clamp on version-modal summaries
 
 = 1.5.26 =
 * Pin actions are pills now, not raw links — Settings → Updates rows

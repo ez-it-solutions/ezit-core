@@ -84,14 +84,20 @@ class EzIT_Licensing
     /** Push handler — synchronous re-verify, returns fresh statuses.
      *  A push can only *ask* for a re-check; the verdict still comes
      *  from the server over HTTPS, so a forged push can't disable a
-     *  site. Throttled: the api_key ships with products, and an
-     *  unthrottled endpoint would let a leaked key amplify outbound
-     *  HTTP to the license server. */
+     *  site. Anti-burst: a short window coalesces the double-fires of
+     *  one admin action while still bounding how often a leaked api_key
+     *  can make the site amplify outbound HTTP to the license server.
+     *  A push landing inside the window is never dropped — it queues
+     *  one deferred verify for when the window closes, so a rapid
+     *  disable→enable converges on the final state within seconds. */
     public function rest_push(WP_REST_Request $r): WP_REST_Response
     {
         if (! get_transient('ezit_push_recent')) {
-            set_transient('ezit_push_recent', 1, 15);
+            set_transient('ezit_push_recent', 1, 3);
             $this->verify_all();
+        } elseif (! wp_next_scheduled(self::PING)) {
+            wp_schedule_single_event(time() + 3, self::PING);
+            spawn_cron();
         }
         $out = [];
         foreach (array_keys($this->core->products()) as $slug) {
