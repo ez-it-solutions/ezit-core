@@ -166,15 +166,21 @@ class EzIT_Login
             .login .button-primary:hover, .login .button-primary:focus {
                 filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 10px 24px {$accent}66;
             }
-            /* Busy state — spinner swaps in while the form POSTs (login_footer JS).
-               <input> can't hold a pseudo-element, so the spinner is a real span. */
+            /* Busy state — while the form POSTs, a spinner + label overlay sits
+               exactly over the button (login_footer JS anchors it to the button's
+               own offsetTop/offsetLeft — margin collapse can't push it off). */
             .login p.submit { position:relative; }
             .login .button-primary.ezit-busy { color:transparent !important; pointer-events:none; filter:none; transform:none; }
+            .ezit-login-busy {
+                position:absolute; transform:translate(-50%,-50%);
+                display:inline-flex; align-items:center; gap:9px;
+                color:#fff; font-size:15px; font-weight:700; letter-spacing:.01em;
+                white-space:nowrap; pointer-events:none;
+            }
             .ezit-login-spin {
-                position:absolute; left:50%; top:50%; width:20px; height:20px;
-                margin:-10px 0 0 -10px; border-radius:50%;
-                border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff;
-                animation:ezitLoginSpin .7s linear infinite; pointer-events:none;
+                width:16px; height:16px; flex-shrink:0; border-radius:50%;
+                border:2px solid rgba(255,255,255,.35); border-top-color:#fff;
+                animation:ezitLoginSpin .7s linear infinite;
             }
             @keyframes ezitLoginSpin { to { transform:rotate(360deg); } }
             @media (prefers-reduced-motion:reduce) { .ezit-login-spin { animation-duration:1.4s; } }
@@ -215,10 +221,17 @@ class EzIT_Login
             if (! btn || btn.classList.contains('ezit-busy')) { return; }
             btn.classList.add('ezit-busy');
             btn.setAttribute('aria-busy', 'true');
-            var s = document.createElement('span');
-            s.className = 'ezit-login-spin';
-            s.setAttribute('aria-hidden', 'true');
-            (btn.closest('.submit') || btn.parentNode).appendChild(s);
+            // Overlay centered on the button itself — offsetTop is read
+            // against the positioned .submit wrapper, so the button's
+            // collapsed top margin can't shove the indicator off-center.
+            var wrap = btn.closest('.submit') || btn.parentNode;
+            var o = document.createElement('span');
+            o.className = 'ezit-login-busy';
+            o.setAttribute('aria-hidden', 'true');
+            o.innerHTML = '<span class="ezit-login-spin"></span><span><?php echo esc_js(__('Logging in…', 'ezit-core')); ?></span>';
+            wrap.appendChild(o);
+            o.style.left = (btn.offsetLeft + btn.offsetWidth  / 2) + 'px';
+            o.style.top  = (btn.offsetTop  + btn.offsetHeight / 2) + 'px';
         });
     });
 })();
