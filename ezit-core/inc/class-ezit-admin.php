@@ -34,6 +34,7 @@ class EzIT_Admin
         add_action('admin_post_ezit_credit',     [$this, 'handle_credit']);
         add_action('admin_post_ezit_market_install', [$this, 'handle_market_install']);
         add_action('admin_post_ezit_version',    [$this, 'handle_version']);
+        add_action('admin_post_ezit_retry_versions', [$this, 'handle_retry_versions']);
         add_action('admin_post_ezit_unpin',      [$this, 'handle_unpin']);
         add_action('admin_post_ezit_pin',        [$this, 'handle_pin']);
         add_action('admin_post_ezit_clear_applied', [$this, 'handle_clear_applied']);
@@ -753,6 +754,27 @@ class EzIT_Admin
             $product['name'] ?? $slug,
             $chosen['version']
         ));
+    }
+
+    /**
+     * Retry a failed version-history fetch — errors cache inside
+     * ezit_versions_{slug} for 15 min, so a Retry link clears it and the
+     * reloaded page asks the server again. ezit_vm re-arms the picker
+     * (admin.js re-checks that toggle after load).
+     */
+    public function handle_retry_versions(): void
+    {
+        $this->guard('ezit_retry_versions', 'ezit_retry_nonce');
+        $slug = sanitize_key(wp_unslash($_GET['slug'] ?? ''));
+        if ($slug !== '') {
+            delete_transient('ezit_versions_' . $slug);
+        }
+        $args = ['page' => 'ezit-core', 'tab' => 'marketplace'];
+        if ($slug !== '') {
+            $args['ezit_vm'] = $slug;
+        }
+        wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+        exit;
     }
 
     /** Pin a product at its installed version — pause auto/forced updates. */

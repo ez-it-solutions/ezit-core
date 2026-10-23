@@ -206,18 +206,20 @@ if (preg_match('/--panel-muted:\s*([^;]+)/', $tabs[$active]['vars'], $m)) {
                 <a href="https://ez-it-solutions.com" target="_blank" rel="noopener"><?php esc_html_e('Documentation', 'ezit-core'); ?></a>
                 <a href="https://ez-it-solutions.com" target="_blank" rel="noopener"><?php esc_html_e('Changelog', 'ezit-core'); ?></a>
                 <a href="https://ez-it-solutions.com/support" target="_blank" rel="noopener"><?php esc_html_e('Support', 'ezit-core'); ?></a>
-                <a href="https://ez-it-solutions.com" target="_blank" rel="noopener"><?php esc_html_e('ez-it-solutions.com', 'ezit-core'); ?></a>
             </nav>
         </div>
         <div class="pg-foot__base">
             <div>
-                <?php
-                printf(
-                    /* translators: %s: Ez IT Core version */
-                    esc_html__('Ez IT Core v%s · Thank you for running Ez IT products.', 'ezit-core'),
-                    esc_html(EZIT_CORE_VERSION)
-                );
-                ?>
+                <span>
+                    <?php
+                    printf(
+                        /* translators: %s: Ez IT Core version */
+                        esc_html__('Ez IT Core v%s · Thank you for running Ez IT products.', 'ezit-core'),
+                        esc_html(EZIT_CORE_VERSION)
+                    );
+                    ?>
+                </span>
+                <a href="https://ez-it-solutions.com" target="_blank" rel="noopener">http://www.Ez-IT-Solutions.com</a>
             </div>
         </div>
     </footer>

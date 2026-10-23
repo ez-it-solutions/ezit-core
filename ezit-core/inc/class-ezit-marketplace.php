@@ -609,6 +609,20 @@ class EzIT_Marketplace
                                                     ? sprintf(esc_html__('Release history unavailable: %s', 'ezit-core'), esc_html($ver_err))
                                                     : esc_html__('No published releases yet.', 'ezit-core'); ?>
                                             </p>
+                                            <?php if ($ver_err !== '') :
+                                                // Failures cache 15 min with the empty list — a Retry
+                                                // link clears the transient and refetches right now.
+                                                $retry_url = wp_nonce_url(
+                                                    admin_url('admin-post.php?action=ezit_retry_versions&slug=' . $local_slug),
+                                                    'ezit_retry_versions',
+                                                    'ezit_retry_nonce'
+                                                );
+                                            ?>
+                                                <p class="ezit-vm__retrynote">
+                                                    <a class="ezit-btn" href="<?php echo esc_url($retry_url); ?>"><?php esc_html_e('Retry', 'ezit-core'); ?></a>
+                                                    <span><?php esc_html_e('Errors cache briefly — retrying asks the server again immediately.', 'ezit-core'); ?></span>
+                                                </p>
+                                            <?php endif; ?>
                                         <?php else : ?>
                                         <?php
                                         // A running build that isn't a published release (a local

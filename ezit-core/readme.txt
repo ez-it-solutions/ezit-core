@@ -4,7 +4,7 @@ Tags: licensing, marketplace, updates, theme framework
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.5.28
+Stable tag: 1.5.29
 License: GPL-2.0-or-later
 
 Shared foundation for Ez IT Solutions WordPress themes: licensing, updates,
@@ -134,6 +134,22 @@ individual products or the whole site. Works for themes too — same
 flag.
 
 == Changelog ==
+
+= 1.5.29 =
+* Fix: stray checkboxes under the admin footer — the version-picker
+  toggles printed at admin_footer were visible because core's
+  input[type=checkbox] rule (0,1,1) outranked the bare-class hide
+  (0,1,0). Selector is now input.ezit-vm__toggle
+* Version-history retry: when the release list errors out, the empty
+  state now offers a Retry button — clears the cached failure
+  (ezit_versions_{slug}, 15 min) and reloads the picker already open
+* Admin footer: dark band now pins to the viewport bottom on short
+  pages via a flex chain on WP's own wrappers, green 1px divider + 3px
+  green bottom border, and the company link moved to the base row's
+  far right
+* Card grids (marketplace + installed strips) go 2-up again —
+  auto-fill was counting tracks on the 480px max, which never fit
+  two inside the panel; tracks now minmax(300px, 1fr)
 
 = 1.5.28 =
 * Branded login page: the primary button gets a busy state — on submit

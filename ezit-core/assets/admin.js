@@ -39,6 +39,16 @@
             u.searchParams.delete('ezit_detail');
             window.history.replaceState({}, '', u);
         }
+        // Retry round-trip: ?ezit_vm={slug} means "reopen that version
+        // picker" — the toggle is a checkbox, so check it after load.
+        if (u.searchParams.has('ezit_vm')) {
+            var vmTog = document.getElementById('ezit-vm-' + u.searchParams.get('ezit_vm'));
+            if (vmTog) {
+                vmTog.checked = true;
+            }
+            u.searchParams.delete('ezit_vm');
+            window.history.replaceState({}, '', u);
+        }
     } catch (e) { /* older browsers keep the params — harmless */ }
 
     // ── Branded confirm — data-confirm forms, zero native dialogs ────
